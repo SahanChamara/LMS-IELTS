@@ -64,7 +64,7 @@ const CompletedCoursesCard = () => {
               <p className="text-sm text-gray-600 line-clamp-2">{course.description}</p>
               <div className="flex justify-end">
                 <Link
-                  to={`/course/${course.id}`}
+                  to={`/unit/${course.id}`}
                   state={{ course: course }}
                   className="text-sm px-3 py-1 bg-black text-white  rounded-md shadow-sm hover:bg-gray-600 hover:text-white transition duration-300 ease-in-out"
                 >
