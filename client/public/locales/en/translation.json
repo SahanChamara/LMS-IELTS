@@ -1,0 +1,29 @@
+{
+  "marks": "Marks",
+  "lmsRecord": "LMS - Record of Formative Coursework Evaluation",
+  "year": "Year {{number}}",
+  "semester1": "Semester 1",
+  "semester2": "Semester 2",
+  "resultsSummary": "Results Summary",
+  "examFaceDates": "Exam Face Dates",
+  "gradeMeaning": "Grade Meaning",
+  "continuousAssessments": "Continuous Assessments",
+  "midtermExam": "Midterm Exam",
+  "projectWork": "Project Work",
+  "quizzes": "Quizzes",
+  "applyingForExams": "Applying for Exams",
+  "applyExamsDescription": "Apply for proper, repeat, or re-correction exams using the button below.",
+  "navigateToExamApplication": "Navigate to exam application",
+  "applyForExams": "Apply for Exams",
+  "repeatedSubjects": "Repeated Subjects",
+  "noRepeatedSubjects": "No repeated subjects",
+  "extraCurricularMarks": "Extra-Curricular Activity Marks",
+  "finalGPA": "Final GPA",
+  "gradeMeanings": {
+    "A": "Excellent",
+    "B": "Good",
+    "C": "Satisfactory",
+    "D": "Pass",
+    "F": "Fail"
+  }
+}
