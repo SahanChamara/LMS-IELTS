@@ -14,6 +14,7 @@ import AssignmentsTab from '../components/course/tabs/AssignmentsTab';
 import OnlineSessionTab from '../components/course/tabs/OnlineSessionTabs';
 import { getUnitById } from '../service/unitsService';
 import StudentDiscussionsTab from '../components/course/tabs/StudentDiscussionTab';
+import InstructorDiscussionsTab from '../components/course/tabs/InstructorDisccussionTab';
 
 const UnitDetails = () => {
   const { id } = useParams();
@@ -133,6 +134,7 @@ const UnitDetails = () => {
           {activeTab === 'materials' && <MaterialsTab studyMaterials={unitData.studyMaterials} />}
           {/* {activeTab === 'discussions' && <DiscussionsTab discussions={unitData.discussions} />} */}
           {activeTab === 'discussions' && <StudentDiscussionsTab unitId={unitData.id} />}
+          {/* {activeTab === 'discussions' && <InstructorDiscussionsTab unitId={unitData.id} />} */}
           {activeTab === 'assignments' && (
             <AssignmentsTab
               assignments={assignments}
