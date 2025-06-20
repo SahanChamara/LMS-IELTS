@@ -6,10 +6,10 @@ import {
   FiUsers,
   FiLogOut,
   FiHome,
-  FiArrowRight,
-  FiArrowLeft,
   FiChevronLeft,
   FiChevronRight,
+  FiCalendar, // Added for calendar
+  FiSettings, // Added for settings
 } from "react-icons/fi";
 import PropTypes from "prop-types";
 
@@ -23,23 +23,33 @@ const Lecsidebar = ({ onLogout }) => {
   const navItems = [
     {
       name: "Dashboard",
-      path: "/lecturepages/lecturedashboard",
+      path: "/dashboard/lecture",
       icon: <FiHome className="text-lg" />,
     },
     {
       name: "My Courses",
-      path: "/lecturepages/lcourses",
+      path: "/courses/lecture",
       icon: <FiBook className="text-lg" />,
     },
     {
       name: "Assignments",
-      path: "/lecturepages/lassignments",
+      path: "/assignments/lecture",
       icon: <FiFileText className="text-lg" />,
     },
     {
       name: "Students",
-      path: "/lecturepages/lstudents",
+      path: "/students/lecture",
       icon: <FiUsers className="text-lg" />,
+    },
+    {
+      name: "Calendar", // Fixed typo "calender" to "Calendar"
+      path: "/calendar/lecture", // Fixed path to "/calendar/lecture"
+      icon: <FiCalendar className="text-lg" />, // Proper calendar icon
+    },
+    {
+      name: "Settings",
+      path: "/settings/lecture", // Fixed path to "/settings/lecture"
+      icon: <FiSettings className="text-lg" />, // Proper settings icon
     },
   ];
 
@@ -73,7 +83,7 @@ const Lecsidebar = ({ onLogout }) => {
         {/* Sidebar Header */}
         <div className="p-6 border-b border-neutral-700">
           <h1 className="text-2xl font-bold tracking-tight">
-            Lecture Dashboard
+            Lecturer Dashboard
           </h1>
         </div>
 
