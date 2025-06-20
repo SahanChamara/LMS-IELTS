@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   useAppDispatch,
   useAppSelector,
@@ -12,6 +12,10 @@ function AssignmentsTab() {
     (state) => state.assignments
   );
 
+  const fetachAllDonors = useCallback(() => {
+    dispatch(getAllAssignmentsAPI());
+  },[dispatch])
+
     useEffect(() => {
     // Get All Assignments...
 /*     const fetchAssignments = async () => {
@@ -20,9 +24,9 @@ function AssignmentsTab() {
     }
     fetchAssignments(); */
 
-    dispatch(getAllAssignmentsAPI());
+    fetachAllDonors();   
     
-  }, [dispatch]);
+  }, [fetachAllDonors]);
 
   console.log(assignment);
   console.log(loading);
