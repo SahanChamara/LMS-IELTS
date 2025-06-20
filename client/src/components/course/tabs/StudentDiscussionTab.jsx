@@ -176,12 +176,12 @@ const StudentDiscussionsTab = ({ unitId }) => {
                     </div>
                     <div
                       className={`px-4 py-2 rounded-2xl ${
-                        message.userId === currentUserId
-                          ? "bg-blue-500 text-white"
+                        message.role === "Student"
+                          ? "bg-blue-500 text-white "
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">
+                      <p className="text-sm whitespace-pre-wrap ">
                         {message.content}
                       </p>
                     </div>
