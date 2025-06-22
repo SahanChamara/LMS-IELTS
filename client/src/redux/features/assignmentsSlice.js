@@ -21,7 +21,7 @@ const initialState = {
 };
 
 const assignmentsSlice = createSlice({
-  name: "assignmentsSlice",
+  name: "assignment",
   initialState,
   reducers: {},
   extraReducers: (builder) => {

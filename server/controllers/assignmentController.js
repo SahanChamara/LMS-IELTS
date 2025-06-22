@@ -86,7 +86,7 @@ exports.getAssignments = async (req, res) => {
             .populate('unit', 'title')
             .sort({ createdAt: -1 });
 
-        res.status(200).json({ success: true, data: assignments });
+        res.status(200).json({ success: true, data: assignments, message: "All Assignment Fetch Successfull" });
     } catch (error) {
         res.status(500).json({
             success: false,
