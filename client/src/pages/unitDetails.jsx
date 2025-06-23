@@ -142,7 +142,7 @@ const UnitDetails = () => {
             />
           )}
           {activeTab === 'online-session' && (
-            <OnlineSessionTab sessions={unitData.onlineSessions} />
+            <OnlineSessionTab unitId={unitData.id} />
           )}
         </div>
       </main>
