@@ -7,7 +7,7 @@ export const getAllAssignmentsAPI = createAsyncThunk(
     try {
       const response = await getAllAssignments();
       console.log("Get All Assignments Response", response);
-      return response;
+      return response.data;
     } catch (error) {
       return rejectWithValue("Get All Asignments Failed...", error);
     }
@@ -33,7 +33,7 @@ const assignmentsSlice = createSlice({
         state.loading = false;
         console.log("payload ",action.payload);
         
-        state.assignment = action.payload.data;
+        state.assignment = action.payload;
       })
       .addCase(getAllAssignmentsAPI.rejected, (state, action) => {
         state.loading = false;

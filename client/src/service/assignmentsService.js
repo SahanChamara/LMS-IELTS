@@ -8,5 +8,5 @@ export const getAllAssignments = async () => {
     prefix: "assignment",
     endpoint: "",
   };
-  return await ApiService.callApi(apiObject);
+  return ApiService.callApi(apiObject);
 };

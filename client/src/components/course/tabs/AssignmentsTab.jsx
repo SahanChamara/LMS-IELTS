@@ -12,28 +12,12 @@ function AssignmentsTab() {
     (state) => state.assignments
   );
 
-  const fetachAllDonors = useCallback(() => {
-    dispatch(getAllAssignmentsAPI());
-  },[dispatch])
-
-    useEffect(() => {
-    // Get All Assignments...
-/*     const fetchAssignments = async () => {
-      const result = await dispatch(getAllAssignmentsAPI()).unwrap();
-    console.log("result", result);
-    }
-    fetchAssignments(); */
-
-    fetachAllDonors();   
-    
-  }, [fetachAllDonors]);
-
   console.log(assignment);
   console.log(loading);
   console.log(error);
 
-  if(assignment == null){
-    console.log("assign is null");        
+  if (assignment == null) {
+    console.log("assign is null");
   }
 
   const [allAssignments, setAllAssignments] = useState(assignment);
@@ -54,11 +38,21 @@ function AssignmentsTab() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("dueDate");
 
+  useEffect(() => {
+    // Get All Assignments...
+    if (!loading && !error) {
+      dispatch(getAllAssignmentsAPI());
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    setAllAssignments(assignment);
+  }, [assignment]);
+
   // Get unique subjects for filter dropdown
   const subjects = [...new Set(allAssignments.map((a) => a.subjectCode))];
 
   console.log("all assignments", allAssignments);
-  
 
   // Calculate time remaining for each assignment
   useEffect(() => {
@@ -287,6 +281,9 @@ function AssignmentsTab() {
       }
       return 0;
     });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="relative p-6">
