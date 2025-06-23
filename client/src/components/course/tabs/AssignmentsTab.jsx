@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "../../../redux/store-config/store";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "../../../redux/store-config/store";
 import { getAllAssignmentsAPI } from "../../../redux/features/assignmentsSlice";
+import useDrivePicker from "react-google-drive-picker";
 
 function AssignmentsTab() {
   const dispatch = useAppDispatch();
-  const { assignment, loading, error } = useAppSelector((state) => state.assignments);
+  const { assignment, loading, error } = useAppSelector(
+    (state) => state.assignments
+  );
 
   console.log("Redux assignment:", assignment);
   console.log("Loading:", loading);
@@ -14,9 +20,32 @@ function AssignmentsTab() {
     console.log("Assignment is null");
   }
 
+  // Google Drive Picker
+  const [openPicker, setOpenPicker] = useDrivePicker();
+  const [files, setFiles] = useState([]);
+
+  const handleOpenPicker = () => {
+    openPicker({
+      clientId: "",
+      developerKey: '',      
+      viewId: "DOCS",
+      showUploadView: true,
+      showUploadFolders: true,
+      supportDrives: true,
+      multiselect: true,
+      callbackFunction: (data) => {
+        if (data.action === "cancel") {
+          console.log("User Clieck Cansel");
+        } else if (data.docs) {
+          console.log("Google Drive Upload Data",data);
+          setFiles(data.docs);
+        }
+      },
+    });
+  };
+
   // Initialize allAssignments with assignment.data (assuming Redux returns { data: [...] })
   const [allAssignments, setAllAssignments] = useState(assignment);
-  const [files, setFiles] = useState([]);
   const [showUploadForm, setShowUploadForm] = useState(null);
   const [studentName, setStudentName] = useState("");
   const [comments, setComments] = useState("");
@@ -60,15 +89,23 @@ function AssignmentsTab() {
 
         if (diff > 0) {
           const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const hours = Math.floor(
+            (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          newTimeRemaining[assignment._id || assignment.id] = `${days}d ${hours}h ${minutes}m remaining`;
+          newTimeRemaining[
+            assignment._id || assignment.id
+          ] = `${days}d ${hours}h ${minutes}m remaining`;
         } else {
           const lateBy = Math.abs(diff);
           const days = Math.floor(lateBy / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((lateBy % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const hours = Math.floor(
+            (lateBy % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
           const minutes = Math.floor((lateBy % (1000 * 60 * 60)) / (1000 * 60));
-          newTimeRemaining[assignment._id || assignment.id] = `Late by ${days}d ${hours}h ${minutes}m`;
+          newTimeRemaining[
+            assignment._id || assignment.id
+          ] = `Late by ${days}d ${hours}h ${minutes}m`;
         }
       });
 
@@ -112,7 +149,11 @@ function AssignmentsTab() {
     const now = new Date();
     const submittedAt = now.toISOString();
 
-    const assignment = allAssignments.find((a) => a._id === showUploadForm || a.id === showUploadForm);
+    console.log(studentName, files, comments);
+
+    const assignment = allAssignments.find(
+      (a) => a._id === showUploadForm || a.id === showUploadForm
+    );
     if (!assignment) return; // Guard clause if assignment not found
     const dueDate = new Date(assignment.dueDate);
 
@@ -166,7 +207,12 @@ function AssignmentsTab() {
     }, 1000);
   };
 
-  const handleGradeAssignment = (assignmentId, status, grade = null, feedback = "") => {
+  const handleGradeAssignment = (
+    assignmentId,
+    status,
+    grade = null,
+    feedback = ""
+  ) => {
     const updatedAssignments = allAssignments.map((a) => {
       if (a._id === assignmentId || a.id === assignmentId) {
         return {
@@ -205,14 +251,18 @@ function AssignmentsTab() {
 
   const getAssignmentDetails = (assignment) => {
     const details = [];
-    if (assignment.subjectCode) details.push(`Subject: ${assignment.subjectCode}`);
+    if (assignment.subjectCode)
+      details.push(`Subject: ${assignment.subjectCode}`);
     if (assignment.type) details.push(`Type: ${assignment.type}`);
     if (assignment.marks) details.push(`Marks: ${assignment.marks}`);
-    if (assignment.timeLimit) details.push(`Time Limit: ${assignment.timeLimit} minutes`);
-    if (assignment.wordCount) details.push(`Word Count: ${assignment.wordCount}`);
+    if (assignment.timeLimit)
+      details.push(`Time Limit: ${assignment.timeLimit} minutes`);
+    if (assignment.wordCount)
+      details.push(`Word Count: ${assignment.wordCount}`);
     if (assignment.teamSize) details.push(`Team Size: ${assignment.teamSize}`);
     if (assignment.language) details.push(`Language: ${assignment.language}`);
-    if (assignment.citationStyle) details.push(`Citation: ${assignment.citationStyle}`);
+    if (assignment.citationStyle)
+      details.push(`Citation: ${assignment.citationStyle}`);
     return details.join(" • ");
   };
 
@@ -222,17 +272,22 @@ function AssignmentsTab() {
       const matchesSearch =
         assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assignment.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSubject = filterSubject === "all" || assignment.subjectCode === filterSubject;
+      const matchesSubject =
+        filterSubject === "all" || assignment.subjectCode === filterSubject;
       const matchesStatus =
         filterStatus === "all" ||
-        (filterStatus === "submitted" && (assignment.status === "Submitted On Time" || assignment.status === "Submitted Late")) ||
+        (filterStatus === "submitted" &&
+          (assignment.status === "Submitted On Time" ||
+            assignment.status === "Submitted Late")) ||
         (filterStatus === "notSubmitted" && !assignment.status) ||
         (filterStatus === "graded" && assignment.status === "Graded");
       return matchesSearch && matchesSubject && matchesStatus;
     })
     .sort((a, b) => {
-      if (sortBy === "dueDate") return new Date(a.dueDate) - new Date(b.dueDate);
-      if (sortBy === "subject") return a.subjectCode.localeCompare(b.subjectCode);
+      if (sortBy === "dueDate")
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      if (sortBy === "subject")
+        return a.subjectCode.localeCompare(b.subjectCode);
       if (sortBy === "title") return a.title.localeCompare(b.title);
       return 0;
     });
@@ -272,7 +327,9 @@ function AssignmentsTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Subject</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Filter by Subject
+          </label>
           <select
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={filterSubject}
@@ -280,12 +337,16 @@ function AssignmentsTab() {
           >
             <option value="all">All Subjects</option>
             {subjects.map((subject) => (
-              <option key={subject} value={subject}>{subject}</option>
+              <option key={subject} value={subject}>
+                {subject}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Filter by Status
+          </label>
           <select
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={filterStatus}
@@ -298,7 +359,9 @@ function AssignmentsTab() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Sort By
+          </label>
           <select
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={sortBy}
@@ -324,42 +387,70 @@ function AssignmentsTab() {
                     <div className="flex items-start space-x-3">
                       <div
                         className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
-                          assignment.completed ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          assignment.completed
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        <span className="text-sm font-medium">{assignment.subjectCode}</span>
+                        <span className="text-sm font-medium">
+                          {assignment.subjectCode}
+                        </span>
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{assignment.title}</h3>
-                        <p className="text-sm text-gray-500 mt-1">{assignment.description}</p>
-                        <p className="text-sm text-gray-500 mt-1">{getAssignmentDetails(assignment)}</p>
+                        <h3 className="font-medium text-gray-900">
+                          {assignment.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {assignment.description}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {getAssignmentDetails(assignment)}
+                        </p>
                       </div>
                     </div>
                     <div className="mt-3">
-                      <p className="text-sm text-gray-500">Due: {formatDateTime(assignment.dueDate)}</p>
+                      <p className="text-sm text-gray-500">
+                        Due: {formatDateTime(assignment.dueDate)}
+                      </p>
                       <p
                         className={`text-xs mt-1 ${
-                          timeRemaining[assignment._id || assignment.id]?.includes("Late") ? "text-red-600" : "text-gray-600"
+                          timeRemaining[
+                            assignment._id || assignment.id
+                          ]?.includes("Late")
+                            ? "text-red-600"
+                            : "text-gray-600"
                         }`}
                       >
                         {timeRemaining[assignment._id || assignment.id]}
                       </p>
                       {assignment.submittedAt ? (
-                        <p className="text-sm mt-1">Submitted: {formatDateTime(assignment.submittedAt)}</p>
+                        <p className="text-sm mt-1">
+                          Submitted: {formatDateTime(assignment.submittedAt)}
+                        </p>
                       ) : (
-                        <p className="text-sm mt-1 text-gray-500">Not Submitted</p>
+                        <p className="text-sm mt-1 text-gray-500">
+                          Not Submitted
+                        </p>
                       )}
-                      {assignment.grade && <p className="text-sm mt-1 font-medium">Grade: {assignment.grade}</p>}
+                      {assignment.grade && (
+                        <p className="text-sm mt-1 font-medium">
+                          Grade: {assignment.grade}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getAssignmentStatusColor(assignment.status || "Not Submitted")}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getAssignmentStatusColor(
+                        assignment.status || "Not Submitted"
+                      )}`}
                     >
                       {assignment.status || "Not Submitted"}
                     </span>
                     {assignment.isLate && assignment.status && (
-                      <span className="mt-1 px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">Late</span>
+                      <span className="mt-1 px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">
+                        Late
+                      </span>
                     )}
                   </div>
                 </div>
@@ -367,7 +458,9 @@ function AssignmentsTab() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 flex items-center"
-                    onClick={() => window.open("/sample-assignment.pdf", "_blank")}
+                    onClick={() =>
+                      window.open("/sample-assignment.pdf", "_blank")
+                    }
                   >
                     <svg
                       className="h-4 w-4 mr-1"
@@ -402,7 +495,10 @@ function AssignmentsTab() {
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-                    {assignment.status && assignment.status.startsWith("Submitted") ? "Resubmit" : "Upload"}
+                    {assignment.status &&
+                    assignment.status.startsWith("Submitted")
+                      ? "Resubmit"
+                      : "Upload"}
                   </button>
 
                   {(assignment.status === "Submitted On Time" ||
@@ -446,8 +542,12 @@ function AssignmentsTab() {
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No assignments found</h3>
-              <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No assignments found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Try adjusting your search or filter criteria.
+              </p>
             </div>
           )}
         </div>
@@ -456,7 +556,9 @@ function AssignmentsTab() {
       {showUploadForm && (
         <div className="bg-white rounded-lg p-6 border border-gray-200 mb-8 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Submit Assignment: {showUploadForm.title}</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Submit Assignment: {showUploadForm.title}
+            </h3>
             <button
               onClick={() => {
                 setShowUploadForm(null);
@@ -484,7 +586,9 @@ function AssignmentsTab() {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Student Name
+              </label>
               <input
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -496,25 +600,24 @@ function AssignmentsTab() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Upload Files (Multiple allowed)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Files (Multiple allowed)
+              </label>
               <div className="mt-1 flex items-center">
                 <label className="cursor-pointer">
-                  <span className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  <button onClick={handleOpenPicker} className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Choose Files
-                  </span>
-                  <input
-                    type="file"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                    multiple
-                    required={files.length === 0}
-                  />
+                  </button>                  
                 </label>
                 <span className="ml-2 text-sm text-gray-500">
-                  {files.length > 0 ? `${files.length} files selected` : "No files chosen"}
+                  {files.length > 0
+                    ? `${files.length} files selected`
+                    : "No files chosen"}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-gray-500">PDF, DOCX, PPTX, JPG, PNG up to 10MB each</p>
+              <p className="mt-1 text-xs text-gray-500">
+                PDF, DOCX, PPTX, JPG, PNG up to 10MB each
+              </p>
 
               {files.length > 0 && (
                 <div className="mt-2 space-y-2">
@@ -531,7 +634,9 @@ function AssignmentsTab() {
                         >
                           {file.name}
                         </button>
-                        <span className="ml-2 text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -559,7 +664,9 @@ function AssignmentsTab() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Comments
+              </label>
               <textarea
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -598,7 +705,9 @@ function AssignmentsTab() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">{selectedAssignment.title} - Submission Details</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                {selectedAssignment.title} - Submission Details
+              </h3>
               <button
                 onClick={() => setSelectedAssignment(null)}
                 className="text-gray-400 hover:text-gray-500"
@@ -621,48 +730,91 @@ function AssignmentsTab() {
 
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-gray-700">Assignment Information</h4>
-                <p className="text-sm text-gray-500">{selectedAssignment.description}</p>
-                <p className="text-sm text-gray-500 mt-1">{getAssignmentDetails(selectedAssignment)}</p>
-                <p className="text-sm text-gray-500 mt-1">Due: {formatDateTime(selectedAssignment.dueDate)}</p>
+                <h4 className="font-medium text-gray-700">
+                  Assignment Information
+                </h4>
+                <p className="text-sm text-gray-500">
+                  {selectedAssignment.description}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {getAssignmentDetails(selectedAssignment)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Due: {formatDateTime(selectedAssignment.dueDate)}
+                </p>
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-700">Student Information</h4>
-                <p className="text-sm text-gray-500 mt-1">Submitted by: {selectedAssignment.studentName || "Not available"}</p>
-                <p className="text-sm text-gray-500">
-                  Submitted on: {selectedAssignment.submittedAt ? formatDateTime(selectedAssignment.submittedAt) : "Not submitted"}
+                <h4 className="font-medium text-gray-700">
+                  Student Information
+                </h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  Submitted by:{" "}
+                  {selectedAssignment.studentName || "Not available"}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Status: <span className={`px-2 py-1 rounded-full text-xs ${getAssignmentStatusColor(selectedAssignment.status || "Not Submitted")}`}>{selectedAssignment.status || "Not Submitted"}</span>
-                  {selectedAssignment.isLate && <span className="ml-2 px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">Late Submission</span>}
+                  Submitted on:{" "}
+                  {selectedAssignment.submittedAt
+                    ? formatDateTime(selectedAssignment.submittedAt)
+                    : "Not submitted"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Status:{" "}
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${getAssignmentStatusColor(
+                      selectedAssignment.status || "Not Submitted"
+                    )}`}
+                  >
+                    {selectedAssignment.status || "Not Submitted"}
+                  </span>
+                  {selectedAssignment.isLate && (
+                    <span className="ml-2 px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                      Late Submission
+                    </span>
+                  )}
                 </p>
               </div>
 
-              {selectedAssignment.files && selectedAssignment.files.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-gray-700">Submitted Files</h4>
-                  <div className="mt-2 space-y-2">
-                    {selectedAssignment.files.map((file, index) => (
-                      <div key={index} className="flex items-center p-2 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700">{file.name}</span>
-                        <span className="ml-2 text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
-                        <button
-                          onClick={() => window.open(URL.createObjectURL(file), "_blank")}
-                          className="ml-auto text-indigo-600 hover:text-indigo-800 text-sm"
+              {selectedAssignment.files &&
+                selectedAssignment.files.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700">
+                      Submitted Files
+                    </h4>
+                    <div className="mt-2 space-y-2">
+                      {selectedAssignment.files.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center p-2 bg-gray-50 rounded"
                         >
-                          Download
-                        </button>
-                      </div>
-                    ))}
+                          <span className="text-sm text-gray-700">
+                            {file.name}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-500">
+                            {(file.size / 1024).toFixed(1)} KB
+                          </span>
+                          <button
+                            onClick={() =>
+                              window.open(URL.createObjectURL(file), "_blank")
+                            }
+                            className="ml-auto text-indigo-600 hover:text-indigo-800 text-sm"
+                          >
+                            Download
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {selectedAssignment.comments && (
                 <div>
-                  <h4 className="font-medium text-gray-700">Student Comments</h4>
-                  <p className="mt-1 text-sm text-gray-600 p-2 bg-gray-50 rounded">{selectedAssignment.comments}</p>
+                  <h4 className="font-medium text-gray-700">
+                    Student Comments
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-600 p-2 bg-gray-50 rounded">
+                    {selectedAssignment.comments}
+                  </p>
                 </div>
               )}
 
@@ -670,10 +822,14 @@ function AssignmentsTab() {
                 selectedAssignment.status === "Submitted Late" ||
                 selectedAssignment.status === "Not Graded") && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-700">Grade Assignment</h4>
+                  <h4 className="font-medium text-gray-700">
+                    Grade Assignment
+                  </h4>
                   <div className="mt-2 space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Grade
+                      </label>
                       <input
                         type="text"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -683,7 +839,9 @@ function AssignmentsTab() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Feedback
+                      </label>
                       <textarea
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -700,7 +858,14 @@ function AssignmentsTab() {
                         Cancel
                       </button>
                       <button
-                        onClick={() => handleGradeAssignment(selectedAssignment._id || selectedAssignment.id, "Graded", grade, feedback)}
+                        onClick={() =>
+                          handleGradeAssignment(
+                            selectedAssignment._id || selectedAssignment.id,
+                            "Graded",
+                            grade,
+                            feedback
+                          )
+                        }
                         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                         disabled={!grade}
                       >
@@ -713,17 +878,33 @@ function AssignmentsTab() {
 
               {selectedAssignment.status === "Graded" && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-700">Grading Information</h4>
-                  <p className="text-sm text-gray-500 mt-1">Grade: <span className="font-medium">{selectedAssignment.grade}</span></p>
+                  <h4 className="font-medium text-gray-700">
+                    Grading Information
+                  </h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Grade:{" "}
+                    <span className="font-medium">
+                      {selectedAssignment.grade}
+                    </span>
+                  </p>
                   {selectedAssignment.feedback && (
                     <div className="mt-2">
-                      <h5 className="text-sm font-medium text-gray-700">Feedback:</h5>
-                      <p className="text-sm text-gray-600 mt-1 p-2 bg-gray-50 rounded">{selectedAssignment.feedback}</p>
+                      <h5 className="text-sm font-medium text-gray-700">
+                        Feedback:
+                      </h5>
+                      <p className="text-sm text-gray-600 mt-1 p-2 bg-gray-50 rounded">
+                        {selectedAssignment.feedback}
+                      </p>
                     </div>
                   )}
                   <div className="mt-4 flex justify-end">
                     <button
-                      onClick={() => handleGradeAssignment(selectedAssignment._id || selectedAssignment.id, "Not Graded")}
+                      onClick={() =>
+                        handleGradeAssignment(
+                          selectedAssignment._id || selectedAssignment.id,
+                          "Not Graded"
+                        )
+                      }
                       className="px-3 py-1 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
                     >
                       Reopen for Grading
@@ -740,7 +921,9 @@ function AssignmentsTab() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">File Preview: {previewFile.name}</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                File Preview: {previewFile.name}
+              </h3>
               <button
                 onClick={() => setShowFilePreview(false)}
                 className="text-gray-400 hover:text-gray-500"
@@ -762,7 +945,11 @@ function AssignmentsTab() {
             </div>
             <div className="mt-4 border rounded-lg p-4 bg-gray-50">
               {previewFile.type.startsWith("image/") ? (
-                <img src={URL.createObjectURL(previewFile)} alt="Preview" className="max-w-full h-auto mx-auto" />
+                <img
+                  src={URL.createObjectURL(previewFile)}
+                  alt="Preview"
+                  className="max-w-full h-auto mx-auto"
+                />
               ) : (
                 <div className="text-center py-10">
                   <svg
@@ -778,9 +965,13 @@ function AssignmentsTab() {
                       d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="mt-2 text-sm text-gray-500">Preview not available for this file type. Download to view.</p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Preview not available for this file type. Download to view.
+                  </p>
                   <button
-                    onClick={() => window.open(URL.createObjectURL(previewFile), "_blank")}
+                    onClick={() =>
+                      window.open(URL.createObjectURL(previewFile), "_blank")
+                    }
                     className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
                     Download File
@@ -809,15 +1000,22 @@ function AssignmentsTab() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d={submissionStatus.isLate ? "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" : "M5 13l4 4L19 7"}
+                d={
+                  submissionStatus.isLate
+                    ? "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    : "M5 13l4 4L19 7"
+                }
               />
             </svg>
             <div>
               <p className="font-medium">
-                {submissionStatus.isLate ? "Late Submission!" : "Assignment Submitted Successfully!"}
+                {submissionStatus.isLate
+                  ? "Late Submission!"
+                  : "Assignment Submitted Successfully!"}
               </p>
               <p className="text-sm">
-                {submissionStatus.files?.join(", ")} has been uploaded for Assignment {submissionStatus.assignmentId}
+                {submissionStatus.files?.join(", ")} has been uploaded for
+                Assignment {submissionStatus.assignmentId}
               </p>
             </div>
             <button
