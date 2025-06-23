@@ -21,10 +21,6 @@ const Home = () => {
                   <div className="border-t border-gray-200 my-2"></div>
                   <CompletedAssessmentsCard />
                   <div className="border-t border-gray-200 my-2"></div>
-                  <Exm />
-                  <div className="border-t border-gray-200 my-2"></div>
-                  <AssignedAssessments />
-                  <div className="border-t border-gray-200 my-2"></div>
                   <Performance />
                 </CardContent>
               </Card>
