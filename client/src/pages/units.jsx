@@ -172,7 +172,7 @@ const Institution = () => {
                 {units.map((unit, index) => (
                 <motion.div
                     key={index}
-                    className="rounded-2xl shadow-sm border-2 border-gray-300/30 bg-white/10 backdrop-blur-lg p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
+                    className="rounded-2xl shadow-sm border-2 border-gray-300 bg-white/10 backdrop-blur-lg p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
                     whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
                     transition={{ duration: 0.3 }}
                   >
