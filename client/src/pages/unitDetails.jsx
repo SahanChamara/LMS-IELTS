@@ -129,7 +129,7 @@ const UnitDetails = () => {
             <LessonsTab lessons={unitData.lessons} setLessons={setLessons} />
           )}
           {activeTab === 'Quizes' && <AssessmentsTab assessments={unitData.assessments} unitId={unitData.id} />}
-          {activeTab === 'exams' && <ExamsTab exams={unitData.exams} />}
+          {activeTab === 'exams' && <ExamsTab unitId={unitData.id} />}
           {activeTab === 'materials' && <MaterialsTab studyMaterials={unitData.studyMaterials} />}
           {/* {activeTab === 'discussions' && <DiscussionsTab discussions={unitData.discussions} />} */}
           {activeTab === 'discussions' && <StudentDiscussionsTab unitId={unitData.id} />}

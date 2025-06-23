@@ -1,32 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import PropTypes from "prop-types";
+import { getExamsByUnitId } from "../../../service/examService";
 
-const ExamsTab = ({ isLecturer = false }) => {
-  // Sample exam data with future dates
-  const sampleExams = [
-    {
-      id: 1,
-      title: "Midterm Exam",
-      date: "2025-10-15", // Future date
-      description: "Exam will cover all materials from weeks 1-6",
-      lessons: ["Introduction to React", "State Management", "React Hooks"],
-      time: "09:00 AM - 11:00 AM",
-      location: "Main Hall A",
-      duration: "2 hours"
-    },
-    {
-      id: 2,
-      title: "Final Exam",
-      date: "2025-12-30", // Future date
-      description: "Comprehensive final examination",
-      lessons: ["Advanced React", "Performance Optimization", "Testing"],
-      time: "01:00 PM - 04:00 PM",
-      location: "Building B - Room 203",
-      duration: "3 hours"
-    }
-  ];
-
+const ExamsTab = ({unitId }) => {
+  const [exams, setExams] = useState([]);
   const [expandedExamId, setExpandedExamId] = useState(null);
-  const [exams, setExams] = useState(sampleExams);
   const [editingExam, setEditingExam] = useState(null);
   const [isAddingExam, setIsAddingExam] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -36,9 +15,35 @@ const ExamsTab = ({ isLecturer = false }) => {
     time: "",
     location: "",
     duration: "",
-    lessons: ["Lesson 1", "Lesson 2", "Lesson 3"] // Default lessons
+    lessons: ["Lesson 1", "Lesson 2", "Lesson 3"],
   });
   const [daysRemaining, setDaysRemaining] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch exams by unitId
+  useEffect(() => {
+    if (!unitId) {
+      setLoading(false);
+      setError("Unit ID is required");
+      return;
+    }
+
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const fetchedExams = await getExamsByUnitId(unitId);
+        setExams(fetchedExams);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExams();
+  }, [unitId]);
 
   // Calculate days remaining for each exam
   useEffect(() => {
@@ -47,7 +52,7 @@ const ExamsTab = ({ isLecturer = false }) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      exams.forEach(exam => {
+      exams.forEach((exam) => {
         const examDate = new Date(exam.date);
         examDate.setHours(0, 0, 0, 0);
         const diffTime = examDate - today;
@@ -59,9 +64,7 @@ const ExamsTab = ({ isLecturer = false }) => {
     };
 
     calculateDaysRemaining();
-    // Update the countdown every day (86400000 ms = 1 day)
     const interval = setInterval(calculateDaysRemaining, 86400000);
-    
     return () => clearInterval(interval);
   }, [exams]);
 
@@ -78,7 +81,7 @@ const ExamsTab = ({ isLecturer = false }) => {
       time: exam.time,
       location: exam.location,
       duration: exam.duration,
-      lessons: exam.lessons
+      lessons: exam.lessons,
     });
   };
 
@@ -91,7 +94,7 @@ const ExamsTab = ({ isLecturer = false }) => {
       time: "",
       location: "",
       duration: "",
-      lessons: ["Lesson 1", "Lesson 2", "Lesson 3"]
+      lessons: ["Lesson 1", "Lesson 2", "Lesson 3"],
     });
   };
 
@@ -99,7 +102,7 @@ const ExamsTab = ({ isLecturer = false }) => {
     const { name, value } = e.target;
     setEditFormData({
       ...editFormData,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -108,14 +111,14 @@ const ExamsTab = ({ isLecturer = false }) => {
     newLessons[index] = value;
     setEditFormData({
       ...editFormData,
-      lessons: newLessons
+      lessons: newLessons,
     });
   };
 
   const addLessonField = () => {
     setEditFormData({
       ...editFormData,
-      lessons: [...editFormData.lessons, ""]
+      lessons: [...editFormData.lessons, ""],
     });
   };
 
@@ -123,31 +126,23 @@ const ExamsTab = ({ isLecturer = false }) => {
     const newLessons = editFormData.lessons.filter((_, i) => i !== index);
     setEditFormData({
       ...editFormData,
-      lessons: newLessons
+      lessons: newLessons,
     });
   };
 
   const handleEditSubmit = (examId) => {
-    const updatedExams = exams.map(exam => {
-      if (exam.id === examId) {
-        return { 
-          ...exam,
-          ...editFormData
-        };
-      }
-      return exam;
-    });
-
+    const updatedExams = exams.map((exam) =>
+      exam.id === examId ? { ...exam, ...editFormData } : exam
+    );
     setExams(updatedExams);
     setEditingExam(null);
   };
 
   const handleAddSubmit = () => {
     const newExam = {
-      id: exams.length > 0 ? Math.max(...exams.map(exam => exam.id)) + 1 : 1,
-      ...editFormData
+      id: exams.length > 0 ? Math.max(...exams.map((exam) => exam.id)) + 1 : 1,
+      ...editFormData,
     };
-    
     setExams([...exams, newExam]);
     setIsAddingExam(false);
   };
@@ -166,26 +161,49 @@ const ExamsTab = ({ isLecturer = false }) => {
     return `${days} days remaining`;
   };
 
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-gray-700 text-center"
+      >
+        Loading exams...
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-red-600 text-center"
+      >
+        {error}
+      </motion.div>
+    );
+  }
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Exams</h2>
-        {isLecturer && !isAddingExam && (
-          <button
-            onClick={handleAddClick}
-            className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
-          >
-            Add New Exam
-          </button>
-        )}
-      </div>
-      
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
+
+
       <div className="space-y-4">
         {/* Add Exam Form */}
         {isAddingExam && (
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <h3 className="font-medium text-gray-900 mb-2">Add New Exam</h3>
-            <div className="grid gap-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border-2 border-gray-300/50 bg-white/10 backdrop-blur-lg rounded-lg p-6 shadow-lg"
+          >
+            <h3 className="font-medium text-gray-900 mb-4">Add New Exam</h3>
+            <div className="grid gap-4">
               <div>
                 <label className="text-sm text-gray-600">Title</label>
                 <input
@@ -193,11 +211,11 @@ const ExamsTab = ({ isLecturer = false }) => {
                   name="title"
                   value={editFormData.title}
                   onChange={handleEditFormChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                   placeholder="Exam title"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm text-gray-600">Date</label>
                   <input
@@ -205,7 +223,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                     name="date"
                     value={editFormData.date}
                     onChange={handleEditFormChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                   />
                 </div>
                 <div>
@@ -215,7 +233,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                     name="time"
                     value={editFormData.time}
                     onChange={handleEditFormChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                     placeholder="e.g. 09:00 AM - 11:00 AM"
                   />
                 </div>
@@ -226,11 +244,11 @@ const ExamsTab = ({ isLecturer = false }) => {
                   name="description"
                   value={editFormData.description}
                   onChange={handleEditFormChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                   placeholder="Exam description"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm text-gray-600">Location</label>
                   <input
@@ -238,7 +256,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                     name="location"
                     value={editFormData.location}
                     onChange={handleEditFormChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                     placeholder="Exam location"
                   />
                 </div>
@@ -249,70 +267,79 @@ const ExamsTab = ({ isLecturer = false }) => {
                     name="duration"
                     value={editFormData.duration}
                     onChange={handleEditFormChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                     placeholder="e.g. 2 hours"
                   />
                 </div>
               </div>
-              
               <div>
                 <label className="text-sm text-gray-600">Covered Lessons</label>
-                <div className="space-y-2">
+                <div className="space-y-2 mt-2">
                   {editFormData.lessons.map((lesson, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={lesson}
                         onChange={(e) => handleLessonChange(index, e.target.value)}
-                        className="flex-1 p-2 border border-gray-300 rounded-md"
+                        className="flex-1 p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                         placeholder={`Lesson ${index + 1}`}
                       />
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => removeLessonField(index)}
                         className="p-2 text-red-500 hover:text-red-700"
                         type="button"
                       >
                         ×
-                      </button>
+                      </motion.button>
                     </div>
                   ))}
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
                     onClick={addLessonField}
                     className="text-sm text-blue-600 hover:text-blue-800"
                     type="button"
                   >
                     + Add another lesson
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <button
+            <div className="flex justify-end space-x-3 mt-6">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleCancelAdd}
-                className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm hover:bg-gray-300 border border-gray-300/50"
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleAddSubmit}
-                className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 border border-blue-600/50"
               >
                 Add Exam
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Exams List */}
         {exams.map((exam) => (
-          <div
+          <motion.div
             key={exam.id}
-            className="border border-gray-200 rounded-lg p-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="border-2 border-gray-300/50 bg-white/10 backdrop-blur-lg rounded-lg p-6 shadow-lg"
           >
             {editingExam === exam.id ? (
-              <div className="space-y-3">
-                <h3 className="font-medium text-gray-900 mb-2">Edit Exam</h3>
-                <div className="grid gap-2">
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 mb-4">Edit Exam</h3>
+                <div className="grid gap-4">
                   <div>
                     <label className="text-sm text-gray-600">Title</label>
                     <input
@@ -320,10 +347,10 @@ const ExamsTab = ({ isLecturer = false }) => {
                       name="title"
                       value={editFormData.title}
                       onChange={handleEditFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-md"
+                      className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-gray-600">Date</label>
                       <input
@@ -331,7 +358,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                         name="date"
                         value={editFormData.date}
                         onChange={handleEditFormChange}
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                       />
                     </div>
                     <div>
@@ -341,7 +368,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                         name="time"
                         value={editFormData.time}
                         onChange={handleEditFormChange}
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                         placeholder="e.g. 09:00 AM - 11:00 AM"
                       />
                     </div>
@@ -352,10 +379,10 @@ const ExamsTab = ({ isLecturer = false }) => {
                       name="description"
                       value={editFormData.description}
                       onChange={handleEditFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-md"
+                      className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-gray-600">Location</label>
                       <input
@@ -363,7 +390,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                         name="location"
                         value={editFormData.location}
                         onChange={handleEditFormChange}
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                       />
                     </div>
                     <div>
@@ -373,55 +400,61 @@ const ExamsTab = ({ isLecturer = false }) => {
                         name="duration"
                         value={editFormData.duration}
                         onChange={handleEditFormChange}
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                         placeholder="e.g. 2 hours"
                       />
                     </div>
                   </div>
-                  
                   <div>
                     <label className="text-sm text-gray-600">Covered Lessons</label>
-                    <div className="space-y-2">
+                    <div className="space-y-2 mt-2">
                       {editFormData.lessons.map((lesson, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <input
                             type="text"
                             value={lesson}
                             onChange={(e) => handleLessonChange(index, e.target.value)}
-                            className="flex-1 p-2 border border-gray-300 rounded-md"
+                            className="flex-1 p-2 border-2 border-gray-300/30 rounded-md bg-white/20 backdrop-blur-sm"
                           />
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                             onClick={() => removeLessonField(index)}
                             className="p-2 text-red-500 hover:text-red-700"
                             type="button"
                           >
                             ×
-                          </button>
+                          </motion.button>
                         </div>
                       ))}
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
                         onClick={addLessonField}
                         className="text-sm text-blue-600 hover:text-blue-800"
                         type="button"
                       >
                         + Add another lesson
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-3">
-                  <button
+                <div className="flex justify-end space-x-3 mt-6">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleCancelEdit}
-                    className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm hover:bg-gray-300"
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm hover:bg-gray-300 border border-gray-300/50"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handleEditSubmit(exam.id)}
-                    className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 border border-blue-600/50"
                   >
                     Save
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             ) : (
@@ -429,23 +462,22 @@ const ExamsTab = ({ isLecturer = false }) => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-gray-900">{exam.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Date: {exam.date}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Date: {exam.date}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    daysRemaining[exam.id] <= 7 
-                      ? "bg-red-100 text-red-800" 
-                      : "bg-blue-100 text-blue-800"
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      daysRemaining[exam.id] <= 7
+                        ? "bg-red-100/80 text-red-800 border border-red-200/50"
+                        : "bg-blue-100/80 text-blue-800 border border-blue-200/50"
+                    } backdrop-blur-sm`}
+                  >
                     {getDaysRemainingText(daysRemaining[exam.id] || 0)}
                   </span>
                 </div>
 
                 {expandedExamId === exam.id ? (
-                  <div className="mt-4">
-                    {/* Lessons List Section */}
-                    <div className="mb-3">
+                  <div className="mt-4 space-y-4">
+                    <div>
                       <h4 className="font-medium text-gray-900 mb-1">Covered Lessons:</h4>
                       <ul className="text-sm text-gray-600 pl-5 list-disc">
                         {exam.lessons.map((lesson, index) => (
@@ -453,9 +485,7 @@ const ExamsTab = ({ isLecturer = false }) => {
                         ))}
                       </ul>
                     </div>
-
-                    {/* Exam Schedule Section */}
-                    <div className="mb-3">
+                    <div>
                       <h4 className="font-medium text-gray-900 mb-1">Exam Details:</h4>
                       <div className="text-sm text-gray-600 space-y-1">
                         <p>Time: {exam.time}</p>
@@ -463,47 +493,32 @@ const ExamsTab = ({ isLecturer = false }) => {
                         <p>Duration: {exam.duration}</p>
                       </div>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-between items-center">
-                      {isLecturer && (
-                        <div className="space-x-2">
-                          <button
-                            onClick={() => handleEditClick(exam)}
-                            className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
-                          >
-                            Edit Exam
-                          </button>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => toggleExamDetails(exam.id)}
-                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm hover:bg-gray-300"
-                      >
-                        Hide Details
-                      </button>
-                    </div>
                   </div>
                 ) : (
                   <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {exam.description}
-                    </p>
-                    <button
+                    <p className="text-sm text-gray-600 mb-3">{exam.description}</p>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => toggleExamDetails(exam.id)}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 border border-blue-600/50"
                     >
                       Study Guide
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
+};
+
+ExamsTab.propTypes = {
+  isLecturer: PropTypes.bool,
+  unitId: PropTypes.string.isRequired,
 };
 
 export default ExamsTab;
