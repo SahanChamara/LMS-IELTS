@@ -53,7 +53,7 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/institution" element={<Institution />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/Activity" element={<Goals />} />
+        <Route path="/activity" element={<Goals />} />
         <Route path="/units" element={<Units />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messenger />} />

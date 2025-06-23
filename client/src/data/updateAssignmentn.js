@@ -1,13 +1,15 @@
 export const assignment = [
   // Strategic Management (BUS301)
-  {
-    title: "Data Structures Midterm Assignment",
-    unit: "68538c779480d7bf005bdb89",
-    passPercentage: 60,
-    totalMarks: 100,
-    file: "https://university.edu/uploads/assignments/data-structures-midterm.pdf",
-    description: "Complete all questions related to trees, graphs, and hash tables. Submit before the due date.",
-    dueDate: "2025-08-10T23:59:00.000+00:00",
+{
+    id: 1,
+    title: "Competitive Strategy Analysis",
+    description: "Analyze Porter's Five Forces for a chosen industry",
+    dueDate: new Date("2025-05-19T14:30:00"),
+    completed: false,
+    subjectCode: "BUS301",
+    type: "Case Study",
+    marks: 100,
+    rubric: "caseStudy"
   },
 ];
 
