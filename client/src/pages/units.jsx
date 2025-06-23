@@ -4,6 +4,7 @@ import Card from "../components/card";
 import { Link } from "react-router-dom";
 import { useAppDispatch } from "../redux/store-config/store";
 import { getAllUnitsAPI } from "../redux/features/unitsSlice";
+import { motion } from "framer-motion";
 
 const Institution = () => {
   const dispatch = useAppDispatch();
@@ -169,9 +170,11 @@ const Institution = () => {
             <div className="mb-2 mx-auto pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {units.map((unit, index) => (
-                  <div
+                <motion.div
                     key={index}
-                    className="rounded-2xl shadow-sm border border-gray-200 bg-white p-6 hover:shadow-md transition flex flex-col justify-between"
+                    className="rounded-2xl shadow-sm border-2 border-gray-300 bg-white/10 backdrop-blur-lg p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
+                    whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
+                    transition={{ duration: 0.3 }}
                   >
                     <div>
                       {
@@ -210,7 +213,7 @@ const Institution = () => {
                         View
                       </Link>
                     </div>
-                  </div>
+                </motion.div>
                 ))}
               </div>
             </div>
