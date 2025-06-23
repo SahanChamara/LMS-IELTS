@@ -7,7 +7,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
 import Sidebar from "../components/Sidebar";
 import Card, { CardContent } from "../components/card";
 
@@ -39,15 +38,16 @@ const Dashboard = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
       className="h-screen flex bg-gray-50 text-gray-800 overflow-hidden"
     >
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-md fixed inset-y-0 left-0 z-30">
+      <div className="w-64 bg-white shadow-lg fixed inset-y-0 left-0 z-30">
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 h-full overflow-y-auto p-6 space-y-8">
+      <div className="ml-64 flex-1 h-full overflow-y-auto p-8 space-y-8">
         <DashboardContent />
       </div>
     </motion.div>
@@ -56,7 +56,7 @@ const Dashboard = () => {
 
 const DashboardContent = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Banner />
       <StatsGrid />
       <EngagementChart />
@@ -67,7 +67,7 @@ const DashboardContent = () => {
 
 const Banner = () => (
   <motion.div
-    className="bg-white rounded-xl shadow-md p-6 flex items-center gap-6 border border-gray-200"
+    className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 flex items-center gap-6 border border-gray-200/20"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6 }}
@@ -75,7 +75,7 @@ const Banner = () => (
     <div className="w-32 h-16 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-lg font-bold shadow-inner border border-gray-300">
       {DASHBOARD_DATA.banner.logoText}
     </div>
-    <h2 className="text-lg font-medium text-gray-700">
+    <h2 className="text-xl font-semibold text-gray-700 leading-tight">
       {DASHBOARD_DATA.banner.title}
     </h2>
   </motion.div>
@@ -90,29 +90,43 @@ const StatsGrid = () => (
 );
 
 const StatCard = ({ title, value }) => (
-  <Card className="bg-white border border-gray-200 shadow-sm mt-12">
-    <CardContent>
-      <h4 className="text-sm font-semibold text-gray-600">{title}</h4>
-      <p className="text-xl font-bold text-gray-900">{value}</p>
-    </CardContent>
-  </Card>
+  <motion.div
+    whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
+    transition={{ duration: 0.3 }}
+  >
+    <Card className="bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <CardContent className="p-6">
+        <h4 className="text-sm font-semibold text-gray-600 mb-2">{title}</h4>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 const EngagementChart = () => (
-  <Card className="p-6 bg-white border border-gray-200 shadow-sm ">
+  <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">
       {DASHBOARD_DATA.chart.title}
     </h3>
     <ResponsiveContainer width="100%" height={250}>
       <LineChart data={DASHBOARD_DATA.chart.data}>
-        <XAxis dataKey="name" stroke="#6b7280" />
-        <YAxis stroke="#6b7280" />
-        <Tooltip />
+        <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+        <YAxis stroke="#6b7280" fontSize={12} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          }}
+        />
         <Line
           type="monotone"
           dataKey="users"
           stroke="#3b82f6"
-          strokeWidth={2}
+          strokeWidth={3}
+          dot={{ fill: "#3b82f6", r: 4 }}
+          activeDot={{ r: 6 }}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -121,36 +135,51 @@ const EngagementChart = () => (
 
 const ExtraSections = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {/* Recent */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-        <h4 className="text-lg font-semibold text-gray-800 mb-2">Recent</h4>
-        <ul className="text-sm text-gray-600 space-y-2">
-          <li>• Enrolled in “React Basics”</li>
-          <li>• Completed Quiz: JS Fundamentals</li>
-          <li>• New instructor feedback</li>
-        </ul>
-      </Card>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">Recent</h4>
+          <ul className="text-sm text-gray-600 space-y-3">
+            <li className="flex items-center">• Enrolled in “React Basics”</li>
+            <li className="flex items-center">• Completed Quiz: JS Fundamentals</li>
+            <li className="flex items-center">• New instructor feedback</li>
+          </ul>
+        </Card>
+      </motion.div>
 
       {/* News & Announcements */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-        <h4 className="text-lg font-semibold text-gray-800 mb-2">News & Announcements</h4>
-        <ul className="text-sm text-gray-600 space-y-2">
-          <li>• New course launched: “AI for Beginners”</li>
-          <li>• Sunday maintenance: 10PM – 12AM</li>
-          <li>• New badge rewards system</li>
-        </ul>
-      </Card>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">News & Announcements</h4>
+          <ul className="text-sm text-gray-600 space-y-3">
+            <li className="flex items-center">• New course launched: “AI for Beginners”</li>
+            <li className="flex items-center">• Sunday maintenance: 10PM – 12AM</li>
+            <li className="flex items-center">• New badge rewards system</li>
+          </ul>
+        </Card>
+      </motion.div>
 
       {/* Updates */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-        <h4 className="text-lg font-semibold text-gray-800 mb-2">Updates</h4>
-        <ul className="text-sm text-gray-600 space-y-2">
-          <li>• Dashboard UI improvements</li>
-          <li>• Fixed quiz result issue</li>
-          <li>• Enhanced notification settings</li>
-        </ul>
-      </Card>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">Updates</h4>
+          <ul className="text-sm text-gray-600 space-y-3">
+            <li className="flex items-center">• Dashboard UI improvements</li>
+            <li className="flex items-center">• Fixed quiz result issue</li>
+            <li className="flex items-center">• Enhanced notification settings</li>
+          </ul>
+        </Card>
+      </motion.div>
     </div>
   );
 };
