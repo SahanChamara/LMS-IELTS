@@ -12,23 +12,23 @@ import Card, { CardContent } from "../components/card";
 
 const DASHBOARD_DATA = {
   banner: {
-    title: "E-Learning Domain for Upgrading Competence and Teaching Excellence",
-    logoText: "EDUCATE",
+    title: "Your Learning Hub for Academic Success",
+    logoText: "LEARN",
   },
   stats: [
-    { title: "Enrolled Courses", value: "8,532" },
-    { title: "Courses Completed", value: "132" },
-    { title: "Certificates Earned", value: "47" },
-    { title: "New Messages", value: "285" },
+    { title: "Active Courses", value: "5" },
+    { title: "Assignments Due", value: "3" },
+    { title: "Completed Modules", value: "28" },
+    { title: "Average Grade", value: "85%" },
   ],
   chart: {
-    title: "Weekly User Engagement",
+    title: "Weekly Study Progress",
     data: [
-      { name: "Mon", users: 400 },
-      { name: "Tue", users: 600 },
-      { name: "Wed", users: 300 },
-      { name: "Thu", users: 500 },
-      { name: "Fri", users: 700 },
+      { name: "Mon", hours: 4 },
+      { name: "Tue", hours: 6 },
+      { name: "Wed", hours: 3 },
+      { name: "Thu", hours: 5 },
+      { name: "Fri", hours: 7 },
     ],
   },
 };
@@ -67,7 +67,7 @@ const DashboardContent = () => {
 
 const Banner = () => (
   <motion.div
-    className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 flex items-center gap-6 border border-gray-200/20"
+    className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 flex items-center gap-6 border border-gray-200"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6 }}
@@ -94,7 +94,7 @@ const StatCard = ({ title, value }) => (
     whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
     transition={{ duration: 0.3 }}
   >
-    <Card className="bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <Card className="bg-white/10 backdrop-blur-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
       <CardContent className="p-6">
         <h4 className="text-sm font-semibold text-gray-600 mb-2">{title}</h4>
         <p className="text-2xl font-bold text-gray-900">{value}</p>
@@ -104,7 +104,7 @@ const StatCard = ({ title, value }) => (
 );
 
 const EngagementChart = () => (
-  <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm">
+  <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200 shadow-sm">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">
       {DASHBOARD_DATA.chart.title}
     </h3>
@@ -122,7 +122,7 @@ const EngagementChart = () => (
         />
         <Line
           type="monotone"
-          dataKey="users"
+          dataKey="hours"
           stroke="#3b82f6"
           strokeWidth={3}
           dot={{ fill: "#3b82f6", r: 4 }}
@@ -136,47 +136,47 @@ const EngagementChart = () => (
 const ExtraSections = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* Recent */}
+      {/* Upcoming Assignments */}
       <motion.div
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">Recent</h4>
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Assignments</h4>
           <ul className="text-sm text-gray-600 space-y-3">
-            <li className="flex items-center">• Enrolled in “React Basics”</li>
-            <li className="flex items-center">• Completed Quiz: JS Fundamentals</li>
-            <li className="flex items-center">• New instructor feedback</li>
+            <li className="flex items-center">• React Project: Due Oct 25</li>
+            <li className="flex items-center">• JS Quiz: Due Oct 23</li>
+            <li className="flex items-center">• Essay on AI Ethics: Due Oct 28</li>
           </ul>
         </Card>
       </motion.div>
 
-      {/* News & Announcements */}
+      {/* Recent Grades */}
       <motion.div
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">News & Announcements</h4>
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">Recent Grades</h4>
           <ul className="text-sm text-gray-600 space-y-3">
-            <li className="flex items-center">• New course launched: “AI for Beginners”</li>
-            <li className="flex items-center">• Sunday maintenance: 10PM – 12AM</li>
-            <li className="flex items-center">• New badge rewards system</li>
+            <li className="flex items-center">• JS Fundamentals: 92%</li>
+            <li className="flex items-center">• CSS Styling: 88%</li>
+            <li className="flex items-center">• HTML Basics: 95%</li>
           </ul>
         </Card>
       </motion.div>
 
-      {/* Updates */}
+      {/* Course Progress */}
       <motion.div
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200/20 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">Updates</h4>
+        <Card className="p-6 bg-white/10 backdrop-blur-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">Course Progress</h4>
           <ul className="text-sm text-gray-600 space-y-3">
-            <li className="flex items-center">• Dashboard UI improvements</li>
-            <li className="flex items-center">• Fixed quiz result issue</li>
-            <li className="flex items-center">• Enhanced notification settings</li>
+            <li className="flex items-center">• React Basics: 75% complete</li>
+            <li className="flex items-center">• Web Dev 101: 60% complete</li>
+            <li className="flex items-center">• Data Structures: 45% complete</li>
           </ul>
         </Card>
       </motion.div>
