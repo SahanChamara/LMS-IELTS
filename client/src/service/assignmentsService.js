@@ -10,3 +10,14 @@ export const getAllAssignments = async () => {
   };
   return ApiService.callApi(apiObject);
 };
+
+// Upload Assignment
+export const uploadAssignment = async () => {
+  const apiObject = {
+    method: "POST",
+    withCredentials: true,
+    prefix: "assignment",
+    endpoint: "",
+  };
+  return ApiService.callApi(apiObject);
+};
