@@ -26,13 +26,15 @@ function AssignmentsTab() {
 
   const handleOpenPicker = () => {
     openPicker({
-      clientId: "",
-      developerKey: '',      
-      viewId: "DOCS",
+      clientId: '904434618647-7u9r8a2rp2lu4tgleqfsa5sg39val3md.apps.googleusercontent.com',  
+      //customScopes: 'https://www.googleapis.com/auth/drive',
+      developerKey: 'AIzaSyBLxzXvZUBmFhESH90U0XDNw8w04mPLuuk',
+      viewId: "DOCS",      
       showUploadView: true,
       showUploadFolders: true,
       supportDrives: true,
       multiselect: true,
+      customScopes: ['https://www.googleapis.com/auth/drive.file'],
       callbackFunction: (data) => {
         if (data.action === "cancel") {
           console.log("User Clieck Cansel");
@@ -43,6 +45,9 @@ function AssignmentsTab() {
       },
     });
   };
+
+  console.log("upload File", files);
+  
 
   // Initialize allAssignments with assignment.data (assuming Redux returns { data: [...] })
   const [allAssignments, setAllAssignments] = useState(assignment);
