@@ -155,6 +155,17 @@ function AssignmentsTab() {
 
     console.log(studentName, files, comments);
 
+    const uploadAssignment = {
+      student: localStorage.getItem('user'),
+      assignment: showUploadForm._id,
+      file: files.length > 0 ? files[0].url : '',
+      feedback: comments,
+      totalMarks: showUploadForm.totalMarks,
+    }
+
+    console.log("upload assignment data", uploadAssignment);
+    
+
     const assignment = allAssignments.find(
       (a) => a._id === showUploadForm || a.id === showUploadForm
     );
@@ -190,14 +201,17 @@ function AssignmentsTab() {
       setAllAssignments(updatedAssignments);
       setSubmissionStatus({
         assignmentId: showUploadForm,
-        files: files.map((file) => file.name),
+        files: files.map((file) => file.url),
         studentName,
         timestamp: now.toLocaleString(),
         status: status,
         isLate: isLate,
         dueDate: formatDateTime(assignment.dueDate),
         comments: comments,
-      });
+      });      
+
+      console.log("submit assignment", submissionStatus);
+      
 
       setShowSubmissionSuccess(true);
       setFiles([]);
