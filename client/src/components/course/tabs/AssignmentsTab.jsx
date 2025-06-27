@@ -26,9 +26,8 @@ function AssignmentsTab() {
 
   const handleOpenPicker = () => {
     openPicker({
-      clientId: '904434618647-7u9r8a2rp2lu4tgleqfsa5sg39val3md.apps.googleusercontent.com',  
-      //customScopes: 'https://www.googleapis.com/auth/drive',
-      developerKey: 'AIzaSyBLxzXvZUBmFhESH90U0XDNw8w04mPLuuk',
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      developerKey: import.meta.env.VITE_GOOGLE_DEVELOPER_KEY,
       viewId: "DOCS",      
       showUploadView: true,
       showUploadFolders: true,
