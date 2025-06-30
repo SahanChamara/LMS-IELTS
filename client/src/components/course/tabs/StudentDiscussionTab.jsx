@@ -43,7 +43,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
           }))
         );
       } catch (err) {
-        setError("Failed to load messages");
+        setError("No Messages");
       }
     };
     fetchMessages();
@@ -132,6 +132,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-lg">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <h1 className="text-center">{error && <p className="text-xs text-red-500 mt-2">{error}</p>}</h1>
         {Object.entries(messageGroups).map(([date, dateMessages]) => (
           <div key={date}>
             <div className="flex items-center justify-center my-4">
@@ -141,13 +142,13 @@ const StudentDiscussionsTab = ({ unitId }) => {
                 </span>
               </div>
             </div>
-            {dateMessages.map((message, index) => ( // Map only date-specific messages
+            {dateMessages.map((message, index) => ( // Map only date-specific messages            
               <div
                 key={message.id}
                 className={`flex ${
                   message.role === "Student" ? "justify-end" : "justify-start"
                 } mt-4`}
-              >
+              >                
                 <div
                   className={`flex max-w-xs lg:max-w-md ${
                     message.userId === currentUserId
