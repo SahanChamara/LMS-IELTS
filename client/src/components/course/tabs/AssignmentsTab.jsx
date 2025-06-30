@@ -30,6 +30,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
   const [filterSubject, setFilterSubject] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("dueDate");
+  const [files, setFiles] = useState([]);
 
   // Fetch all assignments on mount
   useEffect(() => {
@@ -102,9 +103,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
   };
 
   // Google Drive Picker
-  const [openPicker, setOpenPicker] = useDrivePicker();
-  const [files, setFiles] = useState([]);
-
+  const [openPicker] = useDrivePicker();
   const handleOpenPicker = () => {
     openPicker({
       clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
@@ -119,18 +118,14 @@ const AssignmentsTab = memo(function AssignmentsTab() {
         if (data.action === "cancel") {
           console.log("User Click Cancel");
         } else if (data.docs) {
-          console.log("Google Drive Upload Data", data);
-          setFiles(data.docs);
+          console.log("Google Drive Upload Data", data.docs);
+          setFiles(data.docs); // Update files state only
         }
       },
     });
   };
 
   console.log("upload File", files);
-
-  const handleFileChange = (e) => {
-    setFiles([...e.target.files]);
-  };
 
   const handleRemoveFile = (index) => {
     const newFiles = [...files];
@@ -140,7 +135,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
 
   // Debounced handler for studentName
   const debouncedSetStudentName = useCallback(
-    debounce((value) => setStudentName(value), 100),
+    debounce((value) => setStudentName(value), 10),
     []
   );
 
@@ -162,6 +157,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("handleSubmit triggered"); // Debug log
     const now = new Date();
     const submittedAt = now.toISOString();
 
@@ -180,10 +176,18 @@ const AssignmentsTab = memo(function AssignmentsTab() {
     try {
       const result = await dispatch(uploadAssignmentAPI(uploadAssignment)).unwrap();
       console.log("uploaded Result", result);
-      // Optionally reset form fields or update local state if needed
+      setShowUploadForm(null);
+      setFiles([]);
+      setStudentName("");
+      setComments("");
+      setShowSubmissionSuccess(true);
+      setSubmissionStatus({
+        isLate: new Date(showUploadForm.dueDate) < now,
+        files: files.map((file) => file.name),
+        assignmentId: showUploadForm.title,
+      });
     } catch (err) {
       console.error("Upload failed:", err);
-      // Handle error (e.g., show a user message)
     }
   };
 
@@ -427,6 +431,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
                   </button>
 
                   <button
+                    type="button" // Explicitly set type to prevent form submission
                     className="px-3 py-1 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 flex items-center"
                     onClick={() => setShowUploadForm(assignment)}
                   >
@@ -552,14 +557,13 @@ const AssignmentsTab = memo(function AssignmentsTab() {
                 Upload Files (Multiple allowed)
               </label>
               <div className="mt-1 flex items-center">
-                <label className="cursor-pointer">
-                  <button
-                    onClick={handleOpenPicker}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Choose Files
-                  </button>
-                </label>
+                <button
+                  type="button" // Explicitly set type to prevent form submission
+                  onClick={handleOpenPicker}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Choose Files
+                </button>
                 <span className="ml-2 text-sm text-gray-500">
                   {files.length > 0
                     ? `${files.length} files selected`
