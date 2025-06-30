@@ -1,4 +1,3 @@
-// components/StudentDiscussionsTab.js
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Paperclip, Image } from "lucide-react";
 import { Check } from "lucide-react";
@@ -21,7 +20,6 @@ const StudentDiscussionsTab = ({ unitId }) => {
   const [newMessage, setNewMessage] = useState("");
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
-  //   const currentUser = JSON.parse(localStorage.getItem('user')) || { name: "John Doe", role: "student", id: "user1" };
   const currentUserId = localStorage.getItem("user");
   const currentUserRole = localStorage.getItem("userRole");
   const currentUserName = localStorage.getItem("userName");
@@ -34,7 +32,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
 
         setMessages(
           response.data.map((m) => ({
-            id: Date.now() + Math.random(),
+            id: m._id || Date.now() + Math.random(), // Use server ID if available
             userId: m.senderId,
             sender: m.senderName,
             role: m.user,
@@ -45,22 +43,25 @@ const StudentDiscussionsTab = ({ unitId }) => {
           }))
         );
       } catch (err) {
-        setError("Failed to load messages");
+        setError("No Messages");
       }
     };
     fetchMessages();
-  }, [unitId]);
+  }, [unitId, dispatch]); // Added dispatch to dependency array
 
   const scrollToBottom = () =>
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  useEffect(() => scrollToBottom(), [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const formatTime = (timestamp) =>
     new Date(timestamp).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
+
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     const today = new Date();
@@ -73,7 +74,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
     if (!newMessage.trim()) return;
 
     const message = {
-      id: Date.now() + Math.random(),
+      id: Date.now() + Math.random(), // Temporary ID
       userId: currentUserId,
       sender: currentUserName,
       role: currentUserRole,
@@ -87,13 +88,21 @@ const StudentDiscussionsTab = ({ unitId }) => {
     setNewMessage("");
 
     try {
-      // Send new Message API
       const newSendMessage = { unitId, newMessage };
       const result = await dispatch(sendNewMessageAPI(newSendMessage)).unwrap();
       console.log("new message send result", result);
 
+      // Update the message with the server response (e.g., real ID and status)
       setMessages((prev) =>
-        prev.map((m) => (m.id === message.id ? { ...m, status: "sent" } : m))
+        prev.map((m) =>
+          m.id === message.id
+            ? {
+                ...m,
+                id: result.data._id || m.id, // Use server-generated ID
+                status: "sent",
+              }
+            : m
+        )
       );
     } catch (err) {
       setError("Failed to send message");
@@ -123,6 +132,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-lg">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <h1 className="text-center">{error && <p className="text-xs text-red-500 mt-2">{error}</p>}</h1>
         {Object.entries(messageGroups).map(([date, dateMessages]) => (
           <div key={date}>
             <div className="flex items-center justify-center my-4">
@@ -132,15 +142,13 @@ const StudentDiscussionsTab = ({ unitId }) => {
                 </span>
               </div>
             </div>
-            {messages.map((message, index) => (
+            {dateMessages.map((message, index) => ( // Map only date-specific messages            
               <div
                 key={message.id}
                 className={`flex ${
-                  message.role === 'Student'
-                    ? "justify-end"
-                    : "justify-start"
+                  message.role === "Student" ? "justify-end" : "justify-start"
                 } mt-4`}
-              >
+              >                
                 <div
                   className={`flex max-w-xs lg:max-w-md ${
                     message.userId === currentUserId
@@ -177,11 +185,11 @@ const StudentDiscussionsTab = ({ unitId }) => {
                     <div
                       className={`px-4 py-2 rounded-2xl ${
                         message.role === "Student"
-                          ? "bg-blue-500 text-white "
+                          ? "bg-blue-500 text-white"
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap ">
+                      <p className="text-sm whitespace-pre-wrap">
                         {message.content}
                       </p>
                     </div>
