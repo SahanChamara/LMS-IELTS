@@ -1,25 +1,23 @@
+// components/InstructorDiscussionsTab.js
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { Send, Paperclip, Image } from "lucide-react";
 import { Check } from "lucide-react";
 import {
   useAppDispatch,
   useAppSelector,
 } from "../../../redux/store-config/store";
-import {
-  getMessageAPI,
-  sendNewMessageAPI,
-} from "../../../redux/features/discussionSlice";
+import { getMessageAPI, replyMessageAPI } from "../../../redux/features/discussionSlice";
 
-const StudentDiscussionsTab = ({ unitId }) => {
-  console.log("unit ID", unitId);
-
+const InstructorDiscussionsTab = ({ unitId }) => {
   const dispatch = useAppDispatch();
   const { chat, loading } = useAppSelector((state) => state.discussions);
 
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [newReply, setNewReply] = useState("");
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  //const currentUser = JSON.parse(localStorage.getItem('user')) || { name: "Dr. Sarah Wilson", role: "instructor", id: "instructor1" };
   const currentUserId = localStorage.getItem("user");
   const currentUserRole = localStorage.getItem("userRole");
   const currentUserName = localStorage.getItem("userName");
@@ -28,11 +26,9 @@ const StudentDiscussionsTab = ({ unitId }) => {
     const fetchMessages = async () => {
       try {
         const response = await dispatch(getMessageAPI(unitId)).unwrap();
-        console.log("get Message Result", response);
-
         setMessages(
-          response.data.map((m) => ({
-            id: m._id || Date.now() + Math.random(), // Use server ID if available
+          response.data.data.map((m) => ({
+            id: Date.now() + Math.random(),
             userId: m.senderId,
             sender: m.senderName,
             role: m.user,
@@ -43,25 +39,22 @@ const StudentDiscussionsTab = ({ unitId }) => {
           }))
         );
       } catch (err) {
-        setError("No Messages");
+        setError("Failed to load messages");
       }
     };
     fetchMessages();
-  }, [unitId, dispatch]); // Added dispatch to dependency array
+  }, [unitId]);
 
   const scrollToBottom = () =>
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => scrollToBottom(), [messages]);
 
   const formatTime = (timestamp) =>
     new Date(timestamp).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     const today = new Date();
@@ -70,50 +63,66 @@ const StudentDiscussionsTab = ({ unitId }) => {
       : date.toLocaleDateString();
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const handleReply = async (messageId) => {
+    if (!newReply.trim()) return;
+    const discussionId =
+      messages.find((m) => m.id === messageId)?.discussionId || ""; // Placeholder, adjust logic
+    if (!discussionId) return;
 
-    const message = {
-      id: Date.now() + Math.random(), // Temporary ID
+    const replyMessage = {
+      id: Date.now() + Math.random(),
       userId: currentUserId,
       sender: currentUserName,
       role: currentUserRole,
-      content: newMessage,
+      content: newReply,
       timestamp: new Date().toISOString(),
       avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
       status: "sending",
     };
 
-    setMessages((prev) => [...prev, message]);
-    setNewMessage("");
+    setMessages((prev) => [...prev, replyMessage]);
+    setNewReply("");
 
     try {
-      const newSendMessage = { unitId, newMessage };
-      const result = await dispatch(sendNewMessageAPI(newSendMessage)).unwrap();
-      console.log("new message send result", result);
+      await axios.post(
+        "/api/discussion/reply",
+        { discussionId, reply: newReply },
+        { withCredentials: true }
+      );
 
-      // Update the message with the server response (e.g., real ID and status)
+      const newSendReply = { discussionId, newReply };
+      const result = await dispatch(replyMessageAPI(newSendReply)).unwrap();
+      console.log("new Reply message send result", result);
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === message.id
-            ? {
-                ...m,
-                id: result.data._id || m.id, // Use server-generated ID
-                status: "sent",
-              }
-            : m
+          m.id === replyMessage.id ? { ...m, status: "sent" } : m
         )
       );
+      // Refresh to get updated discussion
+      const response = await dispatch(getMessageAPI(unitId)).unwrap();
+      setMessages(
+        response.data.data.map((m) => ({
+          id: Date.now() + Math.random(),
+          userId: m.senderId,
+          sender: m.senderName,
+          role: m.user,
+          content: m.msg,
+          timestamp: m.timestamp,
+          avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
+          status: currentUserId === m.senderId ? "sent" : "read",
+        }))
+      );
+      setError(null);
     } catch (err) {
-      setError("Failed to send message");
-      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+      setError("Failed to send reply", err);
+      setMessages((prev) => prev.filter((m) => m.id !== replyMessage.id));
     }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleReply(messages[messages.length - 1]?.id); // Reply to the latest message
     }
   };
 
@@ -132,7 +141,6 @@ const StudentDiscussionsTab = ({ unitId }) => {
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-lg">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <h1 className="text-center">{error && <p className="text-xs text-red-500 mt-2">{error}</p>}</h1>
         {Object.entries(messageGroups).map(([date, dateMessages]) => (
           <div key={date}>
             <div className="flex items-center justify-center my-4">
@@ -142,13 +150,15 @@ const StudentDiscussionsTab = ({ unitId }) => {
                 </span>
               </div>
             </div>
-            {dateMessages.map((message, index) => ( // Map only date-specific messages            
+            {dateMessages.map((message, index) => (
               <div
                 key={message.id}
                 className={`flex ${
-                  message.role === "Student" ? "justify-end" : "justify-start"
+                  message.userId === currentUserId
+                    ? "justify-end"
+                    : "justify-start"
                 } mt-4`}
-              >                
+              >
                 <div
                   className={`flex max-w-xs lg:max-w-md ${
                     message.userId === currentUserId
@@ -168,24 +178,26 @@ const StudentDiscussionsTab = ({ unitId }) => {
                         : "items-start"
                     }`}
                   >
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-gray-900">
-                        {message.sender}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          message.role === "Instructor"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {message.role}
-                      </span>
-                    </div>
+                    {!message.userId === currentUserId && (
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-xs font-medium text-gray-900">
+                          {message.sender}
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            message.role === "instructor"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {message.role}
+                        </span>
+                      </div>
+                    )}
                     <div
                       className={`px-4 py-2 rounded-2xl ${
-                        message.role === "Student"
-                          ? "bg-blue-500 text-white"
+                        message.userId === currentUserId
+                          ? "bg-purple-500 text-white"
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
@@ -205,7 +217,7 @@ const StudentDiscussionsTab = ({ unitId }) => {
                       </span>
                       {message.userId === currentUserId &&
                         message.status === "sent" && (
-                          <Check className="w-3 h-3 text-blue-500 ml-1" />
+                          <Check className="w-3 h-3 text-purple-500 ml-1" />
                         )}
                     </div>
                   </div>
@@ -219,19 +231,19 @@ const StudentDiscussionsTab = ({ unitId }) => {
       <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-lg">
         <div className="flex items-end space-x-2">
           <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            value={newReply}
+            onChange={(e) => setNewReply(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask a question or share your thoughts..."
-            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
+            placeholder="Type your reply..."
+            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-white"
             rows="1"
           />
           <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            onClick={() => handleReply(messages[messages.length - 1]?.id)}
+            disabled={!newReply.trim()}
             className={`p-3 rounded-full ${
-              newMessage.trim()
-                ? "bg-blue-500 text-white hover:bg-blue-600"
+              newReply.trim()
+                ? "bg-purple-500 text-white hover:bg-purple-600"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -244,4 +256,4 @@ const StudentDiscussionsTab = ({ unitId }) => {
   );
 };
 
-export default StudentDiscussionsTab;
+export default InstructorDiscussionsTab;

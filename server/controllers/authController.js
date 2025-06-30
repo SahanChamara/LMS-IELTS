@@ -549,8 +549,8 @@ const refreshToken = async (req,res) => {
             return res.error("Invalid refresh Token", HttpsStatus.FORBIDDEN);
         } */
 
-        console.log("Request Refresh Token:", refreshToken);
-        console.log("User Stored Refresh Token:", user.refreshToken);
+/*        console.log("Request Refresh Token:", refreshToken);
+        console.log("User Stored Refresh Token:", user.refreshToken);*/
 
         if (user.refreshToken !== refreshToken) {
             console.log("Token mismatch detected");
@@ -564,7 +564,7 @@ const refreshToken = async (req,res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 15 * 60 * 1000 , // 5 minutes
+            maxAge: 15 * 60 * 1000 , // 15 minutes
         });
 
         res.success(

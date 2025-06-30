@@ -26,6 +26,8 @@ export const courses = [
       "Develop strategic plans",
       "Evaluate competitive positioning",
     ],
+    studentsEnrolled: 78,
+    imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
   },
   {
     id: "BUS205",
@@ -54,6 +56,8 @@ export const courses = [
       "Apply ethical frameworks",
       "Design compliance programs",
     ],
+    studentsEnrolled: 65,
+    imageUrl: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80"
   },
   {
     id: "MKT310",
@@ -82,6 +86,8 @@ export const courses = [
       "Optimize campaign performance",
       "Measure customer lifetime value",
     ],
+    studentsEnrolled: 92,
+    imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
   },
   {
     id: "OPS320",
@@ -94,8 +100,7 @@ export const courses = [
       project: 40,
       quizzes: 15,
     },
-    description:
-      "Model business processes for better efficiency and productivity.",
+    description: "Model business processes for better efficiency and productivity.",
     instructor: "Dr. Michael Johnson",
     department: "Operations Management",
     schedule: "Wed/Fri 09:00-10:30",
@@ -107,9 +112,11 @@ export const courses = [
       "Apply simulation techniques",
       "Improve process flows",
     ],
+    studentsEnrolled: 58,
+    imageUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1511&q=80"
   },
   {
-    id: "HRM210",
+    id: "6848fef5b46d16dccf6732d0",
     name: "Organizational Behavior",
     credits: 3,
     grade: "B",
@@ -119,8 +126,7 @@ export const courses = [
       project: 40,
       quizzes: 15,
     },
-    description:
-      "Analyze how individuals and groups impact organizational dynamics.",
+    description: "Analyze how individuals and groups impact organizational dynamics.",
     instructor: "Dr. Emily Park",
     department: "Human Resources",
     schedule: "Tue/Thu 11:00-12:30",
@@ -136,6 +142,8 @@ export const courses = [
       "Design effective teams",
       "Manage organizational change",
     ],
+    studentsEnrolled: 84,
+    imageUrl: "https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80"
   },
   {
     id: "ACC101",
@@ -148,8 +156,7 @@ export const courses = [
       project: 40,
       quizzes: 15,
     },
-    description:
-      "Interpret financial statements and track business performance.",
+    description: "Interpret financial statements and track business performance.",
     instructor: "Prof. Robert Kim",
     department: "Accounting",
     schedule: "Mon/Wed/Fri 08:00-09:00",
@@ -161,6 +168,8 @@ export const courses = [
       "Analyze financial ratios",
       "Apply GAAP principles",
     ],
+    studentsEnrolled: 97,
+    imageUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1511&q=80"
   },
   {
     id: "684fae7639d36d10c5619d83",
@@ -185,6 +194,8 @@ export const courses = [
       "Build influence networks",
       "Lead organizational transitions",
     ],
+    studentsEnrolled: 72,
+    imageUrl: "https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80"
   },
   {
     id: "684a59a641510d80c8f8bcb6",
@@ -213,6 +224,8 @@ export const courses = [
       "Manage development pipelines",
       "Launch new ventures",
     ],
+    studentsEnrolled: 88,
+    imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
   },
   {
     id: "OPS410",
@@ -241,6 +254,8 @@ export const courses = [
       "Implement lean principles",
       "Mitigate supply risks",
     ],
+    studentsEnrolled: 45,
+    imageUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1511&q=80"
   },
   {
     id: "BUS350",
@@ -269,6 +284,8 @@ export const courses = [
       "Build decision models",
       "Present data insights",
     ],
+    studentsEnrolled: 91,
+    imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
   },
   {
     id: "BUS220",
@@ -297,6 +314,8 @@ export const courses = [
       "Adapt business practices",
       "Evaluate entry modes",
     ],
+    studentsEnrolled: 67,
+    imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
   },
   {
     id: "HRM405",
@@ -321,6 +340,8 @@ export const courses = [
       "Align HR with strategy",
       "Measure HR effectiveness",
     ],
+    studentsEnrolled: 73,
+    imageUrl: "https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80"
   },
 ];
 

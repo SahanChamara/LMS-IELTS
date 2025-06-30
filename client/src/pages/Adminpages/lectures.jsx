@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Lecsidebar from "./lecsidebar";
+import Lecsidebar from "./Lecsidebar";
 import { FiAlertCircle, FiBook, FiFileText, FiUsers, FiBell } from "react-icons/fi";
 
 const Lecdashboard = () => {

@@ -28,6 +28,8 @@ const assessmentMarkRoutes = require("./routes/assessmentMarksRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const assignmentMarkRoutes = require("./routes/assignmentMarksRoutes");
 const examMarkRoutes = require("./routes/examMarksRoutes");
+const submitAssignmentRoutes = require("./routes/submitAssignmentRoutes");
+const onlineSessionRoutes = require("./routes/onlineSessionRoutes");
 const responseFormatter = require("./middleware/responseFormatter");
 const { default: mongoose } = require("mongoose");
 
@@ -72,6 +74,8 @@ app.use("/api/assessmentMarks", assessmentMarkRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/assignmentMarks", assignmentMarkRoutes);
 app.use("/api/examMarks", examMarkRoutes);
+app.use("/api/submitAssignment", submitAssignmentRoutes);
+app.use("/api/onlineSession", onlineSessionRoutes);
 
 app.use(require("./middleware/errorHandler"));
 
