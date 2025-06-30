@@ -20,7 +20,7 @@ import Terms from "../pages/Terms";
 import Accessibility from "../pages/Accessibility";
 import CourseDetails from "../pages/unitDetails";
 import Exam from "../pages/Exam";
-import ExamDashboard from "../pages/ExamDashboard";
+import ExamDashboard from "../pages/Exam Pages/ExamDashboard";
 
 // routes 
 import ProtectedRoute from "./protectedRoute";
