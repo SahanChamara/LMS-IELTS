@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import landingImage1 from '../images/landing-img1.jpg';
-
 const IELTSLandingPage = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ const IELTSLandingPage = () => {
   };
 
   const handleNavigation = (path) => {
-    console.log(`Navigating to: ${path}`);
+    navigate(path);
   };
 
   return (
