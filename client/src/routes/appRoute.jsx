@@ -20,6 +20,7 @@ import Terms from "../pages/Terms";
 import Accessibility from "../pages/Accessibility";
 import CourseDetails from "../pages/unitDetails";
 import Exam from "../pages/Exam";
+import ExamDashboard from "../pages/Exam Pages/ExamDashboard";
 
 // routes 
 import ProtectedRoute from "./protectedRoute";
@@ -54,7 +55,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/institution" element={<Institution />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/exams" element={<Exams />} />
+        <Route path="/exams" element={<ExamDashboard />} />
         <Route path="/Activity" element={<Goals />} />
         <Route path="/units" element={<Units />} />
         <Route path="/calendar" element={<Calendar />} />
