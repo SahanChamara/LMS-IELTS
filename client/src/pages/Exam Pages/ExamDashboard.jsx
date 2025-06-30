@@ -115,55 +115,7 @@ const ExamDashboard = () => {
             <p className="text-lg text-gray-600">
               Practice with authentic IELTS exam papers
             </p>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white/70 backdrop-blur-sm border border-blue-200 p-4 rounded-lg shadow">
-              <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium text-gray-600">
-                  Available Exams
-                </h3>
-                <BookOpen className="h-4 w-4 text-blue-600" />
-              </div>
-              <div className="text-2xl font-bold text-blue-600">
-                {availableExams.length}
-              </div>
-            </div>
-
-            <div className="bg-white/70 backdrop-blur-sm border border-blue-200 p-4 rounded-lg shadow">
-              <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium text-gray-600">
-                  Total Questions
-                </h3>
-                <Users className="h-4 w-4 text-green-600" />
-              </div>
-              <div className="text-2xl font-bold text-green-600">
-                {availableExams.reduce(
-                  (total, exam) => total + exam.questions,
-                  0
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white/70 backdrop-blur-sm border border-blue-200 p-4 rounded-lg shadow">
-              <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium text-gray-600">
-                  Study Hours
-                </h3>
-                <Clock className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="text-2xl font-bold text-purple-600">
-                {Math.floor(
-                  availableExams.reduce(
-                    (total, exam) => total + exam.duration,
-                    0
-                  ) / 60
-                )}
-                h
-              </div>
-            </div>
-          </div>
+          </div>         
 
           {/* Exams Grid */}
           {loading ? (
