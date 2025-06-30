@@ -39,26 +39,28 @@ import SuperAdmin from "../pages/Adminpages/admindashboard"
 import SuperAdminstudentcontrol from "../pages/Adminpages/adminstudents"
 import SuperAdminlecturercontrol from "../pages/Adminpages/adminlecturer"
 import SuperAdminnotifications from "../pages/Adminpages/adminnotifications"
+import IELTSLandingPage from "../pages/landing";
+import Exams from "../pages/exams";
 
 
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<Login/>} />
+      <Route path="/" element={<IELTSLandingPage />} />
       <Route element={<ProtectedRoute allowedRoles={["Student", "SuperAdmin"]} />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Institution />} />
         <Route path="/register" element={<Register />} />
-        
-        <Route path="/" element={<Home />} />
         <Route path="/institution" element={<Institution />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/activity" element={<Goals />} />
+        <Route path="/exams" element={<Exams />} />
+        <Route path="/Activity" element={<Goals />} />
         <Route path="/units" element={<Units />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messenger />} />
         <Route path="/marks" element={<Marks />} />
-        <Route path="/tools" element={<Tool />} />
+        <Route path="/settings" element={<Tool />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
