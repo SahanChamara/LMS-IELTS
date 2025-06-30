@@ -39,13 +39,15 @@ import SuperAdmin from "../pages/Adminpages/admindashboard"
 import SuperAdminstudentcontrol from "../pages/Adminpages/adminstudents"
 import SuperAdminlecturercontrol from "../pages/Adminpages/adminlecturer"
 import SuperAdminnotifications from "../pages/Adminpages/adminnotifications"
+import IELTSLandingPage from "../pages/landing";
 
 
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<Login/>} />
+      <Route path="/" element={<IELTSLandingPage />} />
       <Route element={<ProtectedRoute allowedRoles={["Student", "SuperAdmin"]} />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/register" element={<Register />} />
