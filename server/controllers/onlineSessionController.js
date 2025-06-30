@@ -13,7 +13,7 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 /**
  * Helper function to validate required fields
  * @param {Object} data - Request body data
- * @param {string[]} requiredFields - Array of required field names
+ * @param {string[]} requiredFields 
  * @returns {string|null} - Error message if validation fails, null otherwise
  */
 const validateRequiredFields = (data, requiredFields) => {
