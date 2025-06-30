@@ -1,55 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
+import { debounce } from "lodash"; // Install lodash: npm install lodash
 import {
   useAppDispatch,
   useAppSelector,
 } from "../../../redux/store-config/store";
-import { getAllAssignmentsAPI } from "../../../redux/features/assignmentsSlice";
+import {
+  getAllAssignmentsAPI,
+  uploadAssignmentAPI,
+} from "../../../redux/features/assignmentsSlice";
 import useDrivePicker from "react-google-drive-picker";
 
-function AssignmentsTab() {
+const AssignmentsTab = memo(function AssignmentsTab() {
   const dispatch = useAppDispatch();
-  const { assignment, loading, error } = useAppSelector(
-    (state) => state.assignments
-  );
+  const { loading, error } = useAppSelector((state) => state.assignments);
 
-  console.log("Redux assignment:", assignment);
-  console.log("Loading:", loading);
-  console.log("Error:", error);
-
-  if (assignment == null) {
-    console.log("Assignment is null");
-  }
-
-  // Google Drive Picker
-  const [openPicker, setOpenPicker] = useDrivePicker();
-  const [files, setFiles] = useState([]);
-
-  const handleOpenPicker = () => {
-    openPicker({
-      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      developerKey: import.meta.env.VITE_GOOGLE_DEVELOPER_KEY,
-      viewId: "DOCS",      
-      showUploadView: true,
-      showUploadFolders: true,
-      supportDrives: true,
-      multiselect: true,
-      customScopes: ['https://www.googleapis.com/auth/drive.file'],
-      callbackFunction: (data) => {
-        if (data.action === "cancel") {
-          console.log("User Clieck Cansel");
-        } else if (data.docs) {
-          console.log("Google Drive Upload Data",data);
-          setFiles(data.docs);
-        }
-      },
-    });
-  };
-
-  console.log("upload File", files);
-  
-
-  // Initialize allAssignments with assignment.data (assuming Redux returns { data: [...] })
-  const [allAssignments, setAllAssignments] = useState(assignment);
+  const [assignments, setAssignments] = useState([]);
   const [showUploadForm, setShowUploadForm] = useState(null);
   const [studentName, setStudentName] = useState("");
   const [comments, setComments] = useState("");
@@ -66,20 +31,23 @@ function AssignmentsTab() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("dueDate");
 
+  // Fetch all assignments on mount
   useEffect(() => {
-    if (!loading && !error) {
-      dispatch(getAllAssignmentsAPI());
-    }
+    const fetchAssignments = async () => {
+      try {
+        const result = await dispatch(getAllAssignmentsAPI()).unwrap();
+        console.log("get all assignment ", result);
+        setAssignments(result || []);
+      } catch (err) {
+        console.error("Failed to fetch assignments:", err);
+      }
+    };
+    fetchAssignments();
   }, [dispatch]);
 
-  useEffect(() => {
-    setAllAssignments(assignment);
-  }, [assignment]);
-
-  // Get unique subjects for filter dropdown
-  const subjects = [...new Set(allAssignments.map((a) => a.subjectCode))];
-
-  console.log("All assignments:", allAssignments);
+  console.log("Assignments:", assignments);
+  console.log("Loading:", loading);
+  console.log("Error:", error);
 
   // Calculate time remaining for each assignment
   useEffect(() => {
@@ -87,7 +55,7 @@ function AssignmentsTab() {
       const now = new Date();
       const newTimeRemaining = {};
 
-      allAssignments.forEach((assignment) => {
+      assignments.forEach((assignment) => {
         const dueDate = new Date(assignment.dueDate);
         const diff = dueDate - now;
 
@@ -119,7 +87,7 @@ function AssignmentsTab() {
     calculateTimeRemaining();
     const interval = setInterval(calculateTimeRemaining, 60000);
     return () => clearInterval(interval);
-  }, [allAssignments]);
+  }, [assignments]);
 
   // Format date and time
   const formatDateTime = (dateString) => {
@@ -133,6 +101,33 @@ function AssignmentsTab() {
     });
   };
 
+  // Google Drive Picker
+  const [openPicker, setOpenPicker] = useDrivePicker();
+  const [files, setFiles] = useState([]);
+
+  const handleOpenPicker = () => {
+    openPicker({
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      developerKey: import.meta.env.VITE_GOOGLE_DEVELOPER_KEY,
+      viewId: "DOCS",
+      showUploadView: true,
+      showUploadFolders: true,
+      supportDrives: true,
+      multiselect: true,
+      customScopes: ["https://www.googleapis.com/auth/drive.file"],
+      callbackFunction: (data) => {
+        if (data.action === "cancel") {
+          console.log("User Click Cancel");
+        } else if (data.docs) {
+          console.log("Google Drive Upload Data", data);
+          setFiles(data.docs);
+        }
+      },
+    });
+  };
+
+  console.log("upload File", files);
+
   const handleFileChange = (e) => {
     setFiles([...e.target.files]);
   };
@@ -143,12 +138,29 @@ function AssignmentsTab() {
     setFiles(newFiles);
   };
 
+  // Debounced handler for studentName
+  const debouncedSetStudentName = useCallback(
+    debounce((value) => setStudentName(value), 100),
+    []
+  );
+
+  const handleStudentNameChange = (e) => {
+    debouncedSetStudentName(e.target.value);
+  };
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetStudentName.cancel();
+    };
+  }, [debouncedSetStudentName]);
+
   const handlePreviewFile = (file) => {
     setPreviewFile(file);
     setShowFilePreview(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const now = new Date();
     const submittedAt = now.toISOString();
@@ -156,73 +168,23 @@ function AssignmentsTab() {
     console.log(studentName, files, comments);
 
     const uploadAssignment = {
-      student: localStorage.getItem('user'),
+      student: localStorage.getItem("user"),
       assignment: showUploadForm._id,
-      file: files.length > 0 ? files[0].url : '',
+      file: files.length > 0 ? files[0].url : "",
       feedback: comments,
       totalMarks: showUploadForm.totalMarks,
-    }
+    };
 
     console.log("upload assignment data", uploadAssignment);
-    
 
-    const assignment = allAssignments.find(
-      (a) => a._id === showUploadForm || a.id === showUploadForm
-    );
-    if (!assignment) return; // Guard clause if assignment not found
-    const dueDate = new Date(assignment.dueDate);
-
-    const isLate = now > dueDate;
-    const status = isLate ? "Submitted Late" : "Submitted On Time";
-
-    setTimeout(() => {
-      const updatedAssignments = allAssignments.map((a) => {
-        if (a._id === showUploadForm || a.id === showUploadForm) {
-          return {
-            ...a,
-            status: status,
-            submittedAt: submittedAt,
-            studentName: studentName,
-            files: files.map((file) => ({
-              name: file.name,
-              type: file.type,
-              size: file.size,
-            })),
-            lastModified: now.toISOString(),
-            isLate: isLate,
-            comments: comments,
-            feedback: "",
-            grade: "",
-          };
-        }
-        return a;
-      });
-
-      setAllAssignments(updatedAssignments);
-      setSubmissionStatus({
-        assignmentId: showUploadForm,
-        files: files.map((file) => file.url),
-        studentName,
-        timestamp: now.toLocaleString(),
-        status: status,
-        isLate: isLate,
-        dueDate: formatDateTime(assignment.dueDate),
-        comments: comments,
-      });      
-
-      console.log("submit assignment", submissionStatus);
-      
-
-      setShowSubmissionSuccess(true);
-      setFiles([]);
-      setStudentName("");
-      setComments("");
-      setShowUploadForm(null);
-
-      setTimeout(() => {
-        setShowSubmissionSuccess(false);
-      }, 5000);
-    }, 1000);
+    try {
+      const result = await dispatch(uploadAssignmentAPI(uploadAssignment)).unwrap();
+      console.log("uploaded Result", result);
+      // Optionally reset form fields or update local state if needed
+    } catch (err) {
+      console.error("Upload failed:", err);
+      // Handle error (e.g., show a user message)
+    }
   };
 
   const handleGradeAssignment = (
@@ -231,7 +193,7 @@ function AssignmentsTab() {
     grade = null,
     feedback = ""
   ) => {
-    const updatedAssignments = allAssignments.map((a) => {
+    const updatedAssignments = assignments.map((a) => {
       if (a._id === assignmentId || a.id === assignmentId) {
         return {
           ...a,
@@ -242,7 +204,7 @@ function AssignmentsTab() {
       }
       return a;
     });
-    setAllAssignments(updatedAssignments);
+    setAssignments(updatedAssignments);
     setSelectedAssignment(null);
     setGrade("");
     setFeedback("");
@@ -285,7 +247,7 @@ function AssignmentsTab() {
   };
 
   // Filter and sort assignments
-  const filteredAssignments = allAssignments
+  const filteredAssignments = assignments
     .filter((assignment) => {
       const matchesSearch =
         assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -344,38 +306,6 @@ function AssignmentsTab() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Filter by Subject
-          </label>
-          <select
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={filterSubject}
-            onChange={(e) => setFilterSubject(e.target.value)}
-          >
-            <option value="all">All Subjects</option>
-            {subjects.map((subject) => (
-              <option key={subject} value={subject}>
-                {subject}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Filter by Status
-          </label>
-          <select
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="submitted">Submitted</option>
-            <option value="notSubmitted">Not Submitted</option>
-            <option value="graded">Graded</option>
-          </select>
-        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Sort By
@@ -612,7 +542,7 @@ function AssignmentsTab() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Your name"
                 value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
+                onChange={handleStudentNameChange}
                 required
               />
             </div>
@@ -623,9 +553,12 @@ function AssignmentsTab() {
               </label>
               <div className="mt-1 flex items-center">
                 <label className="cursor-pointer">
-                  <button onClick={handleOpenPicker} className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  <button
+                    onClick={handleOpenPicker}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
                     Choose Files
-                  </button>                  
+                  </button>
                 </label>
                 <span className="ml-2 text-sm text-gray-500">
                   {files.length > 0
@@ -1059,6 +992,6 @@ function AssignmentsTab() {
       )}
     </div>
   );
-}
+});
 
 export default AssignmentsTab;

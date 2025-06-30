@@ -19,7 +19,7 @@ export const getAllAssignmentsAPI = createAsyncThunk(
 
 export const uploadAssignmentAPI = createAsyncThunk(
   "uploadAssignmentAPI",
-  async (uploadAssignmentData, { rejectWithValue }) => {
+  async (uploadAssignmentData, { rejectWithValue }) => {    
     try {
       const response = await uploadAssignment(uploadAssignmentData);
       console.log("Upload Assignment Response", response);
@@ -49,7 +49,7 @@ const assignmentsSlice = createSlice({
         state.loading = false;
         console.log("payload ", action.payload);
 
-        state.assignment = action.payload;
+        state.assignment = Array.isArray(action.payload) ? action.payload : [action.payload];
       })
       .addCase(getAllAssignmentsAPI.rejected, (state, action) => {
         state.loading = false;
@@ -61,7 +61,9 @@ const assignmentsSlice = createSlice({
       })
       .addCase(uploadAssignmentAPI.fulfilled, (state, action) => {
         state.loading = false;
-        state.assignment = action.payload;
+        state.assignment = Array.isArray(state.assignment) 
+          ? [...state.assignment, action.payload] 
+          : [action.payload];
       })
       .addCase(uploadAssignmentAPI.rejected, (state, action) => {
         state.loading = false;
