@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import landingImage1 from '../images/landing-img1.jpg';
 
 const IELTSLandingPage = () => {
   const [email, setEmail] = useState('');
@@ -14,96 +14,81 @@ const IELTSLandingPage = () => {
     console.log('Sign-up email:', email);
     setEmail('');
     setError('');
-    window.location.href = '/register';
+    alert('Thank you for signing up!');
+  };
+
+  const handleNavigation = (path) => {
+    console.log(`Navigating to: ${path}`);
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-100 to-purple-100 font-sans animate-fade-in">
+    <div className="h-screen w-full overflow-hidden bg-gradient-to-br from-blue-300 via-blue-600 to-blue-950 relative">
+      {/* Background overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+      
+      {/* Header */}
+      <header className="relative z-10 flex justify-between items-center px-8 py-6">
+        <div className="text-white text-xl font-bold">IELTS Pro</div>
+        <nav className="hidden md:flex space-x-8 text-white text-sm">
+          <button onClick={() => handleNavigation('/about')} className="hover:text-blue-300 transition-colors">About Us</button>
+          <button onClick={() => handleNavigation('/courses')} className="hover:text-blue-300 transition-colors">Courses</button>
+          <button onClick={() => handleNavigation('/contact')} className="hover:text-blue-300 transition-colors">Contact</button>
+        </nav>
+        <button onClick={() => handleNavigation('/login')} className="bg-slate-700 text-white px-6 py-2 rounded-lg hover:bg-blue-200 hover:text-black transition-colors text-sm font-medium">
+          Log In
+        </button>
+      </header>
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row items-center justify-center p-4 sm:p-6 md:p-8">
-        {/* Left: Hero Text and CTA */}
-        <div className="w-full md:w-1/2 text-center md:text-left mb-4 md:mb-0">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-2">
-            Ace Your IELTS with Our LMS
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-3">
-            Master Reading, Writing, Listening, and Speaking with expert-led online courses tailored for your success.
-          </p>
-          <ul className="text-sm md:text-base text-gray-600 mb-4 space-y-1">
-            <li>🚀 Personalized IELTS study plans</li>
-            <li>📚 Real IELTS practice tests</li>
-            <li>🎥 Live sessions with top instructors</li>
-          </ul>
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 justify-center md:justify-start">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 outline-none text-sm w-full sm:w-64 transition-all duration-300"
-            />
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 hover:scale-105 transition-transform duration-200 text-sm"
-              >
-                Sign Up Now
-              </button>
-              <Link
-                to="/login"
-                className="bg-transparent border border-indigo-600 text-indigo-600 px-4 py-2 rounded-full hover:bg-indigo-50 hover:scale-105 transition-transform duration-200 text-sm"
-              >
-                Login
-              </Link>
+      <main className="relative z-10 flex items-center justify-between px-8 h-[calc(100vh-120px)]">
+        {/* Left Side - Single Image */}
+        <div className="flex-1 flex items-center justify-center">
+            <div className="max-w-xl w-full h-[420px] bg-gray-300 rounded-xl overflow-hidden shadow-2xl">
+                <img
+                    src={landingImage1}
+                    alt="Student studying"
+                    className="w-full h-full object-cover"
+                />
             </div>
-          </form>
-          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-          {/* Testimonial */}
-          <div className="mt-3 bg-white bg-opacity-80 rounded-lg p-3 text-sm italic text-gray-600 shadow-sm">
-            "Scored 8.5 on IELTS with these amazing courses!" – Emma T.
+        </div>
+        <div className="flex-1 text-right pr-12">
+          <h1 className="text-6xl font-bold text-white mb-6 leading-tight">
+            IELTS Pro
+            <br />
+            <span className="text-4xl font-normal text-blue-300">
+              Simplest Path to Learning
+            </span>
+          </h1>
+          
+          <p className="text-gray-300 text-lg mb-8 max-w-lg ml-auto">
+            Master IELTS with expert guidance and comprehensive practice materials. 
+            Your journey to success starts here.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex justify-end gap-4 mb-8">
+            <button 
+              onClick={() => handleNavigation('/demo')}
+              className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-200 hover:text-black transition-colors font-medium shadow-lg"
+            >
+              Join With Us
+            </button>
+            <button 
+              onClick={() => handleNavigation('/courses')}
+              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-white hover:text-slate-800 transition-colors font-medium"
+            >
+              About Us
+            </button>
           </div>
-        </div>
-        {/* Right: Hero Image */}
-        <div className="w-full md:w-1/2 flex justify-center">
-          <img
-            src="/assets/ielts-hero-modern.jpg"
-            alt="IELTS Study"
-            className="max-w-full h-auto sm:max-w-xs md:max-w-sm rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-indigo-800 to-purple-800 text-white py-3 text-center">
-        <div className="flex justify-center space-x-4 mb-1">
-          <Link to="/about" className="text-xs sm:text-sm hover:text-indigo-300 transition-colors">
-            About
-          </Link>
-          <Link to="/contact" className="text-xs sm:text-sm hover:text-indigo-300 transition-colors">
-            Contact
-          </Link>
-          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm hover:text-indigo-300 transition-colors">
-            Twitter
-          </a>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm hover:text-indigo-300 transition-colors">
-            Facebook
-          </a>
+          
         </div>
-        <p className="text-xs">© 2025 IELTS LMS. All rights reserved.</p>
-      </footer>
+      </main>
 
-      {/* Tailwind Animation */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .animate-fade-in {
-            animation: fadeIn 0.5s ease-out;
-          }
-        `}
-      </style>
+      {/* Floating Elements */}
+      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-pulse"></div>
+      <div className="absolute top-3/4 right-1/4 w-3 h-3 bg-green-400 rounded-full opacity-40 animate-pulse"></div>
+      <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-white rounded-full opacity-80 animate-pulse"></div>
     </div>
   );
 };
