@@ -28,73 +28,7 @@ const StudentAssessmentsDashboard = () => {
         </div>
       </motion.div>
       
-      {/* Current Projects */}
-      <div className="mb-8">
-        <h3 className="text-md font-medium text-gray-700 mb-4 flex items-center">
-          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-          Currently Working On
-        </h3>
-        
-        <motion.div
-          whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-          transition={{ duration: 0.3 }}
-          className="flex items-center justify-between p-4 bg-blue-50/80 backdrop-blur-sm border-2 border-gray-300/30 rounded-lg mb-3 shadow-sm"
-        >
-          <div>
-            <p className="font-medium text-gray-800">Advanced Algorithms Project</p>
-            <p className="text-sm text-gray-500">Due: June 15, 2023</p>
-          </div>
-          <div className="text-right">
-            <span className="inline-block px-3 py-1 bg-white text-blue-800 text-xs font-medium rounded-full border border-blue-200 shadow-sm">
-              ⏳ 2 days left
-            </span>
-          </div>
-        </motion.div>
-      </div>
-      
-      {/* Recent Assessments */}
-      <div className="mb-8">
-        <h3 className="text-md font-medium text-gray-700 mb-4 flex items-center">
-          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-          Recently Completed
-        </h3>
-        
-        <div className="space-y-4">
-          <motion.div
-            whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center justify-between p-4 bg-green-50/80 backdrop-blur-sm border-2 border-gray-300/30 rounded-lg shadow-sm"
-          >
-            <div>
-              <p className="font-medium text-gray-800">Database Systems Exam</p>
-              <p className="text-sm text-gray-500">Submitted: May 28, 2023</p>
-            </div>
-            <div className="text-right">
-              <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">
-                A
-              </span>
-              <p className="text-xs text-gray-500 mt-1">Feedback available</p>
-            </div>
-          </motion.div>
-          
-          <motion.div
-            whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center justify-between p-4 bg-green-50/80 backdrop-blur-sm border-2 border-gray-300/30 rounded-lg shadow-sm"
-          >
-            <div>
-              <p className="font-medium text-gray-800">Research Paper</p>
-              <p className="text-sm text-gray-500">Submitted: May 15, 2023</p>
-            </div>
-            <div className="text-right">
-              <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">
-                A+
-              </span>
-              <p className="text-xs text-gray-500 mt-1">View comments</p>
-            </div>
-          </motion.div>
-        </div>
-      </div>
+
       
       {/* Upcoming Assessments */}
       <div className="mb-4">
