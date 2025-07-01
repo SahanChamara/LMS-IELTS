@@ -22,3 +22,13 @@ export const uploadAssignment = async (uploadAssignment) => {
   };
   return ApiService.callApi(apiObject);
 };
+
+export const getAssignmentsByUnitId = async (unitId) => {
+  const apiObject = {
+    method: "GET",
+    withCredentials: true,
+    prefix: "assignment/unit",
+    endpoint: `${unitId}`,
+  };
+  return ApiService.callApi(apiObject);
+};
