@@ -4,17 +4,21 @@ export async function createLog(userId, unitId) {
   try {
     const apiObject = {
       method: "POST",
-      withCredentials: true,
-      prefix: "",
+      withCredentials: true, // Adjust based on server requirements
+      prefix: "", // Confirm if prefix is needed
       endpoint: "logs",
-      data: {
-        user: userId,
+      authentication: true, // Enable if server requires Bearer token
+      body: {
+        user: localStorage.getItem("user"),
         unit: unitId,
       },
     };
-    return await ApiService.callApi(apiObject);
+    console.log("createLog payload:", apiObject.body); // Debug payload
+    const response = await ApiService.callApi(apiObject);
+    console.log("createLog response:", response); // Debug response
+    return response;
   } catch (error) {
-    console.error("createLog error:", error.message);
+    console.error("createLog error:", error.message, error);
     throw error;
   }
 }
