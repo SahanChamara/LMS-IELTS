@@ -102,7 +102,7 @@ const SectionSchema = new Schema({
 
 
 const ExamIelts = mongoose.model("ExamIelts", ExamSchema);
-const Section = mongoose.model("Section", SectionSchema);
+const Sections = mongoose.model("Sections", SectionSchema);
 const Question = mongoose.model("Question", QuestionSchema);
 
-module.exports = {ExamIelts, Section, Question};
+module.exports = {ExamIelts, Sections, Question};
