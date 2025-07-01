@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Upload, MessageCircle, BookOpen } from 'lucide-react';
+import { Upload, MessageCircle, BookOpen, FileUp } from 'lucide-react';
 import { mockPosts, currentUser } from '../data/mockData';
 import ReactionBar from '../components/ReactionBar';
 import AttachmentDisplay from '../components/AttachmentDisplay';
@@ -141,7 +141,7 @@ const StudentFeed = () => {
                   className="flex-1 p-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 text-sm"
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <Upload className="h-5 w-5 text-gray-600 hover:text-blue-600" />
+                  <FileUp className="h-6 w-6 text-gray-600 hover:text-blue-600" />
                   <input
                     id="file-upload"
                     type="file"

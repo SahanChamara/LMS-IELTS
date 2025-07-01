@@ -1,3 +1,4 @@
+import { ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
 
 const ReactionBar = ({ reactions, currentUserId, currentUserName, onReaction }) => {
@@ -7,7 +8,7 @@ const ReactionBar = ({ reactions, currentUserId, currentUserName, onReaction }) 
     like: '👍',
     love: '❤️',
     celebrate: '🎉',
-    support: '💪',
+    support: '👏',
     insightful: '💡',
     funny: '😂'
   };
@@ -24,63 +25,60 @@ const ReactionBar = ({ reactions, currentUserId, currentUserName, onReaction }) 
     return reactions.length;
   };
 
-  const getTopReactions = () => {
+  const getReactionCounts = () => {
     const counts = {};
-    reactions.forEach(r => {
-      counts[r.type] = (counts[r.type] || 0) + 1;
+    Object.keys(reactionEmojis).forEach(type => {
+      counts[type] = reactions.filter(r => r.type === type).length;
     });
-    
-    return Object.entries(counts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([type]) => type);
+    return counts;
   };
 
   const userReaction = getUserReaction();
+  const reactionCounts = getReactionCounts();
   const totalReactions = getTotalReactions();
-  const topReactions = getTopReactions();
+
+  const handleLikeButtonClick = () => {
+    if (userReaction) {
+      // Remove the current reaction by calling onReaction with the same type
+      onReaction(userReaction.type);
+    } else {
+      // Apply a "like" reaction if none exists
+      onReaction('like');
+    }
+  };
 
   return (
-    <div className="flex items-center space-x-4 pb-3 border-b border-gray-200">
-      {/* Main reaction button */}
-      <div className="relative">
+    <div className="flex items-center justify-between py-2 border-t border-b border-gray-200">
+      {/* Like Button and Reaction Picker Container */}
+      <div
+        className="relative"
+        onMouseEnter={() => setShowReactions(true)}
+        onMouseLeave={() => setShowReactions(false)}
+      >
         <button
-          className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors duration-200 ${
+          className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-colors duration-200 ${
             userReaction
-              ? 'text-blue-600 hover:bg-blue-50'
-              : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+              ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+              : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
           }`}
-          onMouseEnter={() => setShowReactions(true)}
-          onMouseLeave={() => setShowReactions(false)}
-          onClick={() => onReaction(userReaction ? userReaction.type : 'like')}
+          onClick={handleLikeButtonClick}
+          aria-label={userReaction ? `Remove ${userReaction.type} reaction` : 'Like post'}
+          tabIndex={0}
         >
           {userReaction ? (
-            <span className="text-sm">{reactionEmojis[userReaction.type]}</span>
+            <span className="text-lg">{reactionEmojis[userReaction.type]}</span>
           ) : (
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m0-16l3.761.94c.159.04.322.06.485.06H15.263a2 2 0 011.789 1.106l3.5 7A2 2 0 0118.764 14H14"
-              />
-            </svg>
+            <ThumbsUp size={15} />
           )}
-          <span className="text-sm font-medium">{userReaction ? userReaction.type : 'Like'}</span>
+          <span className="text-sm font-medium">
+            {userReaction ? userReaction.type : 'Like'}
+          </span>
         </button>
 
-        {/* Reaction picker */}
+        {/* Reaction Picker */}
         {showReactions && (
-          <div 
-            className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex space-x-1 z-10"
-            onMouseEnter={() => setShowReactions(true)}
-            onMouseLeave={() => setShowReactions(false)}
+          <div
+            className="absolute bottom-full left-0 mb-0 bg-white border border-gray-200 rounded-full shadow-lg p-2 flex space-x-2 z-10 transform transition-all duration-200 ease-in-out scale-100 opacity-100"
           >
             {Object.entries(reactionEmojis).map(([type, emoji]) => (
               <button
@@ -89,8 +87,11 @@ const ReactionBar = ({ reactions, currentUserId, currentUserName, onReaction }) 
                   onReaction(type);
                   setShowReactions(false);
                 }}
-                className="p-2 hover:scale-125 transition-transform duration-200 text-xl"
-                title={type}
+                className={`p-1 rounded-full text-lg transition-transform duration-200 hover:scale-125 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  userReaction?.type === type ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                aria-label={`React with ${type}`}
+                tabIndex={0}
               >
                 {emoji}
               </button>
@@ -99,17 +100,17 @@ const ReactionBar = ({ reactions, currentUserId, currentUserName, onReaction }) 
         )}
       </div>
 
-      {/* Reaction summary */}
+      {/* Reaction Summary */}
       {totalReactions > 0 && (
-        <div className="flex items-center space-x-1 text-sm text-gray-500">
-          <div className="flex -space-x-1">
-            {topReactions.map(type => (
-              <span key={type} className="text-xs bg-white rounded-full border border-gray-200 px-1">
-                {reactionEmojis[type]}
+        <div className="text-sm text-gray-600">
+          {Object.entries(reactionCounts)
+            .filter(([_, count]) => count > 0)
+            .map(([type, count]) => (
+              <span key={type} className="mr-2">
+                {reactionEmojis[type]} {count}
               </span>
             ))}
-          </div>
-          <span>{totalReactions}</span>
+          <span>({totalReactions} total)</span>
         </div>
       )}
     </div>
