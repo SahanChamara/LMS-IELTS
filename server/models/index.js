@@ -1,8 +1,28 @@
+const Assessment = require('./Assessment');
+const Assignment = require('./Assignment');
+const AuditLog = require('./AuditLog');
+const Certificate = require('./Certificate');
+const Course = require('./Course');
+const Discussion = require('./Discussion');
+const Exam = require('./Exam');
+const Instructor = require('./Instructor');
+const Lesson = require('./Lesson');
+const Logs = require('./Logs');
+const Marks = require('./Marks');
+const Notification = require('./Notification');
+const onlineSession = require('./onlineSession');
+const Quiz = require('./Quiz');
+const Report = require('./Report');
+const Student = require('./Student');
+const Submission = require('./Submission');
+const SubmissionAssignment = require('./SubmissionAssignment');
+const SuperAdmin = require('./SuperAdmin');
+const Unit = require('./Unit');
+
 // index.js
 module.exports = {
   Assessment: require('./Assessment'),
   AuditLog: require('./AuditLog'),
-  Calendar: require('./Calendar'),
   Certificate: require('./Certificate'),
   Course: require('./Course'),
   Exam: require('./Exam'),
@@ -20,12 +40,12 @@ module.exports = {
   SubmissionAssignment: require('./SubmissionAssignment'),
   Discussion: require('./Discussion'),
   OnlineSession: require('./onlineSession'),
+  Logs: require('./Logs')
 };
 
 module.exports = {
   Assessment,
   AuditLog,
-  Calendar,
   Certificate,
   Course,
   Exam,
@@ -42,5 +62,6 @@ module.exports = {
   Assignment,
   SubmissionAssignment,
   Discussion,
-  OnlineSession
+  onlineSession,
+  Logs
 };

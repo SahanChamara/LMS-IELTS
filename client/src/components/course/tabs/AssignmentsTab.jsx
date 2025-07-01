@@ -9,6 +9,7 @@ import {
   uploadAssignmentAPI,
 } from "../../../redux/features/assignmentsSlice";
 import useDrivePicker from "react-google-drive-picker";
+import { Link } from "lucide-react";
 
 const AssignmentsTab = memo(function AssignmentsTab() {
   const dispatch = useAppDispatch();
@@ -345,7 +346,7 @@ const AssignmentsTab = memo(function AssignmentsTab() {
                         }`}
                       >
                         <span className="text-sm font-medium">
-                          {assignment.subjectCode}
+                          <Link/>
                         </span>
                       </div>
                       <div>

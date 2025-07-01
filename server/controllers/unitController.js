@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Unit = require('../models/Unit');
 const Instructor = require('../models/Instructor'); // Import Instructor model for validation
+const { Logs } = require('../models');
 
 class ApiError extends Error {
     constructor(statusCode, message) {
@@ -195,7 +196,6 @@ exports.getAllUnits = async (req, res) => {
 exports.getUnitById = async (req, res) => {
     try {
         const unit = await findUnitById(req.params.id, populateOptions);
-
 
         return res.status(200).json({
             success: true,

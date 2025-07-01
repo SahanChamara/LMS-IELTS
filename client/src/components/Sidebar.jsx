@@ -133,13 +133,6 @@ const Sidebar = () => {
             <ScrollText size={16} />
             Terms
           </Link>
-          <Link
-            to="/accessibility"
-            className="flex items-center gap-2 hover:text-blue-400 dark:hover:text-blue-200 transition"
-          >
-            <Accessibility size={16} />
-            Accessibility
-          </Link>
         </div>
       
       </aside>
