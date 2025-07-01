@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
 
+
+
+
+
 const Leccorces = () => {
   const [units, setUnits] = useState([
     {
