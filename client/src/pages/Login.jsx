@@ -80,7 +80,7 @@ const Login = () => {
         <div className="relative z-20 w-full max-w-md px-4">
           <div className="bg-white/10 backdrop-blur-2xl p-8 rounded-2xl shadow-xl border border-white/20">
             <h2 className="text-3xl font-bold text-white mb-2 text-center">
-              University LMS
+              IELTS PRO
             </h2>
             <p className="text-sm text-gray-300 mb-8 text-center">
               Access your learning journey
