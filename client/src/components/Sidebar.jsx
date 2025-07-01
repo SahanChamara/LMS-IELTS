@@ -20,6 +20,8 @@ import {
   Percent,
   FileText,
   FilePen,
+  Globe2,
+  GlobeIcon,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -50,7 +52,7 @@ const Sidebar = () => {
           md:translate-x-0 md:static md:block`}
       >
         {/* Heading */}
-        <h1 className="text-2xl font-bold mb-10 mt-8">ILETS PRO</h1>
+        <h1 className="text-3xl font-bold mb-8 mt-2">IELTS PRO</h1>
         <ul className="space-y-6 text-sm font-semibold">
           {[
             {
@@ -77,6 +79,11 @@ const Sidebar = () => {
               icon: <Calendar size={20} />,
               label: "Calendar",
               to: "/calendar",
+            },
+            {
+              icon: <GlobeIcon size={20} />,
+              label: "Study Feed",
+              to: "/feed",
             },
             {
               icon: <Percent size={20} />,
@@ -132,13 +139,6 @@ const Sidebar = () => {
           >
             <ScrollText size={16} />
             Terms
-          </Link>
-          <Link
-            to="/accessibility"
-            className="flex items-center gap-2 hover:text-blue-400 dark:hover:text-blue-200 transition"
-          >
-            <Accessibility size={16} />
-            Accessibility
           </Link>
         </div>
       

@@ -1,4 +1,3 @@
-// src/pages/UnitDetails.jsx (partial update)
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -13,6 +12,7 @@ import DiscussionsTab from '../components/course/tabs/DiscussionsTab';
 import AssignmentsTab from '../components/course/tabs/AssignmentsTab';
 import OnlineSessionTab from '../components/course/tabs/OnlineSessionTabs';
 import { getUnitById } from '../service/unitsService';
+import { createLog } from '../service/logService';
 import StudentDiscussionsTab from '../components/course/tabs/StudentDiscussionTab';
 import InstructorDiscussionsTab from '../components/course/tabs/InstructorDisccussionTab';
 
@@ -24,7 +24,6 @@ const UnitDetails = () => {
   const [error, setError] = useState(null);
   const [assignments, setAssignments] = useState([]);
 
-  // Function to update lessons
   const setLessons = (newLessons) => {
     setUnitData((prev) => ({
       ...prev,
@@ -87,16 +86,20 @@ const UnitDetails = () => {
         const data = generateUnitData();
         setUnitData(data);
         setAssignments(data.assignments);
+
+        const userId = localStorage.getItem('userId') || 'anonymous';
+        await createLog(userId, id);
+
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching unit:', err.message);
+        console.error('Error fetching unit or creating log:', err.message, err);
         setError(err.message);
         setLoading(false);
       }
     };
 
     fetchUnitData();
-  }, [id]);  
+  }, [id]);
 
   if (loading) {
     return (
@@ -130,11 +133,10 @@ const UnitDetails = () => {
             <LessonsTab lessons={unitData.lessons} setLessons={setLessons} />
           )}
           {activeTab === 'Quizes' && <AssessmentsTab assessments={unitData.assessments} unitId={unitData.id} />}
-          {activeTab === 'exams' && <ExamsTab unitId={unitData.id} />}
-          {/* {activeTab === 'materials' && <MaterialsTab studyMaterials={unitData.studyMaterials} />} */}
+          {/* {activeTab === 'exams' && <ExamsTab exams={unitData.exams} />} */}
+          {activeTab === 'materials' && <MaterialsTab studyMaterials={unitData.studyMaterials} />}
           {/* {activeTab === 'discussions' && <DiscussionsTab discussions={unitData.discussions} />} */}
           {activeTab === 'discussions' && <StudentDiscussionsTab unitId={unitData.id} />}
-          {/* {activeTab === 'discussions' && <InstructorDiscussionsTab unitId={unitData.id} />} */}
           {activeTab === 'assignments' && (
             <AssignmentsTab
               assignments={assignments}

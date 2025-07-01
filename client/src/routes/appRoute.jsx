@@ -20,7 +20,9 @@ import Terms from "../pages/Terms";
 import Accessibility from "../pages/Accessibility";
 import CourseDetails from "../pages/unitDetails";
 import Exam from "../pages/Exam";
+import StudentFeed from "../pages/StudentFeed";
 import ExamDashboard from "../pages/Exam Pages/ExamDashboard";
+
 
 // routes 
 import ProtectedRoute from "./protectedRoute";
@@ -34,6 +36,8 @@ import Lassignments from "../pages/lecturepages/lassignments"
 import Leccalander  from "../pages/lecturepages/leccalnder"
 import Lecsettings from "../pages/lecturepages/lecsettings"
 import Lecdisccussion from "../pages/lecturepages/lecdiscussion";
+import InstructorFeed from "../pages/lecturepages/InstructorFeed";
+
 
 
 // Admin
@@ -43,6 +47,7 @@ import SuperAdminlecturercontrol from "../pages/Adminpages/adminlecturer"
 import SuperAdminnotifications from "../pages/Adminpages/adminnotifications"
 import IELTSLandingPage from "../pages/landing";
 import Exams from "../pages/exams";
+import AdminFeed from "../pages/Adminpages/AdminFeed";
 
 
 
@@ -64,6 +69,7 @@ const AppRoutes = () => {
         <Route path="/marks" element={<Marks />} />
         <Route path="/settings" element={<Tool />} />
         <Route path="/logout" element={<Logout />} />
+        <Route path="/feed" element={<StudentFeed/>} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/accessibility" element={<Accessibility />} />
