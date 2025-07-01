@@ -35,7 +35,7 @@ import Lstudents from "../pages/lecturepages/lstudents"
 import Lassignments from "../pages/lecturepages/lassignments"
 import Leccalander  from "../pages/lecturepages/leccalnder"
 import Lecsettings from "../pages/lecturepages/lecsettings"
-import Lecdisccussion from "../pages/lecturepages/lecdiscussion";
+
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
 
 
@@ -83,7 +83,7 @@ const AppRoutes = () => {
         <Route path="students/lecture" element={<Lstudents />} />`
         <Route path="/calendar/lecture" element={<Leccalander />} />
         <Route path="/settings/lecture" element={<Lecsettings />} />`
-        <Route path="/Discussion/lecture" element={<Lecdisccussion />} />`
+       
 
 
       </Route>
