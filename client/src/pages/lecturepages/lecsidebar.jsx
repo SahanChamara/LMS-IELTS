@@ -42,10 +42,16 @@ const Lecsidebar = ({ onLogout }) => {
       icon: <FiUsers className="text-lg" />,
     },
     {
+      name: "Discussion", // Fixed typo "calender" to "Calendar"
+      path: "/calendar/lecture", // Fixed path to "/calendar/lecture"
+      icon: <FiCalendar className="text-lg" />, // Proper calendar icon
+    },
+    {
       name: "Calendar", // Fixed typo "calender" to "Calendar"
       path: "/calendar/lecture", // Fixed path to "/calendar/lecture"
       icon: <FiCalendar className="text-lg" />, // Proper calendar icon
     },
+
     {
       name: "Settings",
       path: "/settings/lecture", // Fixed path to "/settings/lecture"
