@@ -67,7 +67,7 @@ const AppRoutes = () => {
         <Route path="/marks" element={<Marks />} />
         <Route path="/settings" element={<Tool />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/feed" element={<AdminFeed/>} />
+        <Route path="/feed" element={<StudentFeed/>} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/accessibility" element={<Accessibility />} />
