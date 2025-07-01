@@ -57,10 +57,6 @@ const CompletedCoursesCard = () => {
             whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
             transition={{ duration: 0.3 }}
           >
-            {/* Top: Title */}
-            <h3 className="text-md font-semibold text-gray-800 mb-3">{unit.title}</h3>
-            
-            {/* Middle: Course Image */}
             <div className="my-3 flex justify-center h-40 overflow-hidden rounded-md">
               <img 
                 src={unit.image || "https://via.placeholder.com/300"} 
@@ -68,20 +64,14 @@ const CompletedCoursesCard = () => {
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               />
             </div>
-            
-            {/* Details */}
-            <div className="text-sm text-gray-600 space-y-2 mb-3">
-              <p>📅 {new Date(date).toLocaleDateString()}</p>
-            </div>
-            
-            {/* Bottom: ID and Description with See Details button */}
             <div className="mt-auto space-y-3">
+              <h3 className="text-md font-semibold text-gray-800 mb-3">{unit.title}</h3>
               <p className="text-sm text-gray-600 line-clamp-2">{unit.description || "No description available"}</p>
               <div className="flex justify-end">
                 <Link
                   to={`/unit/${unit._id}`}
                   state={{ unit }}
-                  className="text-sm px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition duration-300 ease-in-out"
+                  className="text-sm px-3 py-1 bg-white text-blue-600 border border-blue-600 rounded-md shadow-sm hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out"
                 >
                   View
                 </Link>
