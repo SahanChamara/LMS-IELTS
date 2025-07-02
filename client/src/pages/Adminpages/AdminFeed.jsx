@@ -215,7 +215,7 @@ const renderPost = (post, showActions = false) => (
                 onClick={() => setActiveTab('approved')}
                 className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out ${
                   activeTab === 'approved'
-                    ? 'text-gray-900 font-semibold border-b-2 border-blue-500 bg-gray-200/60'
+                    ? 'text-gray-900 font-semibold border-b-2 border-green-800 bg-gray-200/60'
                     : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
                 }`}
                 role="tab"
@@ -229,7 +229,7 @@ const renderPost = (post, showActions = false) => (
                 onClick={() => setActiveTab('pending')}
                 className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out  ${
                   activeTab === 'pending'
-                    ? 'text-gray-900 font-semibold border-b-2 border-blue-500 bg-gray-200/60'
+                    ? 'text-gray-900 font-semibold border-b-2 border-green-800 bg-gray-200/60'
                     : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
                 }`}
                 role="tab"
