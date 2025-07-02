@@ -12,8 +12,8 @@ const Card = ({
   animate = true,
 }) => {
   const baseClasses = clsx(
-    "rounded-2xl border w-full shadow-sm transition-all duration-300 ease-in-out",
-    "bg-white text-gray-800 border-gray-300", // Light mode focused
+    "rounded-2xl  w-full shadow-sm transition-all duration-300 ease-in-out",
+    "bg-white text-gray-800", // Light mode focused
     {
       "h-96": variant === "institution",
     },

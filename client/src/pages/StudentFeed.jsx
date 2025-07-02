@@ -129,9 +129,6 @@ const StudentFeed = () => {
         <Card>
             <motion.div
                 className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
-                whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-                transition={{ duration: 0.3 }}
-                style={{ border: "none" }}
             >
                 <div className="flex items-center space-x-2">
                     <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
@@ -177,8 +174,6 @@ const StudentFeed = () => {
               <Card>
                 <motion.div
                   className="rounded-2xl shadow-sm  bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12"
-                  whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-                  transition={{ duration: 0.3 }}
                 >
                   <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -194,8 +189,6 @@ const StudentFeed = () => {
                 <Card key={post.id}>
                   <motion.div
                     className="rounded-2xl shadow-sm  bg-white/10 backdrop-blur-lg p-6"
-                    whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
-                    transition={{ duration: 0.3 }}
                   >
                     <div className="border-b border-gray-100 pb-3 mb-3">
                       <div className="flex items-center justify-between">
