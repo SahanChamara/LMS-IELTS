@@ -19,6 +19,7 @@ const QuizzesTab = ({ unit }) => {
     timePeriod: "",
     questionCount: "",
     questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
+    marksMode: "separate", // "total" or "separate" for marks distribution
   });
   // State for student selection
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -33,6 +34,8 @@ const QuizzesTab = ({ unit }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
   const [showErrorTooltip, setShowErrorTooltip] = useState(false);
+  // State for live preview modal visibility
+  const [showLivePreview, setShowLivePreview] = useState(false);
   const navigate = useNavigate();
 
   // Handle input changes for form fields
@@ -43,7 +46,6 @@ const QuizzesTab = ({ unit }) => {
       if (name === "questionCount" && value !== "") {
         const count = parseInt(value);
         if (!isNaN(count) && count > 0) {
-          // Initialize questions array based on questionCount
           updatedFormData.questions = Array.from({ length: count }, (_, i) => ({
             text: prev.questions[i]?.text || "",
             options: prev.questions[i]?.options || ["", "", "", ""],
@@ -52,6 +54,13 @@ const QuizzesTab = ({ unit }) => {
           }));
           setQuestionPage(1); // Reset to first question page
         }
+      } else if (name === "totalMarks" && value !== "") {
+        // Recalculate marks if totalMarks changes
+        const total = parseInt(value) || 0;
+        updatedFormData.questions = updatedFormData.questions.map((q, i) => ({
+          ...q,
+          marks: formData.marksMode === "total" && i === 0 ? total : q.marks,
+        }));
       }
       return updatedFormData;
     });
@@ -59,26 +68,63 @@ const QuizzesTab = ({ unit }) => {
   };
 
   // Handle question field changes
-  const handleQuestionChange = (field, value) => {
+  const handleQuestionChange = (field, value, index = null) => {
     const newQuestions = [...formData.questions];
-    newQuestions[questionPage - 1] = { ...newQuestions[questionPage - 1], [field]: value };
+    const currentQ = newQuestions[questionPage - 1];
+    if (field === "options") {
+      const newOptions = [...currentQ.options];
+      newOptions[index] = value;
+      currentQ.options = newOptions;
+    } else if (field === "correctOption") {
+      currentQ.correctOption = value;
+    } else if (field === "marks") {
+      currentQ.marks = value;
+      if (formData.marksMode === "total" && questionPage === 1) {
+        // Distribute total marks to all questions if in total mode
+        const total = parseInt(value) || 0;
+        newQuestions.forEach((q, i) => {
+          if (i > 0) q.marks = (total / formData.questionCount).toFixed(2);
+        });
+      }
+    } else {
+      currentQ[field] = value;
+    }
     setFormData((prev) => ({ ...prev, questions: newQuestions }));
     setShowErrorTooltip(false);
   };
 
+  // Handle marks mode change
+  const handleMarksModeChange = (e) => {
+    const mode = e.target.value;
+    setFormData((prev) => {
+      const updatedFormData = { ...prev, marksMode: mode };
+      if (mode === "total" && prev.totalMarks && questionPage === 1) {
+        const total = parseInt(prev.totalMarks) || 0;
+        updatedFormData.questions = updatedFormData.questions.map((q, i) => ({
+          ...q,
+          marks: i === 0 ? total : (total / prev.questionCount).toFixed(2),
+        }));
+      } else if (mode === "separate") {
+        updatedFormData.questions = updatedFormData.questions.map((q) => ({
+          ...q,
+          marks: q.marks || "",
+        }));
+      }
+      return updatedFormData;
+    });
+  };
+
   // Handle student selection
   const handleSelectAllStudents = () => {
-    // Placeholder: Fetch all students from backend
     setSelectedStudents(["Student1", "Student2", "Student3"]); // Simulated
   };
   const handleSearchStudent = (e) => {
     const searchTerm = e.target.value;
-    // Placeholder: Filter students by ID from backend
     setSelectedStudents([`Student_${searchTerm}`]); // Simulated
   };
 
-  // Handle adding a new quiz
-  const handleAddQuiz = () => {
+  // Handle adding a new quiz (API simulation)
+  const handleAddQuiz = async () => {
     if (!formData.title || !formData.instructions || !formData.passingScore || !formData.dueDate ||
         !formData.totalMarks || !formData.caMarksPercentage || !formData.timePeriod ||
         !formData.questionCount || formData.questions.some(q => !q.text || q.options.some(o => !o) || !q.marks)) {
@@ -110,19 +156,16 @@ const QuizzesTab = ({ unit }) => {
       answeredStudents: Math.floor(Math.random() * 20), // Simulated data
     };
 
-    const data = new FormData();
-    data.append("unitId", unit.id || unit.code);
-    Object.entries(newQuiz).forEach(([key, value]) => {
-      if (key === "questions") {
-        data.append("questions", JSON.stringify(value));
-      } else {
-        data.append(key, value);
-      }
-    });
-
-    // Simulate API call
-    setTimeout(() => {
-      setQuizzes([...quizzes, newQuiz]);
+    try {
+      // Simulate API call to add quiz
+      const response = await fetch("/api/quizzes", {
+        method: "POST",
+        body: JSON.stringify(newQuiz),
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to add quiz");
+      const savedQuiz = await response.json();
+      setQuizzes([...quizzes, savedQuiz]);
       setFormMode(null);
       setIsLoading(false);
       setFormData({
@@ -136,13 +179,17 @@ const QuizzesTab = ({ unit }) => {
         timePeriod: "",
         questionCount: "",
         questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
+        marksMode: "separate",
       });
       setSelectedStudents([]);
       setToast({ message: "Quiz added successfully", type: "success", visible: true });
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      setToast({ message: "Error adding quiz", type: "error", visible: true });
+    }
   };
 
-  // Handle editing an existing quiz
+  // Handle editing an existing quiz (API simulation)
   const handleEditQuiz = (quiz) => {
     setFormMode(quiz.id);
     setFormData({
@@ -152,8 +199,8 @@ const QuizzesTab = ({ unit }) => {
     setQuestionPage(1); // Reset to first question page
   };
 
-  // Handle saving an edited quiz
-  const handleSaveQuiz = () => {
+  // Handle saving an edited quiz (API simulation)
+  const handleSaveQuiz = async () => {
     if (!formData.title || !formData.instructions || !formData.passingScore || !formData.dueDate ||
         !formData.totalMarks || !formData.caMarksPercentage || !formData.timePeriod ||
         !formData.questionCount || formData.questions.some(q => !q.text || q.options.some(o => !o) || !q.marks)) {
@@ -185,19 +232,16 @@ const QuizzesTab = ({ unit }) => {
       answeredStudents: formData.answeredStudents || Math.floor(Math.random() * 20), // Simulated data
     };
 
-    const data = new FormData();
-    data.append("unitId", unit.id || unit.code);
-    Object.entries(updatedQuiz).forEach(([key, value]) => {
-      if (key === "questions") {
-        data.append("questions", JSON.stringify(value));
-      } else {
-        data.append(key, value);
-      }
-    });
-
-    // Simulate API call
-    setTimeout(() => {
-      setQuizzes(quizzes.map((q) => (q.id === formMode ? updatedQuiz : q)));
+    try {
+      // Simulate API call to update quiz
+      const response = await fetch(`/api/quizzes/${formMode}`, {
+        method: "PUT",
+        body: JSON.stringify(updatedQuiz),
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to update quiz");
+      const savedQuiz = await response.json();
+      setQuizzes(quizzes.map((q) => (q.id === formMode ? savedQuiz : q)));
       setFormMode(null);
       setIsLoading(false);
       setFormData({
@@ -211,21 +255,30 @@ const QuizzesTab = ({ unit }) => {
         timePeriod: "",
         questionCount: "",
         questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
+        marksMode: "separate",
       });
       setSelectedStudents([]);
       setToast({ message: "Quiz updated successfully", type: "success", visible: true });
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      setToast({ message: "Error updating quiz", type: "error", visible: true });
+    }
   };
 
-  // Handle deleting a quiz
-  const handleDeleteQuiz = (quizId) => {
+  // Handle deleting a quiz (API simulation)
+  const handleDeleteQuiz = async (quizId) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Simulate API call to delete quiz
+      const response = await fetch(`/api/quizzes/${quizId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete quiz");
       setQuizzes(quizzes.filter((q) => q.id !== quizId));
       setIsLoading(false);
       setToast({ message: "Quiz deleted successfully", type: "success", visible: true });
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      setToast({ message: "Error deleting quiz", type: "error", visible: true });
+    }
   };
 
   // Handle cancel for add/edit form
@@ -242,6 +295,7 @@ const QuizzesTab = ({ unit }) => {
       timePeriod: "",
       questionCount: "",
       questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
+      marksMode: "separate",
     });
     setSelectedStudents([]);
     setShowErrorTooltip(false);
@@ -307,6 +361,11 @@ const QuizzesTab = ({ unit }) => {
     }
   }, [toast.visible]);
 
+  // Calculate total marks dynamically
+  const calculateTotalMarks = () => {
+    return formData.questions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+  };
+
   return (
     <div className="bg-gray-50 p-6 rounded-lg w-full">
       <div className="flex justify-between items-center mb-6">
@@ -340,16 +399,17 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
-      {/* Add/Edit Quiz Form */}
+      {/* Add/Edit Quiz Form within Full-Width Card */}
       {formMode && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6 transition-all duration-300 ease-in-out">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6 transition-all duration-300 ease-in-out max-w-7xl mx-auto w-full">
           <h4 className="text-lg font-medium text-neutral-900 mb-4">
             {formMode === "add" ? "Add New Quiz" : "Edit Quiz"}
           </h4>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
+          <div className="space-y-6">
+            {/* Quiz Details Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="title" className="block text-sm font-medium text-neutral-700 mb-1">
                   Quiz Title
                 </label>
                 <input
@@ -358,14 +418,14 @@ const QuizzesTab = ({ unit }) => {
                   type="text"
                   value={formData.title}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., What is Node.js"
                   aria-label="Quiz Title"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="description" className="block text-sm font-medium text-neutral-700 mb-1">
                   Description
                 </label>
                 <textarea
@@ -374,14 +434,14 @@ const QuizzesTab = ({ unit }) => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={2}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., Test your Node.js knowledge"
                   aria-label="Quiz Description"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="instructions" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="instructions" className="block text-sm font-medium text-neutral-700 mb-1">
                   Instructions
                 </label>
                 <textarea
@@ -390,14 +450,14 @@ const QuizzesTab = ({ unit }) => {
                   value={formData.instructions}
                   onChange={handleInputChange}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., You can't go back after submitting"
                   aria-label="Quiz Instructions"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="passingScore" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="passingScore" className="block text-sm font-medium text-neutral-700 mb-1">
                   Passing Score (%)
                 </label>
                 <input
@@ -408,14 +468,14 @@ const QuizzesTab = ({ unit }) => {
                   max="100"
                   value={formData.passingScore}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 75"
                   aria-label="Passing Score"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="dueDate" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="dueDate" className="block text-sm font-medium text-neutral-700 mb-1">
                   Due Date
                 </label>
                 <input
@@ -424,13 +484,13 @@ const QuizzesTab = ({ unit }) => {
                   type="date"
                   value={formData.dueDate}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2"
                   aria-label="Due Date"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="totalMarks" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="totalMarks" className="block text-sm font-medium text-neutral-700 mb-1">
                   Total Marks
                 </label>
                 <input
@@ -440,14 +500,14 @@ const QuizzesTab = ({ unit }) => {
                   min="0"
                   value={formData.totalMarks}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 100"
                   aria-label="Total Marks"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="caMarksPercentage" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="caMarksPercentage" className="block text-sm font-medium text-neutral-700 mb-1">
                   CA Marks Percentage (%)
                 </label>
                 <input
@@ -458,14 +518,14 @@ const QuizzesTab = ({ unit }) => {
                   max="100"
                   value={formData.caMarksPercentage}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 20"
                   aria-label="CA Marks Percentage"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="timePeriod" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="timePeriod" className="block text-sm font-medium text-neutral-700 mb-1">
                   Time Period
                 </label>
                 <input
@@ -474,14 +534,14 @@ const QuizzesTab = ({ unit }) => {
                   type="text"
                   value={formData.timePeriod}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 30 minutes"
                   aria-label="Time Period"
                   tabIndex={0}
                 />
               </div>
               <div>
-                <label htmlFor="questionCount" className="block text-sm font-medium text-neutral-700">
+                <label htmlFor="questionCount" className="block text-sm font-medium text-neutral-700 mb-1">
                   Question Count
                 </label>
                 <input
@@ -491,69 +551,227 @@ const QuizzesTab = ({ unit }) => {
                   min="1"
                   value={formData.questionCount}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 5"
                   aria-label="Question Count"
                   tabIndex={0}
                 />
               </div>
-              {/* Horizontal Question Edit Section */}
-              <div className="w-full overflow-x-auto mt-4">
-                <div className="flex space-x-4 pb-4">
-                  <div className="min-w-[300px] bg-white p-4 rounded-lg shadow-md">
-                    <h5 className="text-sm font-medium text-neutral-700">Question {questionPage}</h5>
-                    <textarea
-                      name="text"
-                      value={currentQuestion.text}
-                      onChange={(e) => handleQuestionChange("text", e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                      placeholder="e.g., What is Node.js?"
-                      aria-label={`Question ${questionPage} text`}
-                      tabIndex={0}
-                    />
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-neutral-700">Options (comma-separated)</label>
+            </div>
+
+            {/* Question Edit Section */}
+            <div className="bg-gray-100 p-6 rounded-lg">
+              <h5 className="text-md font-medium text-neutral-900 mb-4">Question {questionPage} Details</h5>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="questionText" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Question Text
+                  </label>
+                  <textarea
+                    id="questionText"
+                    name="text"
+                    value={currentQuestion.text}
+                    onChange={(e) => handleQuestionChange("text", e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
+                    placeholder="e.g., What is GitHub used for?"
+                    aria-label={`Question ${questionPage} text`}
+                    tabIndex={0}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Options</label>
+                  {currentQuestion.options.map((option, index) => (
+                    <div key={index} className="flex items-center space-x-2 mb-2">
                       <input
-                        value={currentQuestion.options.join(", ")}
-                        onChange={(e) => handleQuestionChange("options", e.target.value.split(",").map(opt => opt.trim()))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                        placeholder="e.g., A, B, C, D"
-                        aria-label={`Question ${questionPage} options`}
+                        type="radio"
+                        name={`correctOption-${questionPage}`}
+                        checked={currentQuestion.correctOption === index}
+                        onChange={() => handleQuestionChange("correctOption", index)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        aria-label={`Select option ${index + 1} as correct answer`}
+                        tabIndex={0}
+                      />
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => handleQuestionChange("options", e.target.value, index)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
+                        placeholder={`Option ${index + 1}`}
+                        aria-label={`Option ${index + 1} text`}
                         tabIndex={0}
                       />
                     </div>
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-neutral-700">Correct Option (0-3)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="3"
-                        value={currentQuestion.correctOption}
-                        onChange={(e) => handleQuestionChange("correctOption", parseInt(e.target.value))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                        placeholder="e.g., 0"
-                        aria-label={`Question ${questionPage} correct option`}
-                        tabIndex={0}
-                      />
-                    </div>
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-neutral-700">Marks</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={currentQuestion.marks}
-                        onChange={(e) => handleQuestionChange("marks", e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                        placeholder="e.g., 20"
-                        aria-label={`Question ${questionPage} marks`}
-                        tabIndex={0}
-                      />
-                    </div>
-                  </div>
+                  ))}
+                </div>
+                <div>
+                  <label htmlFor="correctAnswer" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Correct Answer
+                  </label>
+                  <input
+                    id="correctAnswer"
+                    type="text"
+                    value={currentQuestion.options[currentQuestion.correctOption] || ""}
+                    readOnly
+                    className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-neutral-900 p-2"
+                    aria-label={`Correct answer for question ${questionPage}`}
+                    tabIndex={0}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="questionMarks" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Marks
+                  </label>
+                  <input
+                    id="questionMarks"
+                    type="number"
+                    min="0"
+                    max={formData.marksMode === "separate" ? formData.totalMarks : undefined}
+                    value={currentQuestion.marks}
+                    onChange={(e) => handleQuestionChange("marks", e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
+                    placeholder="e.g., 20"
+                    aria-label={`Question ${questionPage} marks`}
+                    tabIndex={0}
+                  />
                 </div>
               </div>
               {/* Question Pagination */}
               {formData.questionCount && (
+                <div className="flex justify-center items-center space-x-2 mt-6">
+                  <button
+                    onClick={handlePreviousQuestionPage}
+                    disabled={questionPage === 1}
+                    className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Previous question"
+                    tabIndex={0}
+                  >
+                    Back
+                  </button>
+                  {Array.from({ length: totalQuestionPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleQuestionPageChange(page)}
+                      className={`px-3 py-1 rounded-lg transition-all duration-200 text-sm ${
+                        questionPage === page
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-neutral-700 hover:bg-gray-300"
+                      }`}
+                      aria-label={`Question page ${page}`}
+                      aria-current={questionPage === page ? "page" : undefined}
+                      tabIndex={0}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={handleNextQuestionPage}
+                    disabled={questionPage === totalQuestionPages}
+                    className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Next question"
+                    tabIndex={0}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Marks Mode Selection */}
+            <div className="bg-gray-100 p-6 rounded-lg">
+              <label htmlFor="marksMode" className="block text-sm font-medium text-neutral-700 mb-1">
+                Marks Distribution
+              </label>
+              <select
+                id="marksMode"
+                name="marksMode"
+                value={formData.marksMode}
+                onChange={handleMarksModeChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2"
+                aria-label="Select marks distribution mode"
+                tabIndex={0}
+              >
+                <option value="separate">Separate marks per question</option>
+                <option value="total">Total marks for all questions</option>
+              </select>
+              <p className="text-sm text-neutral-600 mt-2">
+                Maximum Marks Limit: {formData.totalMarks || 0} (Total marks across all questions)
+              </p>
+              <p className="text-sm text-neutral-600">
+                Current Total Marks: {calculateTotalMarks()}
+              </p>
+            </div>
+
+            {/* Live Preview Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowLivePreview(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 hover:scale-105 transition-all duration-200 text-sm font-medium"
+                disabled={isLoading || !formData.questionCount}
+                aria-label="Show live preview"
+                tabIndex={0}
+              >
+                Live Preview
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4 mt-6">
+              <button
+                onClick={formMode === "add" ? handleAddQuiz : handleSaveQuiz}
+                className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
+                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={isLoading}
+                aria-label={formMode === "add" ? "Save new quiz" : "Save quiz changes"}
+                tabIndex={0}
+              >
+                {isLoading ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
+                disabled={isLoading}
+                aria-label="Cancel"
+                tabIndex={0}
+              >
+                Cancel
+              </button>
+            </div>
+            {showErrorTooltip && (
+              <div className="mt-2 text-red-600 text-xs italic">Please fill all fields correctly</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Live Preview Modal */}
+      {showLivePreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h4 className="text-lg font-medium text-neutral-900 mb-4">Live Preview</h4>
+            <div className="space-y-4">
+              {formData.questions.map((q, idx) => (
+                idx + 1 === questionPage && (
+                  <div key={idx}>
+                    <p className="text-base text-neutral-900 mb-2"><strong>Question {idx + 1}:</strong> {q.text || "N/A"}</p>
+                    {q.options.map((option, i) => (
+                      <label key={i} className="flex items-center space-x-2 mb-2">
+                        <input
+                          type="radio"
+                          name={`preview-${idx}`}
+                          checked={q.correctOption === i}
+                          disabled
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <span className="text-base text-neutral-600">{option || "N/A"}</span>
+                      </label>
+                    ))}
+                    <p className="text-base text-neutral-600"><strong>Marks:</strong> {q.marks || "N/A"}</p>
+                  </div>
+                )
+              ))}
+              {/* Pagination inside modal */}
+              {totalQuestionPages > 1 && (
                 <div className="flex justify-center items-center space-x-2 mt-4">
                   <button
                     onClick={handlePreviousQuestionPage}
@@ -592,44 +810,17 @@ const QuizzesTab = ({ unit }) => {
                 </div>
               )}
             </div>
-            {/* Large Preview Card for Current Question */}
-            <div className="flex items-start">
-              <div className="bg-gray-50 p-6 rounded-lg shadow-md w-full min-w-[350px]">
-                <h5 className="text-sm font-medium text-neutral-700 mb-4">Question {questionPage} Preview</h5>
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <p className="text-base text-neutral-900 mb-3"><strong>Text:</strong> {currentQuestion.text || "N/A"}</p>
-                  <p className="text-base text-neutral-600 mb-3"><strong>Options:</strong> {currentQuestion.options.join(", ") || "N/A"}</p>
-                  <p className="text-base text-neutral-600 mb-3"><strong>Correct Option:</strong> {currentQuestion.correctOption !== undefined ? currentQuestion.correctOption : "N/A"}</p>
-                  <p className="text-base text-neutral-600"><strong>Marks:</strong> {currentQuestion.marks || "N/A"}</p>
-                </div>
-              </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowLivePreview(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
+                aria-label="Close live preview"
+                tabIndex={0}
+              >
+                Back
+              </button>
             </div>
           </div>
-          <div className="flex space-x-4 mt-6">
-            <button
-              onClick={formMode === "add" ? handleAddQuiz : handleSaveQuiz}
-              className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
-                isLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={isLoading}
-              aria-label={formMode === "add" ? "Save new quiz" : "Save quiz changes"}
-              tabIndex={0}
-            >
-              {isLoading ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
-              disabled={isLoading}
-              aria-label="Cancel"
-              tabIndex={0}
-            >
-              Cancel
-            </button>
-          </div>
-          {showErrorTooltip && (
-            <div className="mt-2 text-red-600 text-xs italic">Please fill all fields correctly</div>
-          )}
         </div>
       )}
 
@@ -694,7 +885,7 @@ const QuizzesTab = ({ unit }) => {
               </tr>
             </thead>
             <tbody>
-              {currentQuizzes.map((quiz) => (
+              {quizzes.slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage).map((quiz) => (
                 <tr
                   key={quiz.id}
                   className="border-t hover:bg-gray-50 transition-all duration-200"
@@ -753,7 +944,7 @@ const QuizzesTab = ({ unit }) => {
       {quizzes.length > quizzesPerPage && (
         <div className="mt-6 flex justify-center items-center space-x-2">
           <button
-            onClick={handlePreviousPage}
+            onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 1}
             className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Previous page"
@@ -761,10 +952,10 @@ const QuizzesTab = ({ unit }) => {
           >
             Back
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {Array.from({ length: Math.ceil(quizzes.length / quizzesPerPage) }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              onClick={() => handlePageChange(page)}
+              onClick={() => setCurrentPage(page)}
               className={`px-3 py-1 rounded-lg transition-all duration-200 text-sm ${
                 currentPage === page
                   ? "bg-blue-600 text-white"
@@ -778,8 +969,8 @@ const QuizzesTab = ({ unit }) => {
             </button>
           ))}
           <button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === Math.ceil(quizzes.length / quizzesPerPage)}
             className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Next page"
             tabIndex={0}
