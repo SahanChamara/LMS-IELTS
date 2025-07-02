@@ -153,7 +153,7 @@ const login = async (req, res) => {
             expiresIn: "1h",
         });*/
 
-        const accessToken = generateToken(payload, "15m");
+        const accessToken = generateToken(payload, "2m");
         const refreshToken = generateToken(payload, "7d");
 
         user.refreshToken = refreshToken
@@ -168,7 +168,7 @@ const login = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 5 * 60 * 1000
+            maxAge: 2 * 60 * 1000
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -558,13 +558,13 @@ const refreshToken = async (req,res) => {
         }
 
         const payload = {id: user._id, role: user.role || decoded.role};
-        const newAccessToken = generateToken(payload, "15m");
+        const newAccessToken = generateToken(payload, "2m");
 
         res.cookie("accessToken", newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 5 * 60 * 1000 , // 15 minutes
+            maxAge: 2 * 60 * 1000 , // 15 minutes
         });
 
         res.success(

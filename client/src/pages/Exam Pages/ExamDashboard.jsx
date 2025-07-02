@@ -93,7 +93,7 @@ const ExamDashboard = () => {
     setLoading(false);
   };
 
-  const availableExams = exams.filter((exam) => exam.available);
+  //const availableExams = exams.filter((exam) => exam.available);
 
   if (showIntro && selectedExam) {
     return <ExamIntro exam={selectedExam} onBack={() => setShowIntro(false)} />;
@@ -122,9 +122,9 @@ const ExamDashboard = () => {
             <div className="text-center py-12">
               <p className="text-lg text-gray-600">Loading exams...</p>
             </div>
-          ) : availableExams.length > 0 ? (
+          ) : exams.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableExams.map((exam) => (
+              {exams.map((exam) => (
                 <div
                   key={exam.id}
                   className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
