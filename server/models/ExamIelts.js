@@ -33,7 +33,7 @@ const ExamSchema = new Schema({
         of: Schema.Types.Mixed,
         default: {version: 1, category: "IELTS"}, // Extensible metadata
     },
-    sections: [{type: Schema.Types.ObjectId, ref: "Section"}],
+    sections: [{type: Schema.Types.ObjectId, ref: "Sections"}],
     createdAt: {type: Date, default: Date.now},
     updatedAt: {type: Date, default: Date.now},
 });
@@ -42,7 +42,7 @@ const ExamSchema = new Schema({
 const QuestionSchema = new Schema({
     sectionId: {
         type: Schema.Types.ObjectId,
-        ref: "Section",
+        ref: "Sections",
         required: true,
         index: true, // Index for efficient population
     },
@@ -74,7 +74,7 @@ const QuestionSchema = new Schema({
 const SectionSchema = new Schema({
     examId: {
         type: Schema.Types.ObjectId,
-        ref: "Exam",
+        ref: "ExamIelts",
         required: true,
         index: true, // Index for efficient population
     },

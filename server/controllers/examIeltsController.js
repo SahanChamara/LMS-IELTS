@@ -184,3 +184,76 @@ exports.createQuestion = async (req, res) => {
         });
     }
 }
+
+// Get Exam by id
+// user click start exam now button and calling this api...
+exports.getExamById = async (req, res) => {
+    const {examId} = req.params;
+
+    try {
+        const exam = await ExamIelts.findById(examId)
+            .populate("sections")
+            .populate({
+                path: "sections",
+                populate: {path: "questions"},
+            });
+
+        if (!exam) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                success: false,
+                message: "Exam Not Found",
+            });
+        }
+
+        return res.status(HttpStatus.OK).json({
+            success: true,
+            data: exam,
+            message: "Exam retrieved successfully",
+        });
+    } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Error retrieving exam",
+            error: error.message,
+        });
+    }
+};
+
+// Update Exam Status
+exports.updateExamStatus = async (req, res) => {
+    const {examId} = req.params;
+    const {status, available} = req.body;
+
+    try {
+        const exam = await ExamIelts.findById(examId);
+        if (!exam) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                success: false,
+                message: "Exam not found",
+            });
+        }
+
+        if (status && !["draft", "published", "archived"].includes(status)) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                success: false,
+                message: "Invalid status value",
+            });
+        }
+
+        exam.status = status || exam.status;
+        exam.available = available !== undefined ? available : exam.available;
+        await exam.save();
+
+        return res.status(HttpStatus.OK).json({
+            success: true,
+            data: exam,
+            message: "Exam status updated successfully",
+        });
+    } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Error updating exam status",
+            error: error.message,
+        });
+    }
+}
