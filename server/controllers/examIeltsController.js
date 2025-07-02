@@ -113,3 +113,74 @@ exports.createSection = async (req, res) => {
         });
     }
 };
+
+// Question Create
+exports.createQuestion = async (req, res) => {
+    const {sectionId, type, question, options, passage, answer, wordLimit, points, order} = req.body;
+
+    const requiredFields = ["sectionId", "type", "question", "points", "order"];
+    const missingFields = validateRequireFields(requiredFields, req.body);
+    if (missingFields) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+            success: false,
+            message: `Missing required fields: ${missingFields.join(", ")}`,
+        });
+    }
+
+    // Validating the specific types
+    if (["mcq", "matching"].includes(type) && (!options || !Array.isArray(options) || options.length === 0)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+            success: false,
+            message: "Options are required for mcq or matching type",
+        });
+    }
+    if (type === "essay" && wordLimit <= 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+            success: false,
+            message: "Word limit must be greater than 0 for essay type",
+        });
+    }
+
+    try {
+        const sectionExists = await Sections.findById(sectionId);
+        if (!sectionExists) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                success: false,
+                message: "Section not found",
+            });
+        }
+
+        const questionDoc = new Question({
+            sectionId,
+            type,
+            question,
+            options,
+            passage,
+            answer,
+            wordLimit,
+            points,
+            order,
+        });
+
+        await questionDoc.save();
+
+        sectionExists.questions.push(questionDoc._id);
+        await sectionExists.save();
+
+        const exam = await ExamIelts.findById(sectionExists.examId);
+        exam.totalQuestions += 1;
+        await exam.save();
+
+        return res.status(HttpStatus.CREATED).json({
+            success: true,
+            data: questionDoc,
+            message: "Question created successfully",
+        });
+    } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Error creating question",
+            error: error.message,
+        });
+    }
+}
