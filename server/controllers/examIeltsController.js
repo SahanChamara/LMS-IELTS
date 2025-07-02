@@ -257,3 +257,37 @@ exports.updateExamStatus = async (req, res) => {
         });
     }
 }
+
+// Get all exams with status "published" and available true
+exports.getAllPublishedExams = async (req, res) => {
+    try {
+        const exams = await ExamIelts.find({
+            status: "published",
+            available: true,
+        })
+/*            .populate("sections")
+            .populate({
+                path: "sections",
+                populate: { path: "questions" },
+            });*/
+
+        if (!exams || exams.length === 0) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                success: false,
+                message: "No published and available exams found",
+            });
+        }
+
+        return res.status(HttpStatus.OK).json({
+            success: true,
+            data: exams,
+            message: "Published and available exams retrieved successfully",
+        });
+    } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Error retrieving published exams",
+            error: error.message,
+        });
+    }
+};
