@@ -85,6 +85,7 @@ const AppRoutes = () => {
       </Route>
       <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
          <Route path="/dashboard/admin" element={<SuperAdmin/>} />
+         <Route path="/feed/admin" element={<AdminFeed/>} />
          <Route path="/students/admin" element={<SuperAdminstudentcontrol/>} />
          <Route path="/lectures/admin" element={<SuperAdminlecturercontrol/>} />
          <Route path="/notifications/admin"  element={<SuperAdminnotifications/>} />

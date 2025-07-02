@@ -7,6 +7,7 @@ import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/card';
+import Adminsidebar from './Adminsidebars';
 
 const AdminFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -199,7 +200,7 @@ const renderPost = (post, showActions = false) => (
   return (
     <div className="flex h-screen bg-gray-50 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
-        <Sidebar />
+        <Adminsidebar />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-3xl mx-auto">
