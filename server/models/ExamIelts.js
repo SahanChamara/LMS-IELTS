@@ -100,7 +100,6 @@ const SectionSchema = new Schema({
     }
 );
 
-
 const ExamIelts = mongoose.model("ExamIelts", ExamSchema);
 const Sections = mongoose.model("Sections", SectionSchema);
 const Question = mongoose.model("Question", QuestionSchema);
