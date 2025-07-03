@@ -4,10 +4,10 @@ const postController = require('../controllers/postController');
 const authMiddleware = require('../middleware/auth');
 
 // Create a new post (accessible to students, instructors, and admins)
-router.post('/', authMiddleware(['Student', 'Instructor', 'Admin']), postController.createPost);
+router.post('/', authMiddleware(['Student', 'Instructor', 'SuperAdmin']), postController.createPost);
 
 // Approve or reject a post (admin only)
-router.put('/approve/:postId', authMiddleware(['admin']), postController.approvePost);
+router.put('/approve/:postId', authMiddleware(['SuperAdmin']), postController.approvePost);
 
 // Delete a post (admin or post owner)
 router.delete('/:postId', authMiddleware(['admin', 'student', 'instructor']), postController.deletePost);
