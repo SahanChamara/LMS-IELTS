@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import QuizPreview from "./QuizPreview";
 import { User , Edit, Trash2 } from 'lucide-react';
 
+
 const QuizzesTab = ({ unit }) => {
   const [quizzes, setQuizzes] = useState(unit.quizzes || []);
   const [formMode, setFormMode] = useState(null);
@@ -720,41 +721,59 @@ const QuizzesTab = ({ unit }) => {
               )}
             </div>
 
-            {/* Preview Section */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h5 className="text-md font-medium text-neutral-900 mb-4">
-                Question {questionPage} Preview
-              </h5>
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <p className="text-base text-neutral-900 mb-3">
-                  <strong>Question:</strong> {currentQuestion.text || "Question text not provided"}
-                </p>
-                {currentQuestion.options.map((option, index) => (
-                  <label key={index} className="flex items-center space-x-2 mb-2">
-                    <input
-                      type="radio"
-                      name="quiz"
-                      value={index}
-                      checked={selectedOption === index}
-                      onChange={() => setSelectedOption(index)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      aria-label={`Option ${index + 1}`}
-                    />
-                    <span className="text-base text-neutral-600">
-                      {option || "Option not provided"}
-                      {currentQuestion.correctOption === index && (
-                        <span className="text-green-600 ml-2">✔</span>
-                      )}
-                    </span>
-                  </label>
-                ))}
-                {marksDistribution === "individual" && (
-                  <p className="text-base text-neutral-600">
-                    <strong>Marks:</strong> {currentQuestion.marks || "Not assigned"}
-                  </p>
-                )}
-              </div>
-            </div>
+           {/* Preview Section */}
+<div className="bg-gray-50 p-6 rounded-lg">
+  <h5 className="text-md font-medium text-neutral-900 mb-4">
+    Question {questionPage} Preview
+  </h5>
+  <div className="bg-white p-6 rounded-lg border border-gray-200">
+    <p className="text-base text-neutral-900 mb-3">
+      <strong>Question:</strong> {currentQuestion.text || "Question text not provided"}
+    </p>
+
+    {currentQuestion.options.map((option, index) => (
+      <label key={index} className="flex items-center space-x-2 mb-2">
+        <input
+          type="radio"
+          name="quiz"
+          value={index}
+          checked={selectedOption === index}
+          onChange={() => setSelectedOption(index)}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+          aria-label={`Option ${index + 1}`}
+        />
+        <span className="text-base text-neutral-600">
+          {option || "Option not provided"}
+          {currentQuestion.correctOption === index && (
+            <span className="text-green-600 ml-2 font-semibold">(Correct)</span>
+          )}
+        </span>
+      </label>
+    ))}
+
+    {marksDistribution === "individual" && (
+      <div className="mt-4 text-right">
+        <p
+          className={`text-base ${
+            currentQuestion.marks > currentQuestion.maxMarks
+              ? "text-red-600 font-semibold"
+              : "text-neutral-600"
+          }`}
+        >
+          <strong>Marks and Details:</strong>{" "}
+          {currentQuestion.marks !== undefined ? currentQuestion.marks : "Not assigned"}
+        </p>
+
+        {currentQuestion.marks > currentQuestion.maxMarks && (
+          <p className="text-sm text-red-500 font-medium mt-1">
+            ⚠ Assigned marks exceed maximum allowed ({currentQuestion.maxMarks}).
+          </p>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
 
             {/* Quiz Preview Component */}
             <QuizPreview
