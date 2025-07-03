@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Component to manage quizzes with a table-based lecturer interface
 const QuizzesTab = ({ unit }) => {
-  // State for quizzes list (default to unit.quizzes or empty array)
+  // State declarations
   const [quizzes, setQuizzes] = useState(unit.quizzes || []);
-  // State for form visibility and mode (null = hidden, "add" or quiz ID = visible)
   const [formMode, setFormMode] = useState(null);
-  // State for form data including quiz details and current question page
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -20,21 +17,20 @@ const QuizzesTab = ({ unit }) => {
     questionCount: "",
     questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
   });
-  // State for student selection
   const [selectedStudents, setSelectedStudents] = useState([]);
-  // State for table sorting, filtering, and pagination
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" });
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const quizzesPerPage = 5; // Adjust as needed
-  // State for question pagination
   const [questionPage, setQuestionPage] = useState(1);
-  // State for loading and toast notifications
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
   const [showErrorTooltip, setShowErrorTooltip] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [marksDistribution, setMarksDistribution] = useState("individual"); // "individual" or "total"
+  const [isQuizComplete, setIsQuizComplete] = useState(false); // Tracks quiz completion
+  const [showQuizModel, setShowQuizModel] = useState(false); // Controls quiz model visibility
   const navigate = useNavigate();
+  const quizzesPerPage = 5;
 
   // Handle input changes for form fields
   const handleInputChange = (e) => {
@@ -50,7 +46,7 @@ const QuizzesTab = ({ unit }) => {
             correctOption: prev.questions[i]?.correctOption || 0,
             marks: prev.questions[i]?.marks || "",
           }));
-          setQuestionPage(1); // Reset to first question page
+          setQuestionPage(1);
         }
       }
       return updatedFormData;
@@ -77,28 +73,63 @@ const QuizzesTab = ({ unit }) => {
 
   // Handle student selection
   const handleSelectAllStudents = () => {
-    setSelectedStudents(["Student1", "Student2", "Student3"]); // Simulated
+    setSelectedStudents(["Student1", "Student2", "Student3"]);
   };
+
   const handleSearchStudent = (e) => {
     const searchTerm = e.target.value;
-    setSelectedStudents([`Student_${searchTerm}`]); // Simulated
+    setSelectedStudents([`Student_${searchTerm}`]);
+  };
+
+  // Calculate total marks from questions
+  const calculateTotalQuestionMarks = () => {
+    return formData.questions.reduce((sum, q) => sum + (Number(q.marks) || 0), 0);
   };
 
   // Handle adding a new quiz
   const handleAddQuiz = () => {
-    if (!formData.title || !formData.instructions || !formData.passingScore || !formData.dueDate ||
-        !formData.totalMarks || !formData.caMarksPercentage || !formData.timePeriod ||
-        !formData.questionCount || formData.questions.some(q => !q.text || q.options.some(o => !o) || !q.marks)) {
+    if (
+      !formData.title ||
+      !formData.instructions ||
+      !formData.passingScore ||
+      !formData.dueDate ||
+      !formData.totalMarks ||
+      !formData.caMarksPercentage ||
+      !formData.timePeriod ||
+      !formData.questionCount ||
+      formData.questions.some((q) => !q.text || q.options.some((o) => !o) || (marksDistribution === "individual" && !q.marks))
+    ) {
       setShowErrorTooltip(true);
       setToast({ message: "All fields and questions are required", type: "error", visible: true });
       return;
     }
-    if (isNaN(formData.passingScore) || formData.passingScore < 0 || formData.passingScore > 100 ||
-        isNaN(formData.totalMarks) || formData.totalMarks <= 0 ||
-        isNaN(formData.caMarksPercentage) || formData.caMarksPercentage < 0 || formData.caMarksPercentage > 100) {
+
+    if (
+      isNaN(formData.passingScore) ||
+      formData.passingScore < 0 ||
+      formData.passingScore > 100 ||
+      isNaN(formData.totalMarks) ||
+      formData.totalMarks <= 0 ||
+      isNaN(formData.caMarksPercentage) ||
+      formData.caMarksPercentage < 0 ||
+      formData.caMarksPercentage > 100
+    ) {
       setShowErrorTooltip(true);
       setToast({ message: "Invalid numerical values", type: "error", visible: true });
       return;
+    }
+
+    if (marksDistribution === "individual") {
+      const totalQuestionMarks = calculateTotalQuestionMarks();
+      if (totalQuestionMarks > Number(formData.totalMarks)) {
+        setShowErrorTooltip(true);
+        setToast({
+          message: `Total question marks (${totalQuestionMarks}) exceed quiz total marks (${formData.totalMarks})`,
+          type: "error",
+          visible: true,
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -109,12 +140,12 @@ const QuizzesTab = ({ unit }) => {
       totalMarks: Number(formData.totalMarks),
       caMarksPercentage: Number(formData.caMarksPercentage),
       questionCount: Number(formData.questionCount),
-      questions: formData.questions.map(q => ({
+      questions: formData.questions.map((q) => ({
         ...q,
         correctOption: Number(q.correctOption),
-        marks: Number(q.marks),
+        marks: marksDistribution === "total" ? Number(formData.totalMarks) / Number(formData.questionCount) : Number(q.marks),
       })),
-      answeredStudents: Math.floor(Math.random() * 20), // Simulated data
+      answeredStudents: Math.floor(Math.random() * 20),
     };
 
     const data = new FormData();
@@ -130,6 +161,7 @@ const QuizzesTab = ({ unit }) => {
     setTimeout(() => {
       setQuizzes([...quizzes, newQuiz]);
       setFormMode(null);
+      setIsQuizComplete(true);
       setIsLoading(false);
       setFormData({
         title: "",
@@ -155,24 +187,54 @@ const QuizzesTab = ({ unit }) => {
       ...quiz,
       questions: quiz.questions || [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
     });
-    setQuestionPage(1); // Reset to first question page
+    setQuestionPage(1);
+    setIsQuizComplete(true); // Assume edited quiz is complete
   };
 
   // Handle saving an edited quiz
   const handleSaveQuiz = () => {
-    if (!formData.title || !formData.instructions || !formData.passingScore || !formData.dueDate ||
-        !formData.totalMarks || !formData.caMarksPercentage || !formData.timePeriod ||
-        !formData.questionCount || formData.questions.some(q => !q.text || q.options.some(o => !o) || !q.marks)) {
+    if (
+      !formData.title ||
+      !formData.instructions ||
+      !formData.passingScore ||
+      !formData.dueDate ||
+      !formData.totalMarks ||
+      !formData.caMarksPercentage ||
+      !formData.timePeriod ||
+      !formData.questionCount ||
+      formData.questions.some((q) => !q.text || q.options.some((o) => !o) || (marksDistribution === "individual" && !q.marks))
+    ) {
       setShowErrorTooltip(true);
       setToast({ message: "All fields and questions are required", type: "error", visible: true });
       return;
     }
-    if (isNaN(formData.passingScore) || formData.passingScore < 0 || formData.passingScore > 100 ||
-        isNaN(formData.totalMarks) || formData.totalMarks <= 0 ||
-        isNaN(formData.caMarksPercentage) || formData.caMarksPercentage < 0 || formData.caMarksPercentage > 100) {
+
+    if (
+      isNaN(formData.passingScore) ||
+      formData.passingScore < 0 ||
+      formData.passingScore > 100 ||
+      isNaN(formData.totalMarks) ||
+      formData.totalMarks <= 0 ||
+      isNaN(formData.caMarksPercentage) ||
+      formData.caMarksPercentage < 0 ||
+      formData.caMarksPercentage > 100
+    ) {
       setShowErrorTooltip(true);
       setToast({ message: "Invalid numerical values", type: "error", visible: true });
       return;
+    }
+
+    if (marksDistribution === "individual") {
+      const totalQuestionMarks = calculateTotalQuestionMarks();
+      if (totalQuestionMarks > Number(formData.totalMarks)) {
+        setShowErrorTooltip(true);
+        setToast({
+          message: `Total question marks (${totalQuestionMarks}) exceed quiz total marks (${formData.totalMarks})`,
+          type: "error",
+          visible: true,
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -183,12 +245,12 @@ const QuizzesTab = ({ unit }) => {
       totalMarks: Number(formData.totalMarks),
       caMarksPercentage: Number(formData.caMarksPercentage),
       questionCount: Number(formData.questionCount),
-      questions: formData.questions.map(q => ({
+      questions: formData.questions.map((q) => ({
         ...q,
         correctOption: Number(q.correctOption),
-        marks: Number(q.marks),
+        marks: marksDistribution === "total" ? Number(formData.totalMarks) / Number(formData.questionCount) : Number(q.marks),
       })),
-      answeredStudents: formData.answeredStudents || Math.floor(Math.random() * 20), // Simulated data
+      answeredStudents: formData.answeredStudents || Math.floor(Math.random() * 20),
     };
 
     const data = new FormData();
@@ -204,6 +266,7 @@ const QuizzesTab = ({ unit }) => {
     setTimeout(() => {
       setQuizzes(quizzes.map((q) => (q.id === formMode ? updatedQuiz : q)));
       setFormMode(null);
+      setIsQuizComplete(true);
       setIsLoading(false);
       setFormData({
         title: "",
@@ -232,7 +295,7 @@ const QuizzesTab = ({ unit }) => {
     }, 1000);
   };
 
-  // Handle cancel for add/edit form
+  // Handle cancel
   const handleCancel = () => {
     setFormMode(null);
     setFormData({
@@ -245,10 +308,13 @@ const QuizzesTab = ({ unit }) => {
       caMarksPercentage: "",
       timePeriod: "",
       questionCount: "",
-      questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
+      questions: [{ text: "", options: [ "", "", "", "", ""], correctOption: 0, marks: "" }],
     });
     setSelectedStudents([]);
     setShowErrorTooltip(false);
+    setIsQuizComplete(false);
+    setShowQuizModel(false);
+    setMarksDistribution("individual");
   };
 
   // Handle sorting
@@ -270,11 +336,11 @@ const QuizzesTab = ({ unit }) => {
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filteredQuizzes = (unit.quizzes || []).filter(quiz =>
+    const filteredQuizzes = (unit.quizzes || []).filter((quiz) =>
       quiz.title.toLowerCase().includes(term)
     );
     setQuizzes(filteredQuizzes);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1);
   };
 
   // Navigate to StudentAllHistory page
@@ -303,13 +369,16 @@ const QuizzesTab = ({ unit }) => {
     if (questionPage > 1) setQuestionPage(questionPage - 1);
   };
 
-  // Auto-hide toast after 3 seconds
-  useEffect(() => {
-    if (toast.visible) {
-      const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast.visible]);
+  // Auto-hide toast
+  useEffect(
+    () => {
+      if (toast.visible) {
+        const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
+        return () => clearTimeout(timer);
+      }
+    },
+    [toast.visible]
+  );
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg w-full">
@@ -344,7 +413,7 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
-      {/* Add/Edit Quiz Form within Full-Width Card */}
+      {/* Add/Edit Quiz Form */}
       {formMode && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6 transition-all duration-300 ease-in-out max-w-7xl mx-auto w-full">
           <h4 className="text-lg font-medium text-neutral-900 mb-4">
@@ -366,7 +435,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., What is Node.js"
                   aria-label="Quiz Title"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -382,7 +450,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., Test your Node.js knowledge"
                   aria-label="Quiz Description"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -398,7 +465,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., You can't go back after submitting"
                   aria-label="Quiz Instructions"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -416,7 +482,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 75"
                   aria-label="Passing Score"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -431,7 +496,6 @@ const QuizzesTab = ({ unit }) => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2"
                   aria-label="Due Date"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -448,7 +512,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 100"
                   aria-label="Total Marks"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -466,7 +529,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 20"
                   aria-label="CA Marks Percentage"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -482,7 +544,6 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 30 minutes"
                   aria-label="Time Period"
-                  tabIndex={0}
                 />
               </div>
               <div>
@@ -499,8 +560,19 @@ const QuizzesTab = ({ unit }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                   placeholder="e.g., 5"
                   aria-label="Question Count"
-                  tabIndex={0}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Marks Distribution</label>
+                <select
+                  value={marksDistribution}
+                  onChange={(e) => setMarksDistribution(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2"
+                  aria-label="Marks distribution type"
+                >
+                  <option value="individual">Individual Question Marks</option>
+                  <option value="total">Total Marks for All Questions</option>
+                </select>
               </div>
             </div>
 
@@ -520,7 +592,6 @@ const QuizzesTab = ({ unit }) => {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                     placeholder="e.g., What is GitHub used for?"
                     aria-label={`Question ${questionPage} text`}
-                    tabIndex={0}
                   />
                 </div>
                 <div>
@@ -534,7 +605,6 @@ const QuizzesTab = ({ unit }) => {
                         onChange={() => handleQuestionChange("correctOption", index)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         aria-label={`Select option ${index + 1} as correct answer`}
-                        tabIndex={0}
                       />
                       <input
                         type="text"
@@ -543,7 +613,6 @@ const QuizzesTab = ({ unit }) => {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                         placeholder={`Option ${index + 1}`}
                         aria-label={`Option ${index + 1} text`}
-                        tabIndex={0}
                       />
                     </div>
                   ))}
@@ -559,25 +628,25 @@ const QuizzesTab = ({ unit }) => {
                     readOnly
                     className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-neutral-900 p-2"
                     aria-label={`Correct answer for question ${questionPage}`}
-                    tabIndex={0}
                   />
                 </div>
-                <div>
-                  <label htmlFor="questionMarks" className="block text-sm font-medium text-neutral-700 mb-1">
-                    Marks
-                  </label>
-                  <input
-                    id="questionMarks"
-                    type="number"
-                    min="0"
-                    value={currentQuestion.marks}
-                    onChange={(e) => handleQuestionChange("marks", e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
-                    placeholder="e.g., 20"
-                    aria-label={`Question ${questionPage} marks`}
-                    tabIndex={0}
-                  />
-                </div>
+                {marksDistribution === "individual" && (
+                  <div>
+                    <label htmlFor="questionMarks" className="block text-sm font-medium text-neutral-700 mb-1">
+                      Marks
+                    </label>
+                    <input
+                      id="questionMarks"
+                      type="number"
+                      min="0"
+                      value={currentQuestion.marks}
+                      onChange={(e) => handleQuestionChange("marks", e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
+                      placeholder="e.g., 20"
+                      aria-label={`Question ${questionPage} marks`}
+                    />
+                  </div>
+                )}
               </div>
               {/* Question Pagination */}
               {formData.questionCount && (
@@ -587,7 +656,6 @@ const QuizzesTab = ({ unit }) => {
                     disabled={questionPage === 1}
                     className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Previous question"
-                    tabIndex={0}
                   >
                     Back
                   </button>
@@ -602,7 +670,6 @@ const QuizzesTab = ({ unit }) => {
                       }`}
                       aria-label={`Question page ${page}`}
                       aria-current={questionPage === page ? "page" : undefined}
-                      tabIndex={0}
                     >
                       {page}
                     </button>
@@ -612,7 +679,6 @@ const QuizzesTab = ({ unit }) => {
                     disabled={questionPage === totalQuestionPages}
                     className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Next question"
-                    tabIndex={0}
                   >
                     Next
                   </button>
@@ -620,43 +686,107 @@ const QuizzesTab = ({ unit }) => {
               )}
             </div>
 
-           {/* Preview Section */}
-<div className="bg-gray-50 p-6 rounded-lg">
-  <h5 className="text-md font-medium text-neutral-900 mb-4">
-    Question {questionPage} Preview
-  </h5>
-  <div className="bg-white p-6 rounded-lg border border-gray-200">
-    <p className="text-base text-neutral-900 mb-3">
-      <strong>Question:</strong> {currentQuestion.text || "N/A"}
-    </p>
+            {/* Preview Section */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h5 className="text-md font-medium text-neutral-900 mb-4">
+                Question {questionPage} Preview
+              </h5>
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <p className="text-base text-neutral-900 mb-3">
+                  <strong>Question:</strong> {currentQuestion.text || "Question text not provided"}
+                </p>
+                {currentQuestion.options.map((option, index) => (
+                  <label key={index} className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="radio"
+                      name="quiz"
+                      value={index}
+                      checked={selectedOption === index}
+                      onChange={() => setSelectedOption(index)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      aria-label={`Option ${index + 1}`}
+                    />
+                    <span className="text-base text-neutral-600">
+                      {option || "Option not provided"}
+                      {currentQuestion.correctOption === index && (
+                        <span className="text-green-600 ml-2">✔</span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+                {marksDistribution === "individual" && (
+                  <p className="text-base text-neutral-600">
+                    <strong>Marks:</strong> {currentQuestion.marks || "Not assigned"}
+                  </p>
+                )}
+              </div>
+            </div>
 
-    {currentQuestion.options.map((option, index) => (
-      <label key={index} className="flex items-center space-x-2 mb-2">
-        <input
-          type="radio"
-          name="quiz"
-          value={index}
-          checked={selectedOption === index}
-          onChange={() => setSelectedOption(index)}
-        />
-        <span className="text-base text-neutral-600">
-           {option || "N/A"}
-          {currentQuestion.correctOption === index && (
-            <span className="text-green-600 ml-2"></span>
-          )}
-        </span>
-      </label>
-    ))}
-
-    {/* <p className="text-base text-neutral-600">
-      <strong>Marks:</strong> {currentQuestion.marks || "N/A"}
-    </p> */}
-  </div>
-</div>
-
+            {/* Quiz Model */}
+            {showQuizModel && (
+              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-lg shadow-lg max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+                  <h4 className="text-lg font-medium text-neutral-900 mb-4">Quiz Preview</h4>
+                  <div className="space-y-6">
+                    {formData.questions.map((question, index) => (
+                      <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p className="text-base text-neutral-900 mb-3">
+                          <strong>Question {index + 1}:</strong> {question.text || "Question text not provided"}
+                        </p>
+                        {question.options.map((option, optIndex) => (
+                          <label key={optIndex} className="flex items-center space-x-2 mb-2">
+                            <input
+                              type="radio"
+                              name={`quiz-preview-${index}`}
+                              value={optIndex}
+                              checked={selectedOption === optIndex}
+                              onChange={() => setSelectedOption(optIndex)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              aria-label={`Option ${optIndex + 1} for question ${index + 1}`}
+                            />
+                            <span className="text-base text-neutral-600">
+                              {option || "Option not provided"}
+                              {question.correctOption === optIndex && (
+                                <span className="text-green-600 ml-2">✔</span>
+                              )}
+                            </span>
+                          </label>
+                        ))}
+                        {marksDistribution === "individual" && (
+                          <p className="text-base text-neutral-600">
+                            <strong>Marks:</strong> {question.marks || "Not assigned"}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end mt-6">
+                    <button
+                      onClick={() => setShowQuizModel(false)}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
+                      aria-label="Close quiz preview"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex justify-end space-x-4 mt-6">
+              {isQuizComplete && (
+                <button
+                  onClick={() => setShowQuizModel(true)}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  disabled={isLoading}
+                  aria-label="Live Preview Quiz"
+                >
+                  Live Preview
+                </button>
+              )}
               <button
                 onClick={formMode === "add" ? handleAddQuiz : handleSaveQuiz}
                 className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
@@ -664,7 +794,6 @@ const QuizzesTab = ({ unit }) => {
                 }`}
                 disabled={isLoading}
                 aria-label={formMode === "add" ? "Save new quiz" : "Save quiz changes"}
-                tabIndex={0}
               >
                 {isLoading ? "Saving..." : "Save"}
               </button>
@@ -673,7 +802,6 @@ const QuizzesTab = ({ unit }) => {
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
                 disabled={isLoading}
                 aria-label="Cancel"
-                tabIndex={0}
               >
                 Cancel
               </button>
@@ -694,7 +822,6 @@ const QuizzesTab = ({ unit }) => {
           placeholder="Search by title..."
           className="p-2 border rounded-md w-full md:w-1/3 mb-4 focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
           aria-label="Search quizzes"
-          tabIndex={0}
         />
       </div>
       {quizzes.length > 0 ? (
@@ -706,7 +833,6 @@ const QuizzesTab = ({ unit }) => {
                   className="py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200"
                   onClick={() => handleSort("title")}
                   aria-label="Sort by title"
-                  tabIndex={0}
                 >
                   Title {sortConfig.key === "title" && (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </th>
@@ -714,7 +840,6 @@ const QuizzesTab = ({ unit }) => {
                   className="py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200"
                   onClick={() => handleSort("dueDate")}
                   aria-label="Sort by due date"
-                  tabIndex={0}
                 >
                   Due Date {sortConfig.key === "dueDate" && (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </th>
@@ -722,7 +847,6 @@ const QuizzesTab = ({ unit }) => {
                   className="py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200"
                   onClick={() => handleSort("passingScore")}
                   aria-label="Sort by passing score"
-                  tabIndex={0}
                 >
                   Pass Score (%) {sortConfig.key === "passingScore" && (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </th>
@@ -730,7 +854,6 @@ const QuizzesTab = ({ unit }) => {
                   className="py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200"
                   onClick={() => handleSort("totalMarks")}
                   aria-label="Sort by total marks"
-                  tabIndex={0}
                 >
                   Total Marks {sortConfig.key === "totalMarks" && (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </th>
@@ -738,7 +861,6 @@ const QuizzesTab = ({ unit }) => {
                   className="py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200"
                   onClick={() => handleSort("answeredStudents")}
                   aria-label="Sort by answered students"
-                  tabIndex={0}
                 >
                   Answered Students {sortConfig.key === "answeredStudents" && (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </th>
@@ -761,7 +883,6 @@ const QuizzesTab = ({ unit }) => {
                       onClick={() => handleViewHistory(quiz.id)}
                       className="ml-2 text-green-600 hover:bg-green-100 rounded-full p-1 focus:outline-none transition-all duration-200"
                       aria-label={`View history for quiz ${quiz.title}`}
-                      tabIndex={0}
                     >
                       👤
                     </button>
@@ -775,7 +896,6 @@ const QuizzesTab = ({ unit }) => {
                         }`}
                         disabled={isLoading}
                         aria-label={`Edit quiz ${quiz.title}`}
-                        tabIndex={0}
                       >
                         Edit
                       </button>
@@ -786,7 +906,6 @@ const QuizzesTab = ({ unit }) => {
                         }`}
                         disabled={isLoading}
                         aria-label={`Delete quiz ${quiz.title}`}
-                        tabIndex={0}
                       >
                         Delete
                       </button>
@@ -809,7 +928,6 @@ const QuizzesTab = ({ unit }) => {
             disabled={currentPage === 1}
             className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Previous page"
-            tabIndex={0}
           >
             Back
           </button>
@@ -824,7 +942,6 @@ const QuizzesTab = ({ unit }) => {
               }`}
               aria-label={`Page ${page}`}
               aria-current={currentPage === page ? "page" : undefined}
-              tabIndex={0}
             >
               {page}
             </button>
@@ -834,7 +951,6 @@ const QuizzesTab = ({ unit }) => {
             disabled={currentPage === Math.ceil(quizzes.length / quizzesPerPage)}
             className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Next page"
-            tabIndex={0}
           >
             Next
           </button>
