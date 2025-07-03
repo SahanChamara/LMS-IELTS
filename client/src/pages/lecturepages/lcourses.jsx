@@ -169,7 +169,7 @@ const Leccorces = () => {
         <Lecsidebar onLogout={handleLogout} />
       </div>
 
-      <div className="flex-1 ml-64 bg-neutral-100 overflow-x-auto">
+      <div className="flex-1 ml-64 bg-gray-100 overflow-x-auto">
         <div className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-xl sm:text-2xl font-bold text-neutral-800">

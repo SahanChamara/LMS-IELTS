@@ -143,7 +143,7 @@ const Lcalendar = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-100">
+    <div className="flex min-h-screen bg-gray-100">
       <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-md z-10">
         <LecSidebar onLogout={handleLogout} />
       </div>

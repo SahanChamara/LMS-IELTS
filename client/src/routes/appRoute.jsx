@@ -35,7 +35,7 @@ import Lstudents from "../pages/lecturepages/lstudents"
 import Lassignments from "../pages/lecturepages/lassignments"
 import Leccalander  from "../pages/lecturepages/leccalnder"
 import Lecsettings from "../pages/lecturepages/lecsettings"
-import InstructorFeed from "../pages/lecturepages/InstructorFeed";
+import LecsFeed from "../pages/lecturepages/InstructorFeed";
 
 
 // Admin
@@ -78,13 +78,15 @@ const AppRoutes = () => {
         <Route path="dashboard/lecture" element={<Lecdashboard />} />
         <Route path="courses/lecture" element={<Leccorces />} />
         <Route path="assignments/lecture" element={<Lassignments />} />
-        <Route path="students/lecture" element={<Lstudents />} />`
+        <Route path="students/lecture" element={<Lstudents />} />
         <Route path="/calendar/lecture" element={<Leccalander />} />
-        <Route path="/settings/lecture" element={<Lecsettings />} />`
+        <Route path="/settings/lecture" element={<Lecsettings />} />
+        <Route path="/feed/lecture" element={<LecsFeed />} />
 
       </Route>
       <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
          <Route path="/dashboard/admin" element={<SuperAdmin/>} />
+         <Route path="/feed/admin" element={<AdminFeed/>} />
          <Route path="/students/admin" element={<SuperAdminstudentcontrol/>} />
          <Route path="/lectures/admin" element={<SuperAdminlecturercontrol/>} />
          <Route path="/notifications/admin"  element={<SuperAdminnotifications/>} />

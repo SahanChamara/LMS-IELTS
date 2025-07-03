@@ -124,7 +124,6 @@ const StudentFeed = () => {
           <h1 className="text-3xl font-semibold text-gray-900 mb-4">
             Study Feed
           </h1>
-
         {/* Create Post Form */}
         <Card>
             <motion.div
