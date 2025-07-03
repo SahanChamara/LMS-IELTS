@@ -80,9 +80,7 @@ const IELTSLandingPage = () => {
             >
               About Us
             </button>
-          </div>
-
-          
+          </div>          
         </div>
       </main>
 

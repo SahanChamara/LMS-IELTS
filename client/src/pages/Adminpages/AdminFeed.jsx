@@ -5,9 +5,8 @@ import { Clock, CheckCircle, XCircle, Users, FileText, MessageCircle, AlertTrian
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
-import Sidebar from '../../components/Sidebar';
-import Card from '../../components/card';
 import Adminsidebar from './Adminsidebars';
+import Card from '../../components/card';
 
 const AdminFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -30,7 +29,7 @@ const AdminFeed = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        className: 'bg-blue-100 text-blue-800 border border-blue-200',
+        className: 'bg-teal-100 text-teal-800 border border-teal-200',
       });
     }
   };
@@ -100,102 +99,105 @@ const AdminFeed = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-const renderPost = (post, showActions = false) => (
+  const renderPost = (post, showActions = false) => (
     <Card key={post.id}>
-        <div className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all duration-200">
-            <div className="border-b border-gray-100 pb-3 mb-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                            <span className="text-gray-700 font-semibold text-lg">
-                                {post.userName.charAt(0)}
-                            </span>
-                        </div>
-                        <div>
-                            <p className="font-medium text-gray-900">{post.userName}</p>
-                            <p className="text-xs text-gray-500 capitalize">
-                                <span className="inline-block px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full text-xs font-normal mr-2">
-                                    {post.userRole}
-                                </span>
-                                {post.createdAt.toLocaleDateString()}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
-                            post.status === 'approved'
-                                ? 'bg-gray-50 text-gray-700 border-gray-200'
-                                : post.status === 'pending'
-                                ? 'bg-gray-50 text-gray-500 border-gray-200'
-                                : 'bg-gray-50 text-gray-400 border-gray-200'
-                        }`}>
-                            {post.status}
-                        </span>
-                        {post.userRole === 'instructor' && (
-                            <span className="px-2 py-0.5 text-xs font-normal border border-gray-200 rounded-full text-gray-500 bg-white">
-                                Auto-approved
-                            </span>
-                        )}
-                    </div>
-                </div>
+      <div
+        className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+        style={{ border: "none" }}
+      >
+        <div className="border-b border-gray-100 pb-3 mb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-gray-700 font-semibold text-lg">
+                  {post.userName.charAt(0)}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">{post.userName}</p>
+                <p className="text-xs text-gray-500 capitalize">
+                  <span className="inline-block px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full text-xs font-normal mr-2">
+                    {post.userRole}
+                  </span>
+                  {post.createdAt.toLocaleDateString()}
+                </p>
+              </div>
             </div>
-
-            <div>
-                {post.textContent && (
-                    <p className="text-gray-800 mb-3 leading-relaxed">{post.textContent}</p>
-                )}
-
-                <AttachmentDisplay attachments={post.attachments} />
-
-                <ReactionBar
-                    reactions={post.reactions}
-                    currentUserId={currentUser.id}
-                    currentUserName={currentUser.name}
-                    onReaction={(type) => handleReaction(post.id, type)}
-                />
-
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                    <div className="flex items-center space-x-1 text-gray-400">
-                        <MessageCircle className="h-4 w-4" />
-                        <span className="text-xs">{post.comments.length} Comments</span>
-                    </div>
-                </div>
-
-                {showActions && (
-                    <div className="flex space-x-2 mt-4">
-                        {post.status === 'pending' && (
-                            <>
-                                <button
-                                    className="flex-1 flex items-center justify-center px-3 py-1 bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors duration-150 text-sm"
-                                    onClick={() => handleApprovePost(post.id)}
-                                >
-                                    <CheckCircle className="mr-1 h-4 w-4" />
-                                    Approve
-                                </button>
-                                <button
-                                    className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded hover:bg-red-50 transition-colors duration-150 text-sm"
-                                    onClick={() => handleRejectPost(post.id)}
-                                >
-                                    <XCircle className="mr-1 h-4 w-4" />
-                                    Reject
-                                </button>
-                            </>
-                        )}
-                        {post.status === 'approved' && (
-                            <button
-                                className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded hover:bg-red-100/50 transition-colors duration-150 text-sm"
-                                onClick={() => handleDeletePost(post.id)}
-                            >
-                                <AlertTriangle className="mr-1 h-4 w-4" />
-                                Delete Post
-                            </button>
-                        )}
-                    </div>
-                )}
+            <div className="flex items-center space-x-2">
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+                post.status === 'approved'
+                  ? 'bg-teal-100 text-teal-800 border-teal-200'
+                  : post.status === 'pending'
+                  ? 'bg-gray-50 text-gray-500 border-gray-200'
+                  : 'bg-gray-50 text-gray-400 border-gray-200'
+              }`}>
+                {post.status}
+              </span>
+              {post.userRole === 'instructor' && (
+                <span className="px-2 py-0.5 text-xs font-normal border border-gray-200 rounded-full text-gray-500 bg-white">
+                  Auto-approved
+                </span>
+              )}
             </div>
+          </div>
         </div>
+
+        <div>
+          {post.textContent && (
+            <p className="text-gray-800 mb-3 leading-relaxed">{post.textContent}</p>
+          )}
+
+          <AttachmentDisplay attachments={post.attachments} />
+
+          <ReactionBar
+            reactions={post.reactions}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+            onReaction={(type) => handleReaction(post.id, type)}
+          />
+
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center space-x-1 text-gray-400">
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-xs">{post.comments.length} Comments</span>
+            </div>
+          </div>
+
+          {showActions && (
+            <div className="flex space-x-2 mt-4">
+              {post.status === 'pending' && (
+                <>
+                  <button
+                    className="flex-1 flex items-center justify-center px-3 py-1 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors duration-150 text-sm"
+                    onClick={() => handleApprovePost(post.id)}
+                  >
+                    <CheckCircle className="mr-1 h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded-md hover:bg-red-100 transition-colors duration-150 text-sm"
+                    onClick={() => handleRejectPost(post.id)}
+                  >
+                    <XCircle className="mr-1 h-4 w-4" />
+                    Reject
+                  </button>
+                </>
+              )}
+              {post.status === 'approved' && (
+                <button
+                  className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded-md hover:bg-red-100 transition-colors duration-150 text-sm"
+                  onClick={() => handleDeletePost(post.id)}
+                >
+                  <AlertTriangle className="mr-1 h-4 w-4" />
+                  Delete Post
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </Card>
-);
+  );
 
   return (
     <div className="flex h-screen bg-gray-50 text-neutral-800 overflow-hidden">
@@ -209,13 +211,13 @@ const renderPost = (post, showActions = false) => (
           </h1>
 
           {/* Tab Navigation */}
-          <div className="bg-gray-100 border border-gray-200 rounded-md  mb-4">
+          <div className="bg-gray-100 border border-gray-200 rounded-md mb-4">
             <div className="flex gap-1">
               <button
                 onClick={() => setActiveTab('approved')}
-                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out ${
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-teal-500 ${
                   activeTab === 'approved'
-                    ? 'text-gray-900 font-semibold border-b-2 border-green-800 bg-gray-200/60'
+                    ? 'text-gray-900 font-semibold border-b-2 border-teal-500 bg-gray-200/60'
                     : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
                 }`}
                 role="tab"
@@ -227,9 +229,9 @@ const renderPost = (post, showActions = false) => (
               </button>
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out  ${
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-teal-500 ${
                   activeTab === 'pending'
-                    ? 'text-gray-900 font-semibold border-b-2 border-green-800 bg-gray-200/60'
+                    ? 'text-gray-900 font-semibold border-b-2 border-teal-500 bg-gray-200/60'
                     : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
                 }`}
                 role="tab"
@@ -248,7 +250,10 @@ const renderPost = (post, showActions = false) => (
               <>
                 {posts.length === 0 ? (
                   <Card>
-                    <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-6 flex flex-col items-center justify-center py-12">
+                    <div
+                      className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+                      style={{ border: "none" }}
+                    >
                       <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
                         No Posts Available
@@ -268,7 +273,10 @@ const renderPost = (post, showActions = false) => (
               <>
                 {pendingPosts.length === 0 ? (
                   <Card>
-                    <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-6 flex flex-col items-center justify-center py-12">
+                    <div
+                      className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+                      style={{ border: "none" }}
+                    >
                       <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
                         No Posts Pending

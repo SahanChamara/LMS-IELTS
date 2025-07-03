@@ -59,7 +59,7 @@ const Lecdashboard = () => {
   };
 
   return (
-    <div className="font-sans min-h-screen bg-neutral-100 flex flex-col md:flex-row">
+    <div className="font-sans min-h-screen bg-gray-100 flex flex-col md:flex-row">
       {/* Fixed Sidebar */}
       <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-10 md:block">
         <Lecsidebar onLogout={handleLogout} />

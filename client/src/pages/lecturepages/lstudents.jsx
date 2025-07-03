@@ -110,7 +110,7 @@ const Lstudents = () => {
     <ErrorBoundary>
       <div className="flex min-h-screen">
         <LecSidebar onLogout={handleLogout} />
-        <div className="flex-1 p-6 bg-neutral-100">
+        <div className="flex-1 p-6 bg-gray-100">
           <h2 className="text-2xl font-bold text-neutral-800 mb-6">Students</h2>
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <table className="w-full text-left">
