@@ -18,6 +18,8 @@ const Submission = require('./Submission');
 const SubmissionAssignment = require('./SubmissionAssignment');
 const SuperAdmin = require('./SuperAdmin');
 const Unit = require('./Unit');
+const Post = require('./Post');
+
 
 // index.js
 module.exports = {
@@ -40,7 +42,8 @@ module.exports = {
   SubmissionAssignment: require('./SubmissionAssignment'),
   Discussion: require('./Discussion'),
   OnlineSession: require('./onlineSession'),
-  Logs: require('./Logs')
+  Logs: require('./Logs'),
+  Post: require('./Post'),
 };
 
 module.exports = {
@@ -63,5 +66,7 @@ module.exports = {
   SubmissionAssignment,
   Discussion,
   onlineSession,
-  Logs
+  Logs,
+  Post
+
 };
