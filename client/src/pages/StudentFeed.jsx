@@ -127,6 +127,7 @@ const StudentFeed = () => {
         {/* Create Post Form */}
         <Card>
             <motion.div
+
                 className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
             >
                 <div className="flex items-center space-x-2">

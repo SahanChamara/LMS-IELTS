@@ -178,7 +178,7 @@ const InstructorFeed = () => {
         className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
         style={{ border: "none" }}
       >
-        <div className="border-b border-neutral-700 pb-3 mb-3">
+        <div className="border-b border-gray-100 pb-3 mb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center">
@@ -229,7 +229,7 @@ const InstructorFeed = () => {
             onReaction={(type) => handleReaction(post.id, type)}
           />
 
-          <div className="mt-2 pt-2 border-t border-neutral-700">
+          <div className="mt-2 pt-2 ">
             <button
               className="flex items-center space-x-1 text-gray-400 hover:text-gray-900"
               onClick={() => toggleComments(post.id)}

@@ -13,7 +13,7 @@ const Card = ({
 }) => {
   const baseClasses = clsx(
     "rounded-2xl  w-full shadow-sm transition-all duration-300 ease-in-out",
-    "bg-white text-gray-800", // Light mode focused
+    "bg-white text-gray-800 ", // Light mode focused
     {
       "h-96": variant === "institution",
     },
