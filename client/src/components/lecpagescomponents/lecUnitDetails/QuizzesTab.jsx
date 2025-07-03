@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import QuizPreview from "./QuizPreview";
+import { User , Edit, Trash2 } from 'lucide-react';
 
 const QuizzesTab = ({ unit }) => {
-  // State declarations
   const [quizzes, setQuizzes] = useState(unit.quizzes || []);
   const [formMode, setFormMode] = useState(null);
   const [formData, setFormData] = useState({
@@ -26,11 +27,39 @@ const QuizzesTab = ({ unit }) => {
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
   const [showErrorTooltip, setShowErrorTooltip] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [marksDistribution, setMarksDistribution] = useState("individual"); // "individual" or "total"
-  const [isQuizComplete, setIsQuizComplete] = useState(false); // Tracks quiz completion
-  const [showQuizModel, setShowQuizModel] = useState(false); // Controls quiz model visibility
+  const [marksDistribution, setMarksDistribution] = useState("individual");
+  const [isQuizComplete, setIsQuizComplete] = useState(false);
+  const [showQuizModel, setShowQuizModel] = useState(false);
   const navigate = useNavigate();
   const quizzesPerPage = 5;
+
+  // Validate if all questions are complete
+  const checkQuizCompletion = () => {
+    const questionCount = parseInt(formData.questionCount) || 1; // Default to 1 if questionCount is empty
+    if (questionCount <= 0) {
+      console.log("Quiz not complete: Invalid question count", questionCount);
+      setIsQuizComplete(false);
+      return false;
+    }
+
+    const allQuestionsComplete = formData.questions
+      .slice(0, questionCount)
+      .every((q, index) => {
+        const isComplete = q.text.trim() !== "" && q.options.every((o) => o.trim() !== "");
+        console.log(`Question ${index + 1} complete:`, isComplete, q);
+        return isComplete;
+      });
+
+    console.log("All questions complete:", allQuestionsComplete, "Question count:", questionCount);
+    setIsQuizComplete(allQuestionsComplete);
+    return allQuestionsComplete;
+  };
+
+  // Update quiz completion status when formData or questionPage changes
+  useEffect(() => {
+    console.log("FormData updated:", formData);
+    checkQuizCompletion();
+  }, [formData, questionPage]);
 
   // Handle input changes for form fields
   const handleInputChange = (e) => {
@@ -47,6 +76,8 @@ const QuizzesTab = ({ unit }) => {
             marks: prev.questions[i]?.marks || "",
           }));
           setQuestionPage(1);
+        } else {
+          updatedFormData.questions = [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }];
         }
       }
       return updatedFormData;
@@ -57,16 +88,22 @@ const QuizzesTab = ({ unit }) => {
   // Handle question field changes
   const handleQuestionChange = (field, value, index = null) => {
     const newQuestions = [...formData.questions];
-    const currentQ = newQuestions[questionPage - 1];
+    const currentQ = newQuestions[questionPage - 1] || {
+      text: "",
+      options: ["", "", "", ""],
+      correctOption: 0,
+      marks: "",
+    };
     if (field === "options") {
       const newOptions = [...currentQ.options];
       newOptions[index] = value;
       currentQ.options = newOptions;
     } else if (field === "correctOption") {
-      currentQ.correctOption = value;
+      currentQ.correctOption = parseInt(value);
     } else {
       currentQ[field] = value;
     }
+    newQuestions[questionPage - 1] = currentQ;
     setFormData((prev) => ({ ...prev, questions: newQuestions }));
     setShowErrorTooltip(false);
   };
@@ -140,7 +177,7 @@ const QuizzesTab = ({ unit }) => {
       totalMarks: Number(formData.totalMarks),
       caMarksPercentage: Number(formData.caMarksPercentage),
       questionCount: Number(formData.questionCount),
-      questions: formData.questions.map((q) => ({
+      questions: formData.questions.slice(0, Number(formData.questionCount)).map((q) => ({
         ...q,
         correctOption: Number(q.correctOption),
         marks: marksDistribution === "total" ? Number(formData.totalMarks) / Number(formData.questionCount) : Number(q.marks),
@@ -161,7 +198,7 @@ const QuizzesTab = ({ unit }) => {
     setTimeout(() => {
       setQuizzes([...quizzes, newQuiz]);
       setFormMode(null);
-      setIsQuizComplete(true);
+      setIsQuizComplete(false);
       setIsLoading(false);
       setFormData({
         title: "",
@@ -188,7 +225,7 @@ const QuizzesTab = ({ unit }) => {
       questions: quiz.questions || [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
     });
     setQuestionPage(1);
-    setIsQuizComplete(true); // Assume edited quiz is complete
+    checkQuizCompletion(); // Check completion for edited quiz
   };
 
   // Handle saving an edited quiz
@@ -245,7 +282,7 @@ const QuizzesTab = ({ unit }) => {
       totalMarks: Number(formData.totalMarks),
       caMarksPercentage: Number(formData.caMarksPercentage),
       questionCount: Number(formData.questionCount),
-      questions: formData.questions.map((q) => ({
+      questions: formData.questions.slice(0, Number(formData.questionCount)).map((q) => ({
         ...q,
         correctOption: Number(q.correctOption),
         marks: marksDistribution === "total" ? Number(formData.totalMarks) / Number(formData.questionCount) : Number(q.marks),
@@ -266,7 +303,7 @@ const QuizzesTab = ({ unit }) => {
     setTimeout(() => {
       setQuizzes(quizzes.map((q) => (q.id === formMode ? updatedQuiz : q)));
       setFormMode(null);
-      setIsQuizComplete(true);
+      setIsQuizComplete(false);
       setIsLoading(false);
       setFormData({
         title: "",
@@ -308,7 +345,7 @@ const QuizzesTab = ({ unit }) => {
       caMarksPercentage: "",
       timePeriod: "",
       questionCount: "",
-      questions: [{ text: "", options: [ "", "", "", "", ""], correctOption: 0, marks: "" }],
+      questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
     });
     setSelectedStudents([]);
     setShowErrorTooltip(false);
@@ -349,7 +386,7 @@ const QuizzesTab = ({ unit }) => {
   };
 
   // Question pagination logic
-  const totalQuestionPages = formData.questionCount ? parseInt(formData.questionCount) : 1;
+  const totalQuestionPages = parseInt(formData.questionCount) || 1;
   const currentQuestion = formData.questions[questionPage - 1] || {
     text: "",
     options: ["", "", "", ""],
@@ -370,15 +407,12 @@ const QuizzesTab = ({ unit }) => {
   };
 
   // Auto-hide toast
-  useEffect(
-    () => {
-      if (toast.visible) {
-        const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
-        return () => clearTimeout(timer);
-      }
-    },
-    [toast.visible]
-  );
+  useEffect(() => {
+    if (toast.visible) {
+      const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.visible]);
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg w-full">
@@ -649,7 +683,7 @@ const QuizzesTab = ({ unit }) => {
                 )}
               </div>
               {/* Question Pagination */}
-              {formData.questionCount && (
+              {totalQuestionPages > 1 && (
                 <div className="flex justify-center items-center space-x-2 mt-6">
                   <button
                     onClick={handlePreviousQuestionPage}
@@ -722,62 +756,22 @@ const QuizzesTab = ({ unit }) => {
               </div>
             </div>
 
-            {/* Quiz Model */}
-            {showQuizModel && (
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-6xl w-full max-h-[80vh] overflow-y-auto">
-                  <h4 className="text-lg font-medium text-neutral-900 mb-4">Quiz Preview</h4>
-                  <div className="space-y-6">
-                    {formData.questions.map((question, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <p className="text-base text-neutral-900 mb-3">
-                          <strong>Question {index + 1}:</strong> {question.text || "Question text not provided"}
-                        </p>
-                        {question.options.map((option, optIndex) => (
-                          <label key={optIndex} className="flex items-center space-x-2 mb-2">
-                            <input
-                              type="radio"
-                              name={`quiz-preview-${index}`}
-                              value={optIndex}
-                              checked={selectedOption === optIndex}
-                              onChange={() => setSelectedOption(optIndex)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              aria-label={`Option ${optIndex + 1} for question ${index + 1}`}
-                            />
-                            <span className="text-base text-neutral-600">
-                              {option || "Option not provided"}
-                              {question.correctOption === optIndex && (
-                                <span className="text-green-600 ml-2">✔</span>
-                              )}
-                            </span>
-                          </label>
-                        ))}
-                        {marksDistribution === "individual" && (
-                          <p className="text-base text-neutral-600">
-                            <strong>Marks:</strong> {question.marks || "Not assigned"}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-end mt-6">
-                    <button
-                      onClick={() => setShowQuizModel(false)}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
-                      aria-label="Close quiz preview"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Quiz Preview Component */}
+            <QuizPreview
+              quizData={formData}
+              marksDistribution={marksDistribution}
+              isOpen={showQuizModel}
+              onClose={() => setShowQuizModel(false)}
+            />
 
             {/* Action Buttons */}
             <div className="flex justify-end space-x-4 mt-6">
               {isQuizComplete && (
                 <button
-                  onClick={() => setShowQuizModel(true)}
+                  onClick={() => {
+                    console.log("Opening QuizPreview with formData:", formData);
+                    setShowQuizModel(true);
+                  }}
                   className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
                     isLoading ? "opacity-50 cursor-not-allowed" : ""
                   }`}
@@ -867,53 +861,71 @@ const QuizzesTab = ({ unit }) => {
                 <th className="py-3 px-4 text-center text-sm font-medium text-neutral-700">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {quizzes.slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage).map((quiz) => (
-                <tr
-                  key={quiz.id}
-                  className="border-t hover:bg-gray-50 transition-all duration-200"
-                >
-                  <td className="py-3 px-4 text-center text-sm text-neutral-900">{quiz.title}</td>
-                  <td className="py-3 px-4 text-center text-sm text-neutral-600">{quiz.dueDate}</td>
-                  <td className="py-3 px-4 text-center text-sm text-neutral-600">{quiz.passingScore}%</td>
-                  <td className="py-3 px-4 text-center text-sm text-neutral-600">{quiz.totalMarks}</td>
-                  <td className="py-3 px-4 text-center text-sm text-neutral-600 flex items-center justify-center">
-                    {quiz.answeredStudents}
-                    <button
-                      onClick={() => handleViewHistory(quiz.id)}
-                      className="ml-2 text-green-600 hover:bg-green-100 rounded-full p-1 focus:outline-none transition-all duration-200"
-                      aria-label={`View history for quiz ${quiz.title}`}
-                    >
-                      👤
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-center text-sm">
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => handleEditQuiz(quiz)}
-                        className={`px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm ${
-                          isLoading ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                        disabled={isLoading}
-                        aria-label={`Edit quiz ${quiz.title}`}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteQuiz(quiz.id)}
-                        className={`px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 hover:scale-105 transition-all duration-200 text-sm ${
-                          isLoading ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                        disabled={isLoading}
-                        aria-label={`Delete quiz ${quiz.title}`}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+           <tbody>
+  {quizzes
+    .slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage)
+    .map((quiz) => (
+      <tr
+        key={quiz.id}
+        className="border-t hover:bg-gray-50 transition-all duration-200"
+      >
+        <td className="py-4 px-4 text-center align-middle text-sm text-neutral-900">
+          {quiz.title}
+        </td>
+        <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
+          {quiz.dueDate}
+        </td>
+        <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
+          {quiz.passingScore}%
+        </td>
+        <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
+          {quiz.totalMarks}
+        </td>
+        <td className="py-4 px-4 text-sm text-neutral-600">
+          <div className="flex items-center justify-center space-x-2">
+            <span>{quiz.answeredStudents}</span>
+            <button
+              onClick={() => handleViewHistory(quiz.id)}
+              className="h-8 w-8 flex items-center justify-center hover:bg-green-200 text-green-600 bg-green-100 rounded-full focus:outline-none transition-all duration-200"
+              aria-label={`View history for quiz ${quiz.title}`}
+            >
+              <User className="w-5 h-5 text-green-700" />
+            </button>
+          </div>
+        </td>
+        <td className="py-4 px-4 text-sm">
+          <div className="flex justify-center items-center space-x-2">
+            {/* Edit Icon Button */}
+            <button
+              onClick={() => handleEditQuiz(quiz)}
+              disabled={isLoading}
+              className={`p-2 rounded-full hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition duration-200 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              aria-label={`Edit quiz ${quiz.title}`}
+              title="Edit"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+
+            {/* Delete Icon Button */}
+            <button
+              onClick={() => handleDeleteQuiz(quiz.id)}
+              disabled={isLoading}
+              className={`p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-800 transition duration-200 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              aria-label={`Delete quiz ${quiz.title}`}
+              title="Delete"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))}
+</tbody>
+
           </table>
         </div>
       ) : (
