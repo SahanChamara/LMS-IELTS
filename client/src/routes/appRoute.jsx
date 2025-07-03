@@ -35,6 +35,7 @@ import Leccalander from "../pages/lecturepages/leccalnder";
 import Lecsettings from "../pages/lecturepages/lecsettings";
 import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails"; // Import new unit details page
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
+import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
 
 // Admin
 import SuperAdmin from "../pages/Adminpages/admindashboard";
@@ -85,6 +86,7 @@ const AppRoutes = () => {
         <Route path="/settings/lecture" element={<Lecsettings />} />
         <Route path="/unit/lecture/:id" element={<LecUnitDetails />} /> {/* New route for unit details */}
         <Route path="/feed/lecture" element={<InstructorFeed />} />
+        <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
       </Route>
 
       {/* Protected routes for SuperAdmin */}
