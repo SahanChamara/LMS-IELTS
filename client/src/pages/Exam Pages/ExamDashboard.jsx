@@ -22,7 +22,7 @@ const ExamDashboard = () => {
   const {exams, loading, error} = useAppSelector((state) => state.examIelts);
   const [selectedExam, setSelectedExam] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
-  const [loadings, setLoadings] = useState(loading);
+  const [loadings, setLoadings] = useState(false);
 
   useEffect(() => {
     dispatch(getAllPublishedExamsAPI());
@@ -134,7 +134,7 @@ const ExamDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Object.values(exams).map((exam) => (
                 <div
-                  key={exam.id}
+                  key={exam._id}
                   className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   <div className="p-4">
@@ -177,7 +177,7 @@ const ExamDashboard = () => {
                           <Clock className="h-4 w-4" />
                           {exam.duration} minutes
                         </span>
-                        <span>{exam.questions} questions</span>
+                        <span>{exam.totalQuestions} questions</span>
                       </div>
 
                       <button

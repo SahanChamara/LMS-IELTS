@@ -90,6 +90,12 @@ Education plays a crucial role in addressing climate change. By understanding th
             question:
               "Complete the sentence: The transition to renewable energy sources is essential for _____ greenhouse gas emissions.",
           },
+          {
+            id: "4",
+            type: "typing",
+            question:
+              "Complete the sentence: The transition to renewable energy sources is essential for _____ greenhouse gas emissions.",
+          },
         ]
       : exam.type === "Writing"
       ? [
