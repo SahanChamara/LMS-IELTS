@@ -52,7 +52,7 @@ const ExamPaper = ({ exam, onBack }) => {
   };
 
   // Sample questions based on exam type
-  const questions =
+  /* const questions =
     exam.type === "Reading"
       ? [
           {
@@ -125,7 +125,19 @@ Education plays a crucial role in addressing climate change. By understanding th
             question:
               "Complete the sentence: The Great Wall of China was built to protect against _____.",
           },
-        ];
+        ]; */
+
+  const questions = exam.sections
+    ? exam.sections.flatMap((section) =>
+        section.questions.map((q) => ({
+          id: q._id,
+          type: q.type,
+          question: q.question,
+          options: q.options || [],
+          passage: q.passage || "",
+        }))
+      )
+    : [];
 
   // Security measures
   useEffect(() => {
@@ -204,7 +216,7 @@ Education plays a crucial role in addressing climate change. By understanding th
   // Handle Listening Test
   if (exam.type === "Listening") {
     return (
-      <ListeningTest
+      <ListeningTest      
         onComplete={(answers) => {
           console.log("Listening test completed:", answers);
           // In real app, save answers to backend

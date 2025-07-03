@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Clock, Volume2, CheckCircle, AlertCircle } from "lucide-react";
 import AudioPlayer from "./AudioPlayer";
 
-const ListeningTest = ({ onComplete, onBack }) => {
+const ListeningTest = ({ onComplete, onBack }) => {  
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
   const [sectionCompleted, setSectionCompleted] = useState({});
