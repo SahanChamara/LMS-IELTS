@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Clock, BookOpen, Users, AlertCircle } from "lucide-react";
 import ExamIntro from "../Exam Pages/ExamIntro";
 import Sidebar from "../../components/Sidebar";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
+import { getAllPublishedExamsAPI } from "../../redux/features/examIeltsSlice";
 
 /**
  * @typedef {Object} Exam
@@ -16,11 +18,17 @@ import Sidebar from "../../components/Sidebar";
  */
 
 const ExamDashboard = () => {
+  const dispatch = useAppDispatch();
+  const {exams, loading, error} = useAppSelector((state) => state.examIelts);
   const [selectedExam, setSelectedExam] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadings, setLoadings] = useState(loading);
 
-  const exams = [
+  useEffect(() => {
+    dispatch(getAllPublishedExamsAPI());
+  }, [dispatch])
+
+  /* const exams = [
     {
       id: "1",
       title: "IELTS Academic Reading Test 1",
@@ -84,13 +92,13 @@ const ExamDashboard = () => {
       description: "Advanced listening test with academic and social contexts",
       available: true,
     },
-  ];
+  ]; */
 
   const handleAttemptNow = (exam) => {
-    setLoading(true);
+    setLoadings(true);
     setSelectedExam(exam);
     setShowIntro(true);
-    setLoading(false);
+    setLoadings(false);
   };
 
   //const availableExams = exams.filter((exam) => exam.available);
@@ -118,13 +126,13 @@ const ExamDashboard = () => {
           </div>         
 
           {/* Exams Grid */}
-          {loading ? (
+          {loadings ? (
             <div className="text-center py-12">
               <p className="text-lg text-gray-600">Loading exams...</p>
             </div>
-          ) : exams.length > 0 ? (
+          ) : Object.values(exams).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exams.map((exam) => (
+              {Object.values(exams).map((exam) => (
                 <div
                   key={exam.id}
                   className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
