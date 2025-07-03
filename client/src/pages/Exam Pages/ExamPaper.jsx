@@ -14,6 +14,7 @@ import SpeakingTest from "./SpeakingTest";
  * @property {"Reading" | "Writing" | "Listening" | "Speaking"} type
  * @property {string} description
  * @property {boolean} available
+ * @property {Array} sections - Array of section objects with questions
  */
 
 /**
@@ -25,107 +26,27 @@ import SpeakingTest from "./SpeakingTest";
 /**
  * @typedef {Object} Question
  * @property {string} id
- * @property {"mcq" | "reading" | "typing" | "essay"} type
+ * @property {"mcq" | "reading" | "typing" | "essay" | "form-completion" | "matching" | "short-answer"} type
  * @property {string} question
  * @property {string[]=} options
  * @property {string=} passage
-/** @type {React.FC<ExamPaperProps>} */
+ */
 
 const ExamPaper = ({ exam, onBack }) => {
-  // Always call hooks at the top level
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  // Custom toast function as a replacement for useToast
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
     toastElement.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-      variant === "destructive"
-        ? "bg-red-500 text-white"
-        : "bg-green-500 text-white"
+      variant === "destructive" ? "bg-red-500 text-white" : "bg-green-500 text-white"
     }`;
     toastElement.innerHTML = `<strong>${title}</strong><br>${description}`;
     document.body.appendChild(toastElement);
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
-
-  // Sample questions based on exam type
-  /* const questions =
-    exam.type === "Reading"
-      ? [
-          {
-            id: "1",
-            type: "reading",
-            passage: `Climate change represents one of the most pressing challenges of our time. The scientific consensus is clear: human activities, particularly the burning of fossil fuels, are the primary drivers of recent climate change. The consequences are already visible in rising sea levels, more frequent extreme weather events, and shifts in precipitation patterns that affect agriculture and water supplies globally.
-
-The transition to renewable energy sources such as solar, wind, and hydroelectric power is essential for reducing greenhouse gas emissions. Many countries have set ambitious targets for carbon neutrality, but achieving these goals requires not only technological innovation but also significant changes in policy, economics, and individual behavior.
-
-Education plays a crucial role in addressing climate change. By understanding the science behind climate change and its impacts, individuals can make informed decisions about their energy consumption, transportation choices, and lifestyle habits. Furthermore, climate education empowers people to advocate for policy changes and support sustainable practices in their communities.`,
-            question:
-              "According to the passage, what is the primary cause of recent climate change?",
-            options: [
-              "Natural climate variations",
-              "Solar radiation changes",
-              "Human activities, particularly burning fossil fuels",
-              "Volcanic eruptions",
-            ],
-          },
-          {
-            id: "2",
-            type: "mcq",
-            question:
-              "Which of the following is mentioned as a consequence of climate change?",
-            options: [
-              "Increased volcanic activity",
-              "Rising sea levels",
-              "Reduced solar radiation",
-              "Decreased oxygen levels",
-            ],
-          },
-          {
-            id: "3",
-            type: "typing",
-            question:
-              "Complete the sentence: The transition to renewable energy sources is essential for _____ greenhouse gas emissions.",
-          },
-          {
-            id: "4",
-            type: "typing",
-            question:
-              "Complete the sentence: The transition to renewable energy sources is essential for _____ greenhouse gas emissions.",
-          },
-        ]
-      : exam.type === "Writing"
-      ? [
-          {
-            id: "1",
-            type: "essay",
-            question:
-              "Task 1: The chart below shows the percentage of households in different income brackets in three cities. Summarize the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.",
-          },
-          {
-            id: "2",
-            type: "essay",
-            question:
-              "Task 2: Some people believe that technology has made our lives more complicated, while others argue that it has made life easier. Discuss both views and give your own opinion. Write at least 250 words.",
-          },
-        ]
-      : [
-          {
-            id: "1",
-            type: "mcq",
-            question: "What is the capital of Australia?",
-            options: ["Sydney", "Melbourne", "Canberra", "Perth"],
-          },
-          {
-            id: "2",
-            type: "typing",
-            question:
-              "Complete the sentence: The Great Wall of China was built to protect against _____.",
-          },
-        ]; */
 
   const questions = exam.sections
     ? exam.sections.flatMap((section) =>
@@ -139,17 +60,11 @@ Education plays a crucial role in addressing climate change. By understanding th
       )
     : [];
 
-  // Security measures
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Disable common shortcuts
       if (
         e.ctrlKey &&
-        (e.key === "c" ||
-          e.key === "v" ||
-          e.key === "a" ||
-          e.key === "s" ||
-          e.key === "p")
+        (e.key === "c" || e.key === "v" || e.key === "a" || e.key === "s" || e.key === "p")
       ) {
         e.preventDefault();
         showToast(
@@ -158,12 +73,7 @@ Education plays a crucial role in addressing climate change. By understanding th
           "destructive"
         );
       }
-      // Disable F12, Ctrl+Shift+I, Ctrl+U
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && e.key === "I") ||
-        (e.ctrlKey && e.key === "u")
-      ) {
+      if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && e.key === "u")) {
         e.preventDefault();
         showToast(
           "Access Denied",
@@ -198,7 +108,6 @@ Education plays a crucial role in addressing climate change. By understanding th
     };
   }, [showToast]);
 
-  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -213,13 +122,12 @@ Education plays a crucial role in addressing climate change. By understanding th
     return () => clearInterval(timer);
   }, []);
 
-  // Handle Listening Test
   if (exam.type === "Listening") {
     return (
-      <ListeningTest      
+      <ListeningTest
+        exam={exam} // Pass the full exam object
         onComplete={(answers) => {
           console.log("Listening test completed:", answers);
-          // In real app, save answers to backend
           onBack();
         }}
         onBack={onBack}
@@ -227,13 +135,11 @@ Education plays a crucial role in addressing climate change. By understanding th
     );
   }
 
-  // Handle Speaking Test
   if (exam.type === "Speaking") {
     return (
       <SpeakingTest
         onComplete={(recordings) => {
           console.log("Speaking test completed:", recordings);
-          // In real app, upload recordings to backend
           onBack();
         }}
         onBack={onBack}
@@ -258,7 +164,6 @@ Education plays a crucial role in addressing climate change. By understanding th
   };
 
   const handleSubmit = () => {
-    // In a real application, you would send the answers to a server
     showToast(
       "Exam Submitted Successfully",
       "Your answers have been recorded. You will receive your results soon."
@@ -269,14 +174,12 @@ Education plays a crucial role in addressing climate change. By understanding th
   const currentQ = questions[currentQuestion];
 
   return (
-    // <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
     <div className="flex h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
         <Sidebar />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-6xl mx-auto">
-          {/* Header with Timer */}
           <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-4 mb-6 flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{exam.title}</h1>
@@ -308,7 +211,6 @@ Education plays a crucial role in addressing climate change. By understanding th
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Question Navigation */}
             <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm border border-blue-200 sticky top-6 rounded-lg shadow">
                 <div className="p-4">
@@ -339,7 +241,6 @@ Education plays a crucial role in addressing climate change. By understanding th
               </div>
             </div>
 
-            {/* Question Content */}
             <div className="lg:col-span-3">
               <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
                 <div className="p-6">
@@ -407,7 +308,6 @@ Education plays a crucial role in addressing climate change. By understanding th
                     )}
                   </div>
 
-                  {/* Navigation Buttons */}
                   <div className="flex justify-between">
                     <button
                       onClick={() =>
@@ -435,7 +335,6 @@ Education plays a crucial role in addressing climate change. By understanding th
             </div>
           </div>
 
-          {/* Submit Confirmation Dialog */}
           {showSubmitDialog && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <div className="bg-white max-w-md w-full mx-4 rounded-lg shadow">
@@ -451,8 +350,8 @@ Education plays a crucial role in addressing climate change. By understanding th
                     changes after submission.
                   </p>
                   <div className="text-sm text-gray-600 mb-4">
-                    Answered: {Object.keys(answers).length} of{" "}
-                    {questions.length} questions
+                    Answered: {Object.keys(answers).length} of {questions.length}{" "}
+                    questions
                   </div>
                   <div className="flex space-x-3 p-6">
                     <button
@@ -475,7 +374,6 @@ Education plays a crucial role in addressing climate change. By understanding th
         </div>
       </main>
     </div>
-    // </div>
   );
 };
 
