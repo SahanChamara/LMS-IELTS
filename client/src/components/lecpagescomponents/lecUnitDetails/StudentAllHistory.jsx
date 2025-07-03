@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../../pages/lecturepages/lecsidebar";
 import { Search, Check, X, Download } from "lucide-react";
 
-const StudentAllHistory = ({ unit }) => {
+const StudentAllHistory = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const [studentHistory, setStudentHistory] = useState([]);
@@ -15,12 +15,6 @@ const StudentAllHistory = ({ unit }) => {
   const studentsPerPage = 5;
 
   // Static quiz data (mocked for the specific quizId)
-  const quizData = {
-    id: quizId,
-    passingScore: 75,
-    allowPassingScore: "yes",
-    totalMarks: 100,
-  };
 
   // Static student history data (no duplicates)
   const staticHistory = [
@@ -108,8 +102,8 @@ const StudentAllHistory = ({ unit }) => {
     setCurrentPage(1);
   };
 
-  // Handle individual submit action
-  const handleSubmit = (studentId) => {
+  // Handle individual send action
+  const handleSend = (studentId) => {
     setIsLoading(true);
     try {
       const updatedHistory = studentHistory.map((student) => {
@@ -127,14 +121,14 @@ const StudentAllHistory = ({ unit }) => {
       });
       setStudentHistory(updatedHistory);
       setToast({
-        message: `Quiz submitted for student ID ${studentId}`,
+        message: `Quiz sent for student ID ${studentId}`,
         type: "success",
         visible: true,
       });
     } catch (error) {
-      console.error("Error submitting quiz:", error.message);
+      console.error("Error sending quiz:", error.message);
       setToast({
-        message: `Error submitting quiz: ${error.message}`,
+        message: `Error sending quiz: ${error.message}`,
         type: "error",
         visible: true,
       });
@@ -143,8 +137,8 @@ const StudentAllHistory = ({ unit }) => {
     }
   };
 
-  // Handle submit all action
-  const handleSubmitAll = () => {
+  // Handle send all action
+  const handleSendAll = () => {
     setIsLoading(true);
     try {
       const now = new Date();
@@ -168,9 +162,9 @@ const StudentAllHistory = ({ unit }) => {
         visible: true,
       });
     } catch (error) {
-      console.error("Error submitting all quizzes:", error.message);
+      console.error("Error sending all quizzes:", error.message);
       setToast({
-        message: `Error submitting all quizzes: ${error.message}`,
+        message: `Error sending all quizzes: ${error.message}`,
         type: "error",
         visible: true,
       });
@@ -179,42 +173,74 @@ const StudentAllHistory = ({ unit }) => {
     }
   };
 
-  // Handle download result
+  // Handle download PDF
   const handleDownloadResult = () => {
     setIsLoading(true);
     try {
-      // Simulate CSV generation
-      const csvContent = [
-        "Student Name,Attend Time,Submitted Time,Answered Question Count,Score,Status",
-        ...studentHistory.map(
-          (student) =>
-            `"${student.studentName}","${student.attendTime}","${student.submittedAt || 'Not Submitted'}",${student.responsesCount},${student.score},"${student.status}"`
-        ),
-      ].join("\n");
-      
-      // Log CSV content (simulating file download)
-      console.log("CSV Content:\n", csvContent);
-      
-      // Simulate creating a downloadable file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      // LaTeX content for PDF
+      const latexContent = `
+\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage{booktabs}
+\\usepackage{geometry}
+\\geometry{a4paper, margin=1in}
+\\usepackage{noto}
+
+\\begin{document}
+
+\\begin{center}
+    \\textbf{\\large Student Log for Quiz ${quizId}} \\\\
+    \\vspace{0.5cm}
+    Generated on July 3, 2025, 21:54 IST
+\\end{center}
+
+\\vspace{0.5cm}
+
+\\begin{tabular}{llrrll}
+    \\toprule
+    \\textbf{Student Name} & \\textbf{Attend Time} & \\textbf{Submitted Time} & \\textbf{Answered Questions} & \\textbf{Score} & \\textbf{Status} \\\\
+    \\midrule
+${studentHistory
+  .map(
+    (student) => `
+    ${student.studentName.replace("&", "\\&")} & 
+    ${student.attendTime} & 
+    ${student.submittedAt || "Not Submitted"} & 
+    ${student.responsesCount} & 
+    ${student.score} & 
+    ${student.status.replace("&", "\\&")} \\\\
+`
+  )
+  .join("")}
+    \\bottomrule
+\\end{tabular}
+
+\\end{document}
+`;
+
+      // Log LaTeX content (simulating PDF generation)
+      console.log("LaTeX Content:\n", latexContent);
+
+      // Simulate PDF creation (in a real app, this would be compiled server-side)
+      const blob = new Blob([latexContent], { type: "text/plain;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `quiz_${quizId}_results.csv`);
+      link.setAttribute("download", `quiz_${quizId}_results.tex`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       setToast({
-        message: "Results downloaded successfully",
+        message: "PDF results downloaded successfully",
         type: "success",
         visible: true,
       });
     } catch (error) {
-      console.error("Error downloading results:", error.message);
+      console.error("Error downloading PDF:", error.message);
       setToast({
-        message: `Error downloading results: ${error.message}`,
+        message: `Error downloading PDF: ${error.message}`,
         type: "error",
         visible: true,
       });
@@ -235,17 +261,17 @@ const StudentAllHistory = ({ unit }) => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 p-6 flex flex-col items-center">
-        <div className="w-full p-6 max-w-8xl">
+        <div className="w-full max-w-8xl bg-white shadow-md rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-neutral-900">
               Student Log for Quiz {quizId}
             </h3>
             <button
-              onClick={() => navigate("/unit-details")}
+              onClick={() => navigate("/unit/lecture/:id")}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-semibold"
               aria-label="Back to Quizzes"
             >
-              Back to Quizzes
+              Back to Main
             </button>
           </div>
 
@@ -362,17 +388,17 @@ const StudentAllHistory = ({ unit }) => {
                         </td>
                         <td className="py-4 px-4 text-sm text-center">
                           <button
-                            onClick={() => handleSubmit(student.id)}
+                            onClick={() => handleSend(student.id)}
                             disabled={student.submittedAt || isLoading}
                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              student.submittedAt
+                              student.submittedAt || isLoading
                                 ? "bg-gray-300 text-neutral-500 cursor-not-allowed"
                                 : "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105"
                             }`}
-                            aria-label={`Submit quiz for ${student.studentName}`}
-                            title={student.submittedAt ? "Already Submitted" : "Submit Quiz"}
+                            aria-label={`Send quiz for ${student.studentName}`}
+                            title={student.submittedAt ? "Already Sended" : "Send Quiz"}
                           >
-                            {student.submittedAt ? "Submitted" : "Submit"}
+                            {student.submittedAt ? "sended" : "send"}
                           </button>
                         </td>
                       </tr>
@@ -394,24 +420,24 @@ const StudentAllHistory = ({ unit }) => {
                     ? "bg-gray-300 text-neutral-500 cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700 hover:scale-105"
                 }`}
-                aria-label="Download quiz results"
-                title="Download Results"
+                aria-label="Download quiz results as PDF"
+                title="Download PDF Results"
               >
                 <Download className="h-5 w-5 mr-2" />
-                Download Result
+                Download PDF
               </button>
               <button
-                onClick={handleSubmitAll}
+                onClick={handleSendAll}
                 disabled={isLoading || studentHistory.every((student) => student.submittedAt)}
                 className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isLoading || studentHistory.every((student) => student.submittedAt)
                     ? "bg-gray-300 text-neutral-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105"
                 }`}
-                aria-label="Submit all quizzes"
-                title="Submit All Quizzes"
+                aria-label="Send all quizzes"
+                title="Send All Quizzes"
               >
-                Submit All
+                Send All
               </button>
             </div>
           )}
