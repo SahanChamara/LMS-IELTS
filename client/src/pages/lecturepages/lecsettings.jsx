@@ -165,7 +165,7 @@ const Lsettings = () => {
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-100">
         <LecSidebar onLogout={handleLogout} />
         
         <main className="flex-1 overflow-auto">

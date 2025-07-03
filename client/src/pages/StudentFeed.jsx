@@ -124,11 +124,11 @@ const StudentFeed = () => {
           <h1 className="text-3xl font-semibold text-gray-900 mb-4">
             Study Feed
           </h1>
-
         {/* Create Post Form */}
         <Card>
             <motion.div
-                className="rounded-2xl shadow-sm bg-white  p-6"
+
+                className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
             >
                 <div className="flex items-center space-x-2">
                     <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">

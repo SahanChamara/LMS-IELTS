@@ -36,6 +36,9 @@ const Adminsidebar = ({ onLogout }) => {
             <a href="/notifications/admin" className="block text-sm hover:text-teal-200">
               Notifications
             </a>
+            <a href="/feed/admin" className="block text-sm hover:text-teal-200">
+              Feed Management
+            </a>
             <button
               onClick={onLogout}
               className="w-full text-left text-sm hover:text-teal-200 mt-4"
