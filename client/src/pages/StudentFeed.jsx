@@ -8,6 +8,8 @@ import AttachmentDisplay from '../components/AttachmentDisplay';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/card';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
+import { useAppSelector } from '../redux/store-config/store';
 
 const StudentFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -15,6 +17,7 @@ const StudentFeed = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [newComments, setNewComments] = useState({});
+    const {student} = useAppSelector((state) => state.students);
 
   const handleCreatePost = () => {
     if (!newPost.trim() && !selectedFile) {

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Card from "../components/card";
 import { Link } from "react-router-dom";
-import { useAppDispatch } from "../redux/store-config/store";
+import { useAppDispatch, useAppSelector } from "../redux/store-config/store";
 import { getAllUnitsAPI } from "../redux/features/unitsSlice";
 import { motion } from "framer-motion";
+
 
 const Institution = () => {
   const dispatch = useAppDispatch();
@@ -27,7 +28,7 @@ const Institution = () => {
       (sum, unit) => (progress[unit.unitId] === 100 ? sum + unit.credits : sum),
       0
     );
-
+  
     let weightedProgress = 0;
     let totalPossibleWeight = 0;
 
@@ -54,7 +55,6 @@ const Institution = () => {
          const response = await dispatch(getAllUnitsAPI()).unwrap();
          console.log("Unit Response ",response);
          
-
         let fetchedUnits = [];
         if (Array.isArray(response)) {
           //console.log(response.data._id);
