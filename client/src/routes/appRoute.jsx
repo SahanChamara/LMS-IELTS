@@ -33,9 +33,10 @@ import Lstudents from "../pages/lecturepages/lstudents";
 import Lassignments from "../pages/lecturepages/lassignments";
 import Leccalander from "../pages/lecturepages/leccalnder";
 import Lecsettings from "../pages/lecturepages/lecsettings";
-import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails"; // Import new unit details page
+import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails";
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
 import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
+import StudandTabel from "../components/lecpagescomponents/studandTabel";
 
 // Admin
 import SuperAdmin from "../pages/Adminpages/admindashboard";
@@ -82,9 +83,10 @@ const AppRoutes = () => {
         <Route path="/courses/lecture" element={<Leccorces />} />
         <Route path="/assignments/lecture" element={<Lassignments />} />
         <Route path="/students/lecture" element={<Lstudents />} />
+        <Route path="/students/lecture/records/:unitId" element={<StudandTabel />} />
         <Route path="/calendar/lecture" element={<Leccalander />} />
         <Route path="/settings/lecture" element={<Lecsettings />} />
-        <Route path="/unit/lecture/:id" element={<LecUnitDetails />} /> {/* New route for unit details */}
+        <Route path="/unit/lecture/:id" element={<LecUnitDetails />} />
         <Route path="/feed/lecture" element={<InstructorFeed />} />
         <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
       </Route>
@@ -94,10 +96,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/admin" element={<SuperAdmin />} />
         <Route path="/students/admin" element={<SuperAdminstudentcontrol />} />
         <Route path="/lectures/admin" element={<SuperAdminlecturercontrol />} />
-        <Route
-          path="/notifications/admin"
-          element={<SuperAdminnotifications />}
-        />
+        <Route path="/notifications/admin" element={<SuperAdminnotifications />} />
         <Route path="/feed/admin" element={<AdminFeed />} />
       </Route>
     </Routes>
