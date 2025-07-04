@@ -138,6 +138,7 @@ const ExamPaper = ({ exam, onBack }) => {
   if (exam.type === "Speaking") {
     return (
       <SpeakingTest
+      exam={exam}
         onComplete={(recordings) => {
           console.log("Speaking test completed:", recordings);
           onBack();

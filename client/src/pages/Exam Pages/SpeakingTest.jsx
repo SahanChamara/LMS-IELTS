@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Mic,
   MicOff,
@@ -9,7 +9,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-const SpeakingTest = ({ onComplete, onBack }) => {
+const SpeakingTest = ({ exam, onComplete, onBack }) => {
   const [currentPart, setCurrentPart] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -23,6 +23,7 @@ const SpeakingTest = ({ onComplete, onBack }) => {
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
+
   // Custom toast function as a replacement for useToast
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
@@ -34,51 +35,19 @@ const SpeakingTest = ({ onComplete, onBack }) => {
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  const speakingParts = [
-    {
-      id: "part1",
-      title: "Part 1: Introduction and Interview",
-      duration: 300, // 5 minutes
-      questions: [
-        "What is your full name?",
-        "Can I see your identification?",
-        "Where are you from?",
-        "Do you work or study?",
-        "What do you like about your job/studies?",
-        "What are your hobbies?",
-      ],
-      instructions:
-        "The examiner will ask you general questions about yourself and familiar topics.",
-    },
-    {
-      id: "part2",
-      title: "Part 2: Long Turn",
-      duration: 120, // 2 minutes
-      preparationTime: 60, // 1 minute
-      questions: [
-        "Describe a place you have visited that you particularly enjoyed.",
-        "You should say:",
-        "• Where it was",
-        "• When you went there",
-        "• What you did there",
-        "• And explain why you particularly enjoyed it",
-      ],
-      instructions: "You will have 1 minute to prepare and then speak for 2 minutes.",
-    },
-    {
-      id: "part3",
-      title: "Part 3: Discussion",
-      duration: 300, // 5 minutes
-      questions: [
-        "How important is tourism for your country?",
-        "What are the benefits of traveling?",
-        "How has tourism changed in recent years?",
-        "What problems can tourism cause?",
-        "How can these problems be solved?",
-      ],
-      instructions: "The examiner will ask you questions related to the topic in Part 2.",
-    },
-  ];
+  console.log("exam prop", exam);  
+
+  // Transform backend data into speakingParts structure
+  const speakingParts = useMemo(() => {
+    return exam.sections.map((section) => ({
+      id: section._id,
+      title: section.title,
+      duration: section.duration * 60, // Convert minutes to seconds
+      preparationTime: section.preparationTime * 60 || 0, // Convert minutes to seconds, default to 0 if undefined
+      instructions: section.instructions,
+      questions: section.questions.map((q) => q.question), // Extract only the question text
+    }));
+  }, [exam.sections]);
 
   useEffect(() => {
     setupMediaStream();
@@ -310,11 +279,7 @@ const SpeakingTest = ({ onComplete, onBack }) => {
               <ul className="space-y-2">
                 {currentSpeakingPart.questions.map((question, index) => (
                   <li key={index} className="text-gray-700">
-                    {question.startsWith("•") ? (
-                      <span className="ml-4 text-blue-600">{question}</span>
-                    ) : (
-                      question
-                    )}
+                    {question}
                   </li>
                 ))}
               </ul>
