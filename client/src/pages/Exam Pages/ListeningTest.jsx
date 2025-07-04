@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Clock, Volume2, CheckCircle, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Clock, Volume2, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import AudioPlayer from "./AudioPlayer";
 
-const ListeningTest = ({ exam, onComplete, onBack }) => {  
+const ListeningTest = React.memo(({ exam, onComplete, onBack }) => {
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
   const [sectionCompleted, setSectionCompleted] = useState({});
-  const [isTransferTime, setIsTransferTime] = useState(false);
-  const [transferTimeRemaining, setTransferTimeRemaining] = useState(60); // 10 minutes
+  const [transferTimeRemaining, setTransferTimeRemaining] = useState(600); // 10 minutes
   const [testPhase, setTestPhase] = useState("listening");
+  const [isAudioPlaying, setIsAudioPlaying] = useState(true); // Track audio playback status
 
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
@@ -20,29 +20,39 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  console.log("Listening page exam", exam);
-  
+  // Use useMemo with stable dependency on exam.sections to prevent re-computation
+  const listeningSections = useMemo(() => {
+    return exam.sections.map((section) => ({
+      id: section._id,
+      title: section.title,
+      audioUrl: section.audioUrl,
+      context: section.context,
+      questions: section.questions.map((q) => ({
+        id: q._id,
+        type: q.type,
+        question: q.question,
+        options: q.options || [],
+        passage: q.passage || "",
+      })),
+    }));
+  }, [exam.sections]);
 
-  // Dynamically generate listeningSections from exam prop
-  const listeningSections = exam.sections.map((section) => ({
-    id: section._id,
-    title: section.title,
-    audioUrl: section.audioUrl,
-    context: section.context,
-    questions: section.questions.map((q) => ({
-      id: q._id,
-      type: q.type,
-      question: q.question,
-      options: q.options || [],
-      passage: q.passage || "",
-    })),
-  }));
+  // Derive questions from listeningSections to ensure stability
+  const questions = useMemo(() => {
+    return listeningSections.flatMap((section) => section.questions);
+  }, [listeningSections]);
 
-  const questions = listeningSections.flatMap((section) => section.questions);
-
+  // Debug render cycle
   useEffect(() => {
+    console.log("Listening page render", { currentSection, testPhase, exam, isAudioPlaying });
+    return () => console.log("Listening page cleanup");
+  }, [currentSection, testPhase, exam, isAudioPlaying]);
+
+  // Manage transfer timer
+  useEffect(() => {
+    let timer;
     if (testPhase === "transfer" && transferTimeRemaining > 0) {
-      const timer = setInterval(() => {
+      timer = setInterval(() => {
         setTransferTimeRemaining((prev) => {
           if (prev <= 1) {
             setTestPhase("completed");
@@ -51,9 +61,8 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
           return prev - 1;
         });
       }, 1000);
-
-      return () => clearInterval(timer);
     }
+    return () => clearInterval(timer);
   }, [testPhase, transferTimeRemaining]);
 
   const handleAnswerChange = (questionId, answer) => {
@@ -70,16 +79,35 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
     }));
 
     if (currentSection < listeningSections.length - 1) {
-      showToast("Section Complete", `Section ${currentSection + 1} completed. Moving to next section.`);
+      showToast(
+        "Section Complete",
+        `Section ${currentSection + 1} completed. Moving to next section.`
+      );
       setCurrentSection((prev) => prev + 1);
+      setIsAudioPlaying(true); // Reset for next section
     } else {
       setTestPhase("transfer");
-      showToast("Listening Complete", "You now have 10 minutes to transfer your answers.");
+      showToast(
+        "Listening Complete",
+        "You now have 10 minutes to transfer your answers."
+      );
     }
   };
 
   const handleSubmit = () => {
     onComplete(answers);
+  };
+
+  const goToPreviousSection = () => {
+    if (currentSection > 0) {
+      setCurrentSection((prev) => prev - 1);
+    }
+  };
+
+  const goToNextSection = () => {
+    if (currentSection < listeningSections.length - 1) {
+      setCurrentSection((prev) => prev + 1);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -186,10 +214,12 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
               <>
                 <div className="mb-6">
                   <AudioPlayer
+                    key={currentSection}
                     audioUrl={currentListeningSection.audioUrl}
                     onSectionComplete={handleSectionComplete}
                     sectionTitle={currentListeningSection.title}
                     canReplay={false}
+                    onPlayingStatusChange={setIsAudioPlaying} // Pass playing status
                   />
                 </div>
 
@@ -199,9 +229,19 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
               </>
             )}
 
+            {testPhase === "transfer" && (
+              <>
+                <div className="mb-6">
+                  <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow p-4">
+                    <p className="text-gray-700 italic">{currentListeningSection.context}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
               <div className="p-6">
-                <h3>Questions {currentSection * 4 + 1}-{Math.min((currentSection + 1) * 4, questions.length)}</h3>
+                <h3>Questions {currentSection * 4 + 1} - {Math.min((currentSection + 1) * 4, questions.length)}</h3>
               </div>
               <div className="p-6">
                 <div className="space-y-6">
@@ -230,6 +270,7 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
                                   handleAnswerChange(question.id, e.target.value)
                                 }
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                               />
                               <span className="text-gray-700">{option}</span>
                             </label>
@@ -246,6 +287,7 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
                             handleAnswerChange(question.id, e.target.value)
                           }
                           className="max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                         />
                       )}
 
@@ -270,6 +312,7 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
                                   )
                                 }
                                 className="max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                               />
                             </div>
                           ))}
@@ -282,21 +325,37 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
             </div>
 
             {testPhase === "transfer" && (
-              <div className="bg-white/80 backdrop-blur-sm border border-blue-200 mt-6 rounded-lg shadow p-6">
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={handleSubmit}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
-                  >
-                    Submit Test
-                  </button>
-                  <button
-                    onClick={onBack}
-                    className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg"
-                  >
-                    Back to Dashboard
-                  </button>
+              <div className="flex justify-between items-center mt-6">
+                <button
+                  onClick={goToPreviousSection}
+                  disabled={currentSection === 0}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                </button>
+                <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow p-4">
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={handleSubmit}
+                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
+                    >
+                      Submit Test
+                    </button>
+                    <button
+                      onClick={onBack}
+                      className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg"
+                    >
+                      Back to Dashboard
+                    </button>
+                  </div>
                 </div>
+                <button
+                  onClick={goToNextSection}
+                  disabled={currentSection === listeningSections.length - 1}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+                </button>
               </div>
             )}
           </div>
@@ -304,6 +363,6 @@ const ListeningTest = ({ exam, onComplete, onBack }) => {
       </div>
     </div>
   );
-};
+});
 
 export default ListeningTest;
