@@ -37,6 +37,7 @@ import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecU
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
 import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
 import StudandTabel from "../components/lecpagescomponents/studandTabel";
+import Response from "../pages/lecturepages/Response";
 
 // Admin
 import SuperAdmin from "../pages/Adminpages/admindashboard";
@@ -89,6 +90,8 @@ const AppRoutes = () => {
         <Route path="/unit/lecture/:id" element={<LecUnitDetails />} />
         <Route path="/feed/lecture" element={<InstructorFeed />} />
         <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
+        <Route path="/response/:id" element={<Response />} />
+        
       </Route>
 
       {/* Protected routes for SuperAdmin */}
