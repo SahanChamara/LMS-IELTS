@@ -11,13 +11,12 @@ const Response = () => {
 
   // Mock data for student responses based on assignment ID
   useEffect(() => {
-    // Simulate fetching data with a timeout
     setTimeout(() => {
       const mockResponses = [
         { id: 1, studentId: "STD001", name: "Student 1", response: "Completed with good effort.", submittedAt: "2025-07-03 14:00" },
         { id: 2, studentId: "STD002", name: "Student 2", response: "Needs improvement in structure.", submittedAt: "2025-07-03 15:30" },
         { id: 3, studentId: "STD003", name: "Student 3", response: "Excellent work!", submittedAt: "2025-07-03 16:00" },
-      ].filter(response => response.id <= 3 && response.id === parseInt(id)); // Match by ID for demo
+      ].filter(response => response.id <= 3 && response.id === parseInt(id));
       setResponses(mockResponses);
       setLoading(false);
     }, 1000);
@@ -28,19 +27,23 @@ const Response = () => {
   };
 
   const handleBack = () => {
-    navigate(-1); // Go back to the previous page
+    navigate(-1);
   };
 
- if (loading) {
-     return (
-       <div className="flex min-h-screen">
-         <LecSidebar onLogout={handleLogout} />
-         <div className="flex-1 p-6 bg-neutral-100 flex justify-center items-center">
-           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-         </div>
-       </div>
-     );
-   }
+  const handleGrade = (studentId) => {
+    navigate(`/lecturer/assignments/${id}/grade/${studentId}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen">
+        <LecSidebar onLogout={handleLogout} />
+        <div className="flex-1 p-6 bg-neutral-100 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -105,7 +108,12 @@ const Response = () => {
                     <td className="p-4">{response.response}</td>
                     <td className="p-4">{response.submittedAt}</td>
                     <td className="p-4">
-                      <button className="text-blue-600 hover:underline">Grade</button>
+                      <button
+                        onClick={() => handleGrade(response.studentId)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Give Grade
+                      </button>
                     </td>
                   </tr>
                 ))

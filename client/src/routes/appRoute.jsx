@@ -33,7 +33,11 @@ import Lstudents from "../pages/lecturepages/lstudents"
 import Lassignments from "../pages/lecturepages/lassignments"
 import Leccalander  from "../pages/lecturepages/leccalnder"
 import Lecsettings from "../pages/lecturepages/lecsettings"
+import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails";
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
+import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
+import StudandTabel from "../components/lecpagescomponents/studandTabel";
+import Response from "../pages/lecturepages/Response";
 
 
 // Admin
@@ -82,7 +86,12 @@ const AppRoutes = () => {
         <Route path="assignments/lecture" element={<Lassignments />} />
         <Route path="students/lecture" element={<Lstudents />} />`
         <Route path="/calendar/lecture" element={<Leccalander />} />
-        <Route path="/settings/lecture" element={<Lecsettings />} />`
+        <Route path="/settings/lecture" element={<Lecsettings />} />
+         <Route path="/unit/lecture/:id" element={<LecUnitDetails />} />
+        <Route path="/feed/lecture" element={<InstructorFeed />} />
+        <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
+        <Route path="/response/:id" element={<Response />} />
+        <Route path="/students/lecture/records/:unitId" element={<StudandTabel />} />
 
       </Route>
 
