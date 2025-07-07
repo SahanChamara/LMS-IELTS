@@ -1,8 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
 
+// Defining the Leccorces component to manage and display course units for instructors
 const Leccorces = () => {
+  const navigate = useNavigate(); // Initialize navigate hook for routing
+
+  // Initializing state for units with sample data
   const [units, setUnits] = useState([
     {
       id: 1,
@@ -39,6 +44,7 @@ const Leccorces = () => {
     },
   ]);
 
+  // Managing state for modal visibility, form data, and active tab
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState(null);
   const [formData, setFormData] = useState({
@@ -51,10 +57,12 @@ const Leccorces = () => {
   });
   const [activeTab, setActiveTab] = useState("both");
 
+  // Handling logout action
   const handleLogout = () => {
     console.log("Logout triggered");
   };
 
+  // Updating form data on input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -63,6 +71,7 @@ const Leccorces = () => {
     });
   };
 
+  // Handling image file upload and converting to base64
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -76,6 +85,7 @@ const Leccorces = () => {
     }
   };
 
+  // Updating form data based on selected course code
   const handleCodeChange = (e) => {
     const selectedCode = e.target.value;
     const selectedCourse = courses.find((course) => course.id === selectedCode);
@@ -89,6 +99,7 @@ const Leccorces = () => {
     });
   };
 
+  // Toggling unit state between enabled and disabled
   const toggleUnitState = (unitId) => {
     setUnits(
       units.map((unit) =>
@@ -102,6 +113,7 @@ const Leccorces = () => {
     );
   };
 
+  // Opening modal for creating a new unit
   const openCreateModal = () => {
     setCurrentUnit(null);
     setFormData({
@@ -115,6 +127,7 @@ const Leccorces = () => {
     setIsModalOpen(true);
   };
 
+  // Opening modal for editing an existing unit
   const openEditModal = (unit) => {
     setCurrentUnit(unit);
     setFormData({
@@ -128,11 +141,12 @@ const Leccorces = () => {
     setIsModalOpen(true);
   };
 
+  // Navigating to unit details page
   const handleAccessUnit = (unit) => {
-    console.log("Accessing unit:", unit);
-    alert(`Accessing unit: ${unit.title}`);
+    navigate(`/unit/lecture/${unit.id}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
 
+  // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -157,20 +171,25 @@ const Leccorces = () => {
     setIsModalOpen(false);
   };
 
+  // Deleting a unit with confirmation
   const handleDelete = (unitId) => {
     if (window.confirm("Are you sure you want to delete this unit?")) {
       setUnits(units.filter((unit) => unit.id !== unitId));
     }
   };
 
+  // Rendering the main component layout
   return (
     <div className="flex min-h-screen">
+      {/* Rendering the sidebar */}
       <div className="fixed top-0 left-0 h-full w-64 z-50">
         <Lecsidebar onLogout={handleLogout} />
       </div>
 
-      <div className="flex-1 ml-64 bg-gray-100 overflow-x-auto">
+      {/* Rendering the main content area */}
+      <div className="flex-1 ml-64 bg-neutral-100 overflow-x-auto">
         <div className="p-4 sm:p-6">
+          {/* Displaying header and view toggle buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-xl sm:text-2xl font-bold text-neutral-800">
               My Courses
@@ -215,6 +234,7 @@ const Leccorces = () => {
             </div>
           </div>
 
+          {/* Rendering table view */}
           {(activeTab === "table" || activeTab === "both") && (
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
@@ -338,6 +358,7 @@ const Leccorces = () => {
             </div>
           )}
 
+          {/* Rendering card view */}
           {(activeTab === "cards" || activeTab === "both") && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">
@@ -405,6 +426,7 @@ const Leccorces = () => {
             </div>
           )}
 
+          {/* Rendering create/edit unit modal */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-md my-8">

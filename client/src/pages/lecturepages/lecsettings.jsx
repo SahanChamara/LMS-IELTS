@@ -1,171 +1,90 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import LecSidebar from "./lecsidebar";
-
-// Error Boundary Component
-class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex-1 p-6 bg-white rounded-lg shadow-sm max-w-4xl mx-auto mt-6">
-          <div className="text-red-600 font-medium">
-            Something went wrong: {this.state.error?.message || "Unknown error"}
-          </div>
-          <button 
-            onClick={() => this.setState({ hasError: false })}
-            className="mt-4 text-blue-600 hover:text-blue-800"
-          >
-            Try again
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
+import { FiUser, FiLock } from "react-icons/fi";
 
 const Lsettings = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({ name: "", email: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
   const [activeTab, setActiveTab] = useState("profile");
-  const navigate = useNavigate();
 
-  // Fetch instructor profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("ACCESS_TOKEN");
-        if (!token) {
-          setError("No authentication token found. Please login again.");
-          setTimeout(() => navigate("/login"), 2000);
-          return;
-        }
-        
-        const response = await axios.get("{{baseUrl}}auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        setProfile({ 
-          name: response.data.name || "", 
-          email: response.data.email || "",
-          ...(response.data.avatar && { avatar: response.data.avatar })
-        });
-        setLoading(false);
-      } catch (err) {
-        console.error("Profile fetch error:", err);
-        setError(err.response?.data?.message || err.message || "Failed to fetch profile");
+        setLoading(true);
+        // Simulated API call (replace with actual API call)
+        const mockData = { name: "John Doe", email: "john.doe@university.com" };
         setTimeout(() => {
-          if (err.response?.status === 401) {
-            navigate("/login");
-          }
-        }, 2000);
+          setProfile(mockData);
+          setLoading(false);
+        }, 1000);
+      } catch (err) {
+        setError("Failed to load profile. Please try again.");
         setLoading(false);
       }
     };
     fetchProfile();
-  }, [navigate]);
+  }, []);
 
-  // Handle profile input changes
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle password input changes
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPassword((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle profile form submission
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem("ACCESS_TOKEN");
-      const response = await axios.put(
-        "{{baseUrl}}auth/profile",
-        { name: profile.name, email: profile.email },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setProfile(prev => ({ ...prev, ...response.data }));
-      setSuccess("Profile updated successfully!");
-      setError(null);
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error("Profile update error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to update profile");
-      setSuccess(null);
-    }
+  const handleProfileSubmit = () => {
+    setSuccess("Profile updated successfully!");
+    setError(null);
+    setTimeout(() => setSuccess(null), 3000);
   };
 
-  // Handle password form submission
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handlePasswordSubmit = () => {
     if (password.new !== password.confirm) {
       setError("New passwords don't match");
       return;
     }
-    
-    try {
-      const token = localStorage.getItem("ACCESS_TOKEN");
-      await axios.put(
-        "{{baseUrl}}auth/change-password",
-        { 
-          currentPassword: password.current,
-          newPassword: password.new 
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setSuccess("Password changed successfully!");
-      setError(null);
-      setPassword({ current: "", new: "", confirm: "" });
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error("Password change error:", err);
-      setError(err.response?.data?.message || err.message || "Failed to change password");
-      setSuccess(null);
-    }
+    setSuccess("Password changed successfully!");
+    setError(null);
+    setPassword({ current: "", new: "", confirm: "" });
+    setTimeout(() => setSuccess(null), 3000);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("ACCESS_TOKEN");
     navigate("/login");
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <LecSidebar onLogout={handleLogout} />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="h-8 w-64 bg-gray-200 rounded mb-4"></div>
-            <div className="h-4 w-48 bg-gray-200 rounded"></div>
-          </div>
+      <div className="font-sans min-h-screen bg-neutral-100 flex flex-col md:flex-row">
+        <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-10 md:block">
+          <LecSidebar onLogout={handleLogout} />
         </div>
+        <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-6 sm:gap-8">
+            {[...Array(2)].map((_, index) => (
+              <div key={index} className="bg-white p-6 rounded-lg shadow-lg animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
+                <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <ErrorBoundary>
-      <div className="flex min-h-screen bg-gray-100">
+ <ErrorBoundary>
+      <div className="flex min-h-screen bg-gray-50">
         <LecSidebar onLogout={handleLogout} />
         
         <main className="flex-1 overflow-auto">

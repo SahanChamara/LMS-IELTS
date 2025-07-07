@@ -28,7 +28,7 @@ const Lecsidebar = ({ onLogout }) => {
       icon: <FiHome className="text-lg" />,
     },
     {
-      name: "My Units",
+      name: "Units",
       path: "/courses/lecture",
       icon: <FiBook className="text-lg" />,
     },
@@ -37,6 +37,7 @@ const Lecsidebar = ({ onLogout }) => {
       path: "/students/lecture",
       icon: <FiUsers className="text-lg" />,
     },
+    
     {
       name: "Calendar", // Fixed typo "calender" to "Calendar"
       path: "/calendar/lecture", // Fixed path to "/calendar/lecture"

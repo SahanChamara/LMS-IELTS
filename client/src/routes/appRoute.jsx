@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 
-//students
+// Students
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -23,37 +23,41 @@ import Exam from "../pages/Exam";
 import StudentFeed from "../pages/StudentFeed";
 import ExamDashboard from "../pages/Exam Pages/ExamDashboard";
 
-
-// routes 
+// Routes
 import ProtectedRoute from "./protectedRoute";
 
-
-// lecture
+// Lecture
 import Leccorces from "../pages/lecturepages/lcourses";
 import Lecdashboard from "../pages/lecturepages/lecturedashboard" 
 import Lstudents from "../pages/lecturepages/lstudents" 
 import Lassignments from "../pages/lecturepages/lassignments"
 import Leccalander  from "../pages/lecturepages/leccalnder"
 import Lecsettings from "../pages/lecturepages/lecsettings"
-import LecsFeed from "../pages/lecturepages/InstructorFeed";
+import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails";
+import InstructorFeed from "../pages/lecturepages/InstructorFeed";
+import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
+import StudandTabel from "../components/lecpagescomponents/studandTabel";
+import Response from "../pages/lecturepages/Response";
 
 
 // Admin
-import SuperAdmin from "../pages/Adminpages/admindashboard"
-import SuperAdminstudentcontrol from "../pages/Adminpages/adminstudents"
-import SuperAdminlecturercontrol from "../pages/Adminpages/adminlecturer"
-import SuperAdminnotifications from "../pages/Adminpages/adminnotifications"
+import SuperAdmin from "../pages/Adminpages/admindashboard";
+import SuperAdminstudentcontrol from "../pages/Adminpages/adminstudents";
+import SuperAdminlecturercontrol from "../pages/Adminpages/adminlecturer";
+import SuperAdminnotifications from "../pages/Adminpages/adminnotifications";
 import IELTSLandingPage from "../pages/landing";
 import Exams from "../pages/exams";
 import AdminFeed from "../pages/Adminpages/AdminFeed";
 
-
-
+// Defining the application routes
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<Login/>} />
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
       <Route path="/" element={<IELTSLandingPage />} />
+
+      {/* Protected routes for Students and SuperAdmin */}
       <Route element={<ProtectedRoute allowedRoles={["Student", "SuperAdmin"]} />}>
         <Route path="/dashboard" element={<Institution />} />
         <Route path="/register" element={<Register />} />
@@ -67,26 +71,33 @@ const AppRoutes = () => {
         <Route path="/marks" element={<Marks />} />
         <Route path="/settings" element={<Tool />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/feed" element={<StudentFeed/>} />
+        <Route path="/feed" element={<StudentFeed />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/accessibility" element={<Accessibility />} />
         <Route path="/unit/:id" element={<CourseDetails />} />
         <Route path="/exam-application" element={<Exam />} />
       </Route>
+
+      {/* Protected routes for Instructors */}
       <Route element={<ProtectedRoute allowedRoles={["Instructor"]} />}>
         <Route path="dashboard/lecture" element={<Lecdashboard />} />
         <Route path="courses/lecture" element={<Leccorces />} />
         <Route path="assignments/lecture" element={<Lassignments />} />
-        <Route path="students/lecture" element={<Lstudents />} />
+        <Route path="students/lecture" element={<Lstudents />} />`
         <Route path="/calendar/lecture" element={<Leccalander />} />
         <Route path="/settings/lecture" element={<Lecsettings />} />
-        <Route path="/feed/lecture" element={<LecsFeed />} />
+         <Route path="/unit/lecture/:id" element={<LecUnitDetails />} />
+        <Route path="/feed/lecture" element={<InstructorFeed />} />
+        <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
+        <Route path="/response/:id" element={<Response />} />
+        <Route path="/students/lecture/records/:unitId" element={<StudandTabel />} />
 
       </Route>
+
+      {/* Protected routes for SuperAdmin */}
       <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
          <Route path="/dashboard/admin" element={<SuperAdmin/>} />
-         <Route path="/feed/admin" element={<AdminFeed/>} />
          <Route path="/students/admin" element={<SuperAdminstudentcontrol/>} />
          <Route path="/lectures/admin" element={<SuperAdminlecturercontrol/>} />
          <Route path="/notifications/admin"  element={<SuperAdminnotifications/>} />
