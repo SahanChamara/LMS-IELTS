@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Clock, CheckCircle, XCircle, Users, FileText, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users, FileText, MessageCircle, AlertTriangle, BookOpen } from 'lucide-react';
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
+import Adminsidebar from './Adminsidebars';
+import Card from '../../components/card';
 
 const AdminFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -27,6 +29,7 @@ const AdminFeed = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
+        className: 'bg-teal-100 text-teal-800 border border-teal-200',
       });
     }
   };
@@ -44,6 +47,7 @@ const AdminFeed = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
+        className: 'bg-red-100 text-red-800 border border-red-200',
       });
     }
   };
@@ -57,6 +61,7 @@ const AdminFeed = () => {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
+      className: 'bg-red-100 text-red-800 border border-red-200',
     });
   };
 
@@ -95,223 +100,200 @@ const AdminFeed = () => {
   };
 
   const renderPost = (post, showActions = false) => (
-    <div key={post.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-blue-600 font-semibold">
-                {post.userName.charAt(0)}
-              </span>
+    <Card key={post.id}>
+      <div
+        className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+        style={{ border: "none" }}
+      >
+        <div className="border-b border-gray-100 pb-3 mb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-gray-700 font-semibold text-lg">
+                  {post.userName.charAt(0)}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">{post.userName}</p>
+                <p className="text-xs text-gray-500 capitalize">
+                  <span className="inline-block px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full text-xs font-normal mr-2">
+                    {post.userRole}
+                  </span>
+                  {post.createdAt.toLocaleDateString()}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-gray-900">{post.userName}</p>
-              <p className="text-sm text-gray-500 capitalize">
-                {post.userRole} • {post.createdAt.toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              post.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-              post.status === 'pending' ? 'bg-gray-100 text-gray-800' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {post.status}
-            </span>
-            {post.userRole === 'instructor' && (
-              <span className="px-2 py-1 text-xs font-medium border border-gray-200 rounded-full text-gray-700">
-                Auto-approved
+            <div className="flex items-center space-x-2">
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+                post.status === 'approved'
+                  ? 'bg-teal-100 text-teal-800 border-teal-200'
+                  : post.status === 'pending'
+                  ? 'bg-gray-50 text-gray-500 border-gray-200'
+                  : 'bg-gray-50 text-gray-400 border-gray-200'
+              }`}>
+                {post.status}
               </span>
-            )}
+              {post.userRole === 'instructor' && (
+                <span className="px-2 py-0.5 text-xs font-normal border border-gray-200 rounded-full text-gray-500 bg-white">
+                  Auto-approved
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="p-4">
-        {post.textContent && (
-          <p className="text-gray-700 mb-4">{post.textContent}</p>
-        )}
-        
-        <AttachmentDisplay attachments={post.attachments} />
 
-        <ReactionBar
-          reactions={post.reactions}
-          currentUserId={currentUser.id}
-          currentUserName={currentUser.name}
-          onReaction={(type) => handleReaction(post.id, type)}
-        />
+        <div>
+          {post.textContent && (
+            <p className="text-gray-800 mb-3 leading-relaxed">{post.textContent}</p>
+          )}
 
-        <div className="flex items-center space-x-1 text-gray-500 mt-3 pt-3 border-t border-gray-200">
-          <MessageCircle className="h-4 w-4" />
-          <span className="text-sm">{post.comments.length} Comments</span>
-        </div>
+          <AttachmentDisplay attachments={post.attachments} />
 
-        {showActions && (
-          <div className="flex space-x-2 mt-4">
-            {post.status === 'pending' && (
-              <>
-                <button
-                  className="flex-1 flex items-center justify-center px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm"
-                  onClick={() => handleApprovePost(post.id)}
-                >
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  Approve
-                </button>
-                <button
-                  className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-gray-700 rounded-md hover:bg-gray-100 transition-colors duration-200 text-sm"
-                  onClick={() => handleRejectPost(post.id)}
-                >
-                  <XCircle className="mr-1 h-3 w-3" />
-                  Reject
-                </button>
-              </>
-            )}
-            {post.status === 'approved' && (
-              <button
-                className="flex items-center justify-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm"
-                onClick={() => handleDeletePost(post.id)}
-              >
-                <AlertTriangle className="mr-1 h-3 w-3" />
-                Delete Post
-              </button>
-            )}
+          <ReactionBar
+            reactions={post.reactions}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+            onReaction={(type) => handleReaction(post.id, type)}
+          />
+
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center space-x-1 text-gray-400">
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-xs">{post.comments.length} Comments</span>
+            </div>
           </div>
-        )}
+
+          {showActions && (
+            <div className="flex space-x-2 mt-4">
+              {post.status === 'pending' && (
+                <>
+                  <button
+                    className="flex-1 flex items-center justify-center px-3 py-1 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors duration-150 text-sm"
+                    onClick={() => handleApprovePost(post.id)}
+                  >
+                    <CheckCircle className="mr-1 h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded-md hover:bg-red-100 transition-colors duration-150 text-sm"
+                    onClick={() => handleRejectPost(post.id)}
+                  >
+                    <XCircle className="mr-1 h-4 w-4" />
+                    Reject
+                  </button>
+                </>
+              )}
+              {post.status === 'approved' && (
+                <button
+                  className="flex-1 flex items-center justify-center px-3 py-1 border border-gray-200 text-red-700 rounded-md hover:bg-red-100 transition-colors duration-150 text-sm"
+                  onClick={() => handleDeletePost(post.id)}
+                >
+                  <AlertTriangle className="mr-1 h-4 w-4" />
+                  Delete Post
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Card>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          🛠️ Study Feed - Admin Dashboard
-        </h1>
+    <div className="flex h-screen bg-gray-50 text-neutral-800 overflow-hidden">
+      <aside className="fixed top-0 left-0 z-10 w-64 h-full">
+        <Adminsidebar />
+      </aside>
+      <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-3xl font-semibold text-gray-900 mb-8">
+            Study Feed
+          </h1>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Posts</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {posts.length + pendingPosts.length + rejectedPosts.length}
-                  </p>
-                </div>
-              </div>
+          {/* Tab Navigation */}
+          <div className="bg-gray-100 border border-gray-200 rounded-md mb-4">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActiveTab('approved')}
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-teal-500 ${
+                  activeTab === 'approved'
+                    ? 'text-gray-900 font-semibold border-b-2 border-teal-500 bg-gray-200/60'
+                    : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
+                }`}
+                role="tab"
+                aria-selected={activeTab === 'approved'}
+                tabIndex={0}
+              >
+                <CheckCircle className="inline-block mr-1.5 h-3.5 w-3.5 align-text-bottom" />
+                Approved <span className="text-xs font-normal">({posts.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`flex-1 py-1.5 px-3 rounded-md text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-teal-500 ${
+                  activeTab === 'pending'
+                    ? 'text-gray-900 font-semibold border-b-2 border-teal-500 bg-gray-200/60'
+                    : 'text-gray-600 font-medium hover:bg-gray-200 hover:text-gray-900'
+                }`}
+                role="tab"
+                aria-selected={activeTab === 'pending'}
+                tabIndex={0}
+              >
+                <Clock className="inline-block mr-1.5 h-3.5 w-3.5 align-text-bottom" />
+                Pending <span className="text-xs font-normal">({pendingPosts.length})</span>
+              </button>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-yellow-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                  <p className="text-2xl font-bold text-gray-900">{pendingPosts.length}</p>
-                </div>
-              </div>
-            </div>
+          {/* Content */}
+          <div className="space-y-6">
+            {activeTab === 'approved' && (
+              <>
+                {posts.length === 0 ? (
+                  <Card>
+                    <div
+                      className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+                      style={{ border: "none" }}
+                    >
+                      <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No Posts Available
+                      </h3>
+                      <p className="text-gray-600 text-center">
+                        There are currently no approved posts in the feed.
+                      </p>
+                    </div>
+                  </Card>
+                ) : (
+                  posts.map((post) => renderPost(post, true))
+                )}
+              </>
+            )}
+
+            {activeTab === 'pending' && (
+              <>
+                {pendingPosts.length === 0 ? (
+                  <Card>
+                    <div
+                      className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12 hover:scale-102 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out"
+                      style={{ border: "none" }}
+                    >
+                      <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No Posts Pending
+                      </h3>
+                      <p className="text-gray-600 text-center">
+                        There are currently no posts pending approval.
+                      </p>
+                    </div>
+                  </Card>
+                ) : (
+                  pendingPosts.map((post) => renderPost(post, true))
+                )}
+              </>
+            )}
           </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center">
-                <Users className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Posts</p>
-                  <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('approved')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-              activeTab === 'approved'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Approved Posts ({posts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-              activeTab === 'pending'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Pending Posts ({pendingPosts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('rejected')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-              activeTab === 'rejected'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Rejected Posts ({rejectedPosts.length})
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-6">
-          {activeTab === 'approved' && (
-            <>
-              {posts.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="p-8 text-center">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No approved posts yet</p>
-                  </div>
-                </div>
-              ) : (
-                posts.map((post) => renderPost(post, true))
-              )}
-            </>
-          )}
-
-          {activeTab === 'pending' && (
-            <>
-              {pendingPosts.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="p-8 text-center">
-                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No posts pending approval</p>
-                  </div>
-                </div>
-              ) : (
-                pendingPosts.map((post) => renderPost(post, true))
-              )}
-            </>
-          )}
-
-          {activeTab === 'rejected' && (
-            <>
-              {rejectedPosts.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="p-8 text-center">
-                    <XCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No rejected posts</p>
-                  </div>
-                </div>
-              ) : (
-                rejectedPosts.map((post) => renderPost(post, false))
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      </main>
       <ToastContainer />
     </div>
   );

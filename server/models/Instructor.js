@@ -15,4 +15,4 @@ const InstructorSchema = new Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Instructor', InstructorSchema);
+module.exports = mongoose.models.Instructor || mongoose.model('Instructor', InstructorSchema);

@@ -28,16 +28,13 @@ import ProtectedRoute from "./protectedRoute";
 
 // Lecture
 import Leccorces from "../pages/lecturepages/lcourses";
-import Lecdashboard from "../pages/lecturepages/lecturedashboard";
-import Lstudents from "../pages/lecturepages/lstudents";
-import Lassignments from "../pages/lecturepages/lassignments";
-import Leccalander from "../pages/lecturepages/leccalnder";
-import Lecsettings from "../pages/lecturepages/lecsettings";
-import LecUnitDetails from "../components/lecpagescomponents/lecUnitDetails/LecUnitDetails";
+import Lecdashboard from "../pages/lecturepages/lecturedashboard" 
+import Lstudents from "../pages/lecturepages/lstudents" 
+import Lassignments from "../pages/lecturepages/lassignments"
+import Leccalander  from "../pages/lecturepages/leccalnder"
+import Lecsettings from "../pages/lecturepages/lecsettings"
 import InstructorFeed from "../pages/lecturepages/InstructorFeed";
-import StudentAllHistory from "../components/lecpagescomponents/lecUnitDetails/StudentAllHistory";
-import StudandTabel from "../components/lecpagescomponents/studandTabel";
-import Response from "../pages/lecturepages/Response";
+
 
 // Admin
 import SuperAdmin from "../pages/Adminpages/admindashboard";
@@ -80,27 +77,25 @@ const AppRoutes = () => {
 
       {/* Protected routes for Instructors */}
       <Route element={<ProtectedRoute allowedRoles={["Instructor"]} />}>
-        <Route path="/dashboard/lecture" element={<Lecdashboard />} />
-        <Route path="/courses/lecture" element={<Leccorces />} />
-        <Route path="/assignments/lecture" element={<Lassignments />} />
-        <Route path="/students/lecture" element={<Lstudents />} />
-        <Route path="/students/lecture/records/:unitId" element={<StudandTabel />} />
+        <Route path="dashboard/lecture" element={<Lecdashboard />} />
+        <Route path="courses/lecture" element={<Leccorces />} />
+        <Route path="assignments/lecture" element={<Lassignments />} />
+        <Route path="students/lecture" element={<Lstudents />} />`
         <Route path="/calendar/lecture" element={<Leccalander />} />
-        <Route path="/settings/lecture" element={<Lecsettings />} />
-        <Route path="/unit/lecture/:id" element={<LecUnitDetails />} />
-        <Route path="/feed/lecture" element={<InstructorFeed />} />
-        <Route path="/student-history/:quizId" element={<StudentAllHistory />} />
-        <Route path="/response/:id" element={<Response />} />
-        
+        <Route path="/settings/lecture" element={<Lecsettings />} />`
+
       </Route>
 
       {/* Protected routes for SuperAdmin */}
       <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
-        <Route path="/dashboard/admin" element={<SuperAdmin />} />
-        <Route path="/students/admin" element={<SuperAdminstudentcontrol />} />
-        <Route path="/lectures/admin" element={<SuperAdminlecturercontrol />} />
-        <Route path="/notifications/admin" element={<SuperAdminnotifications />} />
-        <Route path="/feed/admin" element={<AdminFeed />} />
+         <Route path="/dashboard/admin" element={<SuperAdmin/>} />
+         <Route path="/students/admin" element={<SuperAdminstudentcontrol/>} />
+         <Route path="/lectures/admin" element={<SuperAdminlecturercontrol/>} />
+         <Route path="/notifications/admin"  element={<SuperAdminnotifications/>} />
+
+        
+
+
       </Route>
     </Routes>
   );

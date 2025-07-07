@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Upload, MessageCircle, BookOpen } from 'lucide-react';
+import { Upload, MessageCircle, BookOpen, FileUp } from 'lucide-react';
 import { mockPosts, currentUser } from '../data/mockData';
 import ReactionBar from '../components/ReactionBar';
 import AttachmentDisplay from '../components/AttachmentDisplay';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/card';
+import { motion } from 'framer-motion';
 
 const StudentFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -120,56 +121,60 @@ const StudentFeed = () => {
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-           Study Feed
+          <h1 className="text-3xl font-semibold text-gray-900 mb-4">
+            Study Feed
           </h1>
+        {/* Create Post Form */}
+        <Card>
+            <motion.div
 
-          {/* Create Post Form */}
-          <Card>
-            <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">
-                    {currentUser.name.charAt(0)}
-                  </span>
+                className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
+            >
+                <div className="flex items-center space-x-2">
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+                        <span className="text-gray-700 font-semibold text-lg">
+                            {currentUser.name.charAt(0)}
+                        </span>
+                    </div>
+                    <input
+                        id="post-content"
+                        placeholder="What's on your mind?"
+                        value={newPost}
+                        onChange={(e) => setNewPost(e.target.value)}
+                        className="flex-1 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-800 text-sm"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                        <FileUp className="h-5 w-5 text-gray-600 hover:text-blue-500" />
+                        <input
+                            id="file-upload"
+                            type="file"
+                            accept=".pdf,.docx,.png,.jpg,.jpeg"
+                            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                            className="hidden"
+                        />
+                    </label>
+                    <button
+                        onClick={handleCreatePost}
+                        className="text-sm px-3 py-1 bg-white text-blue-600 border border-blue-600 rounded-md shadow-sm hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out"
+                    >
+                        Post
+                    </button>
                 </div>
-                <input
-                  id="post-content"
-                  placeholder="What's on your mind?"
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  className="flex-1 p-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 text-sm"
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <Upload className="h-5 w-5 text-gray-600 hover:text-blue-600" />
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.docx,.png,.jpg,.jpeg"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={handleCreatePost}
-                  className="px-4 py-1 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
-                >
-                  Post
-                </button>
-              </div>
-              {selectedFile && (
-                <p className="text-xs text-gray-600 mt-2 ml-12">
-                  Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-                </p>
-              )}
-            </div>
-          </Card>
+                {selectedFile && (
+                    <p className="text-xs text-gray-600 mt-2 ml-12">
+                        Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                    </p>
+                )}
+            </motion.div>
+        </Card>
 
-          {/* Posts Feed */}
-          <div className="space-y-6 mt-8">
+        {/* Posts Feed */}
+          <div className="space-y-6 mt-6">
             {posts.length === 0 ? (
               <Card>
-                <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-6 flex flex-col items-center justify-center py-12">
+                <motion.div
+                  className="rounded-2xl shadow-sm  bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12"
+                >
                   <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     No Posts Available
@@ -177,24 +182,26 @@ const StudentFeed = () => {
                   <p className="text-gray-600 text-center">
                     There are currently no posts in the feed. Share your study materials to get started!
                   </p>
-                </div>
+                </motion.div>
               </Card>
             ) : (
               posts.map((post) => (
                 <Card key={post.id}>
-                  <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-6 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="border-b border-gray-200 pb-4 mb-4">
+                  <motion.div
+                    className="rounded-2xl shadow-sm  bg-white/10 backdrop-blur-lg p-6"
+                  >
+                    <div className="border-b border-gray-100 pb-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold">
+                          <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+                            <span className="text-gray-700 font-semibold text-lg">
                               {post.userName.charAt(0)}
                             </span>
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{post.userName}</p>
-                            <p className="text-sm text-gray-600 capitalize">
-                              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium mr-2">
+                            <p className="font-medium text-gray-900">{post.userName}</p>
+                            <p className="text-xs text-gray-500 capitalize">
+                              <span className="inline-block px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full text-xs font-normal mr-2">
                                 {post.userRole}
                               </span>
                               {post.createdAt.toLocaleDateString()}
@@ -206,7 +213,7 @@ const StudentFeed = () => {
 
                     <div>
                       {post.textContent && (
-                        <p className="text-gray-700 mb-4">{post.textContent}</p>
+                        <p className="text-gray-800 mb-3 leading-relaxed">{post.textContent}</p>
                       )}
 
                       <AttachmentDisplay attachments={post.attachments} />
@@ -218,13 +225,13 @@ const StudentFeed = () => {
                         onReaction={(type) => handleReaction(post.id, type)}
                       />
 
-                      <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="mt-2 pt-2 border-t border-gray-100">
                         <button
-                          className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
+                          className="flex items-center space-x-1 text-gray-400 hover:text-gray-900"
                           onClick={() => toggleComments(post.id)}
                         >
                           <MessageCircle className="h-4 w-4" />
-                          <span className="text-sm">{post.comments.length} Comments</span>
+                          <span className="text-xs">{post.comments.length} Comments</span>
                         </button>
                       </div>
 
@@ -243,14 +250,14 @@ const StudentFeed = () => {
                                   handleAddComment(post.id);
                                 }
                               }}
-                              className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                              className="flex-1 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-800 text-sm"
                             />
                             <button
-                              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                              className={`px-3 py-1 rounded-md text-sm font-medium ${
                                 newComments[post.id]?.trim()
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                  ? 'bg-gray-900 text-white hover:bg-gray-800'
                                   : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              } transition-colors duration-200`}
+                              } transition-colors duration-150`}
                               onClick={() => handleAddComment(post.id)}
                               disabled={!newComments[post.id]?.trim()}
                             >
@@ -259,7 +266,7 @@ const StudentFeed = () => {
                           </div>
 
                           {post.comments.map((comment) => (
-                            <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                            <div key={comment.id} className="bg-gray-50 p-3 rounded-md">
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="font-medium text-sm text-gray-900">{comment.userName}</span>
                                 <span className="text-xs text-gray-600 capitalize">
@@ -275,7 +282,7 @@ const StudentFeed = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 </Card>
               ))
             )}
