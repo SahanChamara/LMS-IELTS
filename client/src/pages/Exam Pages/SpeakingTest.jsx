@@ -9,7 +9,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-const SpeakingTest = ({ exam, onComplete, onBack }) => {
+const SpeakingTest = React.memo(({ exam = { sections: [] }, onComplete, onBack }) => {
   const [currentPart, setCurrentPart] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -24,7 +24,7 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
 
-  // Custom toast function as a replacement for useToast
+  // Custom toast function
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
     toastElement.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
@@ -35,19 +35,23 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  console.log("exam prop", exam);  
-
-  // Transform backend data into speakingParts structure
+  // Transform backend data into speakingParts structure with fallback
   const speakingParts = useMemo(() => {
-    return exam.sections.map((section) => ({
-      id: section._id,
-      title: section.title,
-      duration: section.duration * 60, // Convert minutes to seconds
-      preparationTime: section.preparationTime * 60 || 0, // Convert minutes to seconds, default to 0 if undefined
-      instructions: section.instructions,
-      questions: section.questions.map((q) => q.question), // Extract only the question text
+    return (exam?.sections || []).map((section) => ({
+      id: section._id || `part-${Math.random()}`,
+      title: section.title || "Untitled Part",
+      duration: (section.duration || 0) * 60, // Convert minutes to seconds
+      preparationTime: (section.preparationTime || 0) * 60 || 0, // Convert minutes to seconds
+      instructions: section.instructions || "No instructions available",
+      questions: (section.questions || []).map((q) => q.question || "No question"),
     }));
-  }, [exam.sections]);
+  }, [exam?.sections]); // Safe access with optional chaining
+
+  // Debug render cycle
+  useEffect(() => {
+    console.log("SpeakingTest render", { currentPart, isRecording, isPreparing, exam });
+    return () => console.log("SpeakingTest cleanup");
+  }, [currentPart, isRecording, isPreparing, exam]);
 
   useEffect(() => {
     setupMediaStream();
@@ -60,7 +64,6 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
 
   useEffect(() => {
     let interval;
-
     if (isPreparing && preparationTime > 0) {
       interval = setInterval(() => {
         setPreparationTime((prev) => {
@@ -72,11 +75,8 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
         });
       }, 1000);
     } else if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
+      interval = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
     }
-
     return () => clearInterval(interval);
   }, [isPreparing, isRecording, preparationTime]);
 
@@ -91,11 +91,7 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
-      showToast(
-        "Media Access Error",
-        "Could not access camera or microphone. Please check permissions.",
-        "destructive"
-      );
+      showToast("Media Access Error", "Could not access camera or microphone.", "destructive");
     }
   };
 
@@ -164,8 +160,8 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
     if (mediaStream) {
       const videoTrack = mediaStream.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = !cameraEnabled;
-        setCameraEnabled(!cameraEnabled);
+        videoTrack.enabled = !videoTrack.enabled;
+        setCameraEnabled(videoTrack.enabled);
       }
     }
   };
@@ -174,8 +170,8 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
     if (mediaStream) {
       const audioTrack = mediaStream.getAudioTracks()[0];
       if (audioTrack) {
-        audioTrack.enabled = !micEnabled;
-        setMicEnabled(!micEnabled);
+        audioTrack.enabled = !audioTrack.enabled;
+        setMicEnabled(audioTrack.enabled);
       }
     }
   };
@@ -186,13 +182,16 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const currentSpeakingPart = speakingParts[currentPart];
+  const currentSpeakingPart = speakingParts[currentPart] || {
+    title: "Loading...",
+    instructions: "Please wait while the test loads.",
+    questions: ["Loading questions..."],
+  };
   const hasRecording = recordings[currentSpeakingPart.id];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -201,7 +200,7 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-600">
-                Part {currentPart + 1} of {speakingParts.length}
+                Part {currentPart + 1} of {speakingParts.length || 1}
               </div>
               {isPreparing && (
                 <div className="text-lg font-mono text-orange-600">
@@ -218,7 +217,6 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Video Preview */}
           <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
             <div className="p-4">
               <h3 className="text-lg font-semibold">Video Preview</h3>
@@ -237,7 +235,6 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
                   </div>
                 )}
               </div>
-
               <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={toggleCamera}
@@ -267,72 +264,58 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
             </div>
           </div>
 
-          {/* Instructions and Questions */}
           <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
             <div className="p-4">
               <h3 className="text-lg font-semibold">Instructions</h3>
             </div>
             <div className="p-4">
               <p className="text-gray-700 mb-4">{currentSpeakingPart.instructions}</p>
-
               <h4 className="font-semibold mb-3">Questions:</h4>
               <ul className="space-y-2">
                 {currentSpeakingPart.questions.map((question, index) => (
-                  <li key={index} className="text-gray-700">
-                    {question}
-                  </li>
+                  <li key={index} className="text-gray-700">{question}</li>
                 ))}
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Recording Controls */}
         <div className="bg-white/80 backdrop-blur-sm border border-blue-200 mt-6 rounded-lg shadow p-6">
           <div className="flex justify-center space-x-4">
-            {!isPreparing &&
-              !isRecording &&
-              !hasRecording && (
-                <button
-                  onClick={startPreparation}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
-                >
-                  {currentSpeakingPart.preparationTime
-                    ? "Start Preparation"
-                    : "Start Recording"}
-                </button>
-              )}
-
+            {!isPreparing && !isRecording && !hasRecording && (
+              <button
+                onClick={startPreparation}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
+              >
+                {currentSpeakingPart.preparationTime
+                  ? "Start Preparation"
+                  : "Start Recording"}
+              </button>
+            )}
             {isRecording && (
               <button
                 onClick={stopRecording}
                 className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg flex items-center"
               >
-                <Square className="h-4 w-4 mr-2" />
-                Stop Recording
+                <Square className="h-4 w-4 mr-2" /> Stop Recording
               </button>
             )}
-
             {hasRecording && (
               <>
                 <button
                   onClick={retakeRecording}
                   className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg flex items-center"
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Retake
+                  <RotateCcw className="h-4 w-4 mr-2" /> Retake
                 </button>
                 <button
                   onClick={nextPart}
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
                 >
-                  {currentPart < speakingParts.length - 1
-                    ? "Next Part"
-                    : "Complete Test"}
+                  {currentPart < speakingParts.length - 1 ? "Next Part" : "Complete Test"}
                 </button>
               </>
             )}
-
             <button
               onClick={onBack}
               className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg"
@@ -344,6 +327,6 @@ const SpeakingTest = ({ exam, onComplete, onBack }) => {
       </div>
     </div>
   );
-};
+});
 
 export default SpeakingTest;
