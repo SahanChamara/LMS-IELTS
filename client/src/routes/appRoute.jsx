@@ -46,6 +46,7 @@ import SuperAdminnotifications from "../pages/Adminpages/adminnotifications"
 import IELTSLandingPage from "../pages/landing";
 import Exams from "../pages/exams";
 import AdminFeed from "../pages/Adminpages/AdminFeed";
+import InstructorDashboard from "../pages/Exam Pages/Instructor Exam Pages/InstructorDashboard";
 
 
 
@@ -82,6 +83,7 @@ const AppRoutes = () => {
         <Route path="/calendar/lecture" element={<Leccalander />} />
         <Route path="/settings/lecture" element={<Lecsettings />} />
         <Route path="/feed/lecture" element={<LecsFeed />} />
+        <Route path="/exam/lecture" element={<InstructorDashboard />} />
 
       </Route>
       <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
