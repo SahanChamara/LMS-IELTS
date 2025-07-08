@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import CourseHeader from '../components/course/CourseHeaders';
-import CourseTabs from '../components/course/CourseTabs';
-import OverviewTab from '../components/course/tabs/OverviewTabs';
-import LessonsTab from '../components/course/tabs/LessonsTabs';
-import AssessmentsTab from '../components/course/tabs/AssessmentsTabs';
-import ExamsTab from '../components/course/tabs/ExamsTab';
-import MaterialsTab from '../components/course/tabs/MaterialsTab';
-import DiscussionsTab from '../components/course/tabs/DiscussionsTab';
-import AssignmentsTab from '../components/course/tabs/AssignmentsTab';
-import OnlineSessionTab from '../components/course/tabs/OnlineSessionTabs';
-import { getUnitById } from '../service/unitsService';
-import { createLog } from '../service/logService';
-import StudentDiscussionsTab from '../components/course/tabs/StudentDiscussionTab';
-import InstructorDiscussionsTab from '../components/course/tabs/InstructorDisccussionTab';
+import Sidebar from '../../components/Sidebar';
+import CourseHeader from '../../components/course/CourseHeaders';
+import CourseTabs from '../../components/course/CourseTabs';
+import OverviewTab from '../../components/course/tabs/OverviewTabs';
+import LessonsTab from '../../components/course/tabs/LessonsTabs';
+import AssessmentsTab from '../../components/course/tabs/AssessmentsTabs';
+import ExamsTab from '../../components/course/tabs/ExamsTab';
+import MaterialsTab from '../../components/course/tabs/MaterialsTab';
+import DiscussionsTab from '../../components/course/tabs/DiscussionsTab';
+import AssignmentsTab from '../../components/course/tabs/AssignmentsTab';
+import OnlineSessionTab from '../../components/course/tabs/OnlineSessionTabs';
+import { getUnitById } from '../../service/unitsService';
+import { createLog } from '../../service/logService';
+import StudentDiscussionsTab from '../../components/course/tabs/StudentDiscussionTab';
+import InstructorDiscussionsTab from '../../components/course/tabs/InstructorDisccussionTab';
 
 const UnitDetails = () => {
   const { id } = useParams();
