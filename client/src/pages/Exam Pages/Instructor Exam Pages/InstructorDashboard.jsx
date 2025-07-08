@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Users, Clock, Edit3, Eye, FileCheck, TrendingUp, AlertCircle } from 'lucide-react';
 import CreateExamForm from './CreateExamForm';
-/*import EditExamForm from '@/components/instructor/EditExamForm';
-import PreviewExam from '@/components/instructor/PreviewExam';
-import SubmissionList from '@/components/instructor/SubmissionList';
-import RecentActivityFeed from '@/components/instructor/RecentActivityFeed';
+import EditExamForm from './EditExamForm';
+import PreviewExam from './PreviewExam';
+import SubmissionList from './SubmissionList';
+/*import RecentActivityFeed from '@/components/instructor/RecentActivityFeed';
 import QuickActionsPanel from '@/components/instructor/QuickActionsPanel'; */
 
 const InstructorDashboard = () => {
