@@ -44,7 +44,7 @@ import SuperAdmin from '../pages/Adminpages/admindashboard'
 import SuperAdminstudentcontrol from '../pages/Adminpages/adminstudents'
 import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
-import IELTSLandingPage from '../pages/landing'
+import IELTSLandingPage from '../pages/Adminpages/landing'
 import Exams from '../pages/exams'
 import AdminFeed from '../pages/Adminpages/AdminFeed'
 

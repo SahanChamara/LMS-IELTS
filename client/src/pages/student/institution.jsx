@@ -5,7 +5,7 @@ import AssignedAssessments from "../../homecomponents/assigned";
 import Exm from "../../homecomponents/Examr";
 import CompletedAssessmentsCard from "../../homecomponents/CompletedAssessmentsCard";
 import Completed from "../../homecomponents/CompletedCoursesCard";
-import Card, { CardContent } from "../../components/Card";
+import Card, { CardContent } from "../../components/card"
 
 const Home = () => {
   return (
