@@ -211,7 +211,7 @@ const InstructorDashboard = () => {
         </div>
 
         {/* Pending Reviews Alert */}
-        {pendingReviews > 0 && (
+      {/*   {pendingReviews > 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg mb-8">
             <div className="p-6 flex items-center">
               <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
@@ -229,7 +229,7 @@ const InstructorDashboard = () => {
               </button>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Exams Grid */}
         <div className="space-y-6">
@@ -304,13 +304,13 @@ const InstructorDashboard = () => {
                           <Edit3 className="h-4 w-4 mr-1 inline" />
                           Edit
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => handlePreviewExam(exam)}
                           className="flex-1 px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg text-sm transition-colors"
                         >
                           <Eye className="h-4 w-4 mr-1 inline" />
                           Preview
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   </div>
