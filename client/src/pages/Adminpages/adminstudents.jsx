@@ -41,7 +41,7 @@ const SuperAdminstudentcontrol = () => {
       <Adminsidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8  overflow-y-auto">
         {/* Header */}
         <div className="mb-6 bg-gradient-to-r from-teal-600 to-teal-800 text-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Student Management</h2>

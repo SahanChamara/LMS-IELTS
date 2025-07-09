@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import Footer from "../components/Footer";
-import Card from "../components/Card";
-import { useAppDispatch } from "../redux/store-config/store";
-import { logout } from "../redux/features/authSlice";
+import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/Sidebar";
+import Footer from "../../components/Footer";
+import Card from "../../components/card";
+import { useAppDispatch } from "../../redux/store-config/store";
+import { logout } from "../../redux/features/authSlice";
 
 const Logout = () => {
   const dispatch = useAppDispatch();

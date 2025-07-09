@@ -1,6 +1,6 @@
 import React from "react";
-import Sidebar from "../components/Sidebar";
-import Card, { CardContent } from "../components/card";
+import Sidebar from "../../components/Sidebar";
+import Card, { CardContent } from "../../components/card";
 import {
   Download,
   UploadCloud,
@@ -8,7 +8,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { assignment } from "../data/updateAssignmentn";
+import { assignment } from "../../data/updateAssignmentn";
 
 const Activity = () => {
   const now = new Date();

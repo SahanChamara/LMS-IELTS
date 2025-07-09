@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Card, { CardContent } from "../components/Card";
+import Sidebar from "../../components/Sidebar";
+import Card, { CardContent } from "../../components/Card";
 
 const Settings = () => {
   // Personal Information State

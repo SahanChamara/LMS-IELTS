@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import landingImage1 from '../images/landing-img1.jpg';
+import landingImage1 from '../../images/landing-img1.jpg';
 import { Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const IELTSLandingPage = () => {

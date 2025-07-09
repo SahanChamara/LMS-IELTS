@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Upload, MessageCircle, BookOpen, FileUp } from 'lucide-react';
-import { mockPosts, currentUser } from '../data/mockData';
-import ReactionBar from '../components/ReactionBar';
-import AttachmentDisplay from '../components/AttachmentDisplay';
-import Sidebar from '../components/Sidebar';
-import Card from '../components/card';
+import { mockPosts, currentUser } from '../../data/mockData';
+import ReactionBar from '../../components/ReactionBar';
+import AttachmentDisplay from '../../components/AttachmentDisplay';
+import Sidebar from '../../components/Sidebar';
+import Card from '../../components/card';
 import { motion } from 'framer-motion';
 
 const StudentFeed = () => {

@@ -2,9 +2,9 @@ import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import Footer from "../components/Footer";
-import { useAppDispatch, useAppSelector } from "../redux/store-config/store";
-import { loginUserAPI } from "../redux/features/authSlice";
+import Footer from "../../components/Footer";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
+import { loginUserAPI } from "../../redux/features/authSlice";
 
 const Login = () => {
   const dispatch = useAppDispatch();
