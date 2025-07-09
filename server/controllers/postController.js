@@ -6,6 +6,7 @@ const createPost = async (req, res) => {
     try {
         const { textContent, attachments, visibility, course, userId, userName, userRole } = req.body;
 
+        console.log(req.body);
         if (!userId || !userName || !userRole || !course) {
             return res.status(400).json({ message: 'Missing required fields' });
         }

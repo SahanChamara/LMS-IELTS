@@ -3,13 +3,12 @@ import ApiService from "./api-service-config/api-service";
 // Create a new post
 export async function createPost(postData) {
   try {
-    console.log(postData)
     const apiObject = {
       method: "POST",
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, // { textContent, attachments, visibility, course, userId, userName, userRole }
+      data: postData, // { textContent, attachments, visibility, course, userId, userName, userRole }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -29,7 +28,7 @@ export async function approvePost(postId, status) {
       withCredentials: true,
       prefix: "",
       endpoint: `posts/${postId}/approve`,
-      body: { status },
+      data: { status },
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -62,7 +61,7 @@ export async function reactPost(postId, reactionData) {
       withCredentials: true,
       prefix: "",
       endpoint: `posts/${postId}/react`,
-      body: reactionData, // { type, userId, userName }
+      data: reactionData, // { type, userId, userName }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -79,7 +78,7 @@ export async function commentPost(postId, commentData) {
       withCredentials: true,
       prefix: "",
       endpoint: `posts/${postId}/comment`,
-      body: commentData, // { content, userId, userName, userRole }
+      data: commentData, // { content, userId, userName, userRole }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -132,10 +131,7 @@ export async function getPostsByCourseId(courseId, filters = {}) {
       prefix: "",
       endpoint: `posts/course/${courseId}${queryParams ? `?${queryParams}` : ''}`,
     };
-    
-    const reponse = await ApiService.callApi(apiObject);
-    console.log(reponse);
-    return reponse;
+    return await ApiService.callApi(apiObject);
   } catch (error) {
     console.error("getPostsByCourseId error:", error.message);
     throw error;
