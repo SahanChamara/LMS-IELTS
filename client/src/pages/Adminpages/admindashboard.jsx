@@ -72,7 +72,7 @@ const Admindashboard = () => {
   };
 
   return (
-    <div className="font-sans min-h-screen bg-neutral-100 flex flex-col lg:flex-row">
+    <div className="font-sans h-screen bg-neutral-100 flex flex-col lg:flex-row overflow-hidden">
       {/* Sidebar */}
       <Adminsidebar onLogout={handleLogout} />
 
