@@ -42,4 +42,19 @@ export async function getUnitById(id) {
   }
 }
 
-
+//=========================================================================
+export async function getUnitByInstructorId(id) {
+  try {
+    const apiObject = {
+      method: "GET",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `units/${id}/units`,  // Fixed here
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("getUnitByInstructorId error:", error.message);
+    throw error;
+  }
+}
+//=========================================================================

@@ -558,7 +558,7 @@ exports.getAllUnitsByInstructor = async (req, res) => {
         unitCode: unit.unitCode,
         title: unit.title,
         description: unit.description,
-        image_url: unit.image
+        image: unit.image
       })),
       pagination: {
         total,

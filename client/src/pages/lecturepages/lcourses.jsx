@@ -1,48 +1,111 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
+
+//=============================================================================================
+import { useAppDispatch } from "../../redux/store-config/store";
+import { getUnitByInstructorIdAPI } from "../../redux/features/unitsSlice";
+import { motion } from "framer-motion";
+//=============================================================================================
 
 // Defining the Leccorces component to manage and display course units for instructors
 const Leccorces = () => {
   const navigate = useNavigate(); // Initialize navigate hook for routing
 
+  //==========================================================================================
+  const dispatch = useAppDispatch();
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+      const fetchUnits = async () => {
+        try {
+          setLoading(true);
+           const response = await dispatch(getUnitByInstructorIdAPI(localStorage.getItem("user"))).unwrap();
+           console.log("::: -> Unit Response ",response);
+           
+  
+          let fetchedUnits = [];
+          if (Array.isArray(response)) {
+            //console.log(response.data._id);
+            fetchedUnits = response.map((unit, index) => ({
+              title: unit.title || "Untitled",
+              unitId: unit._id || `unit-${index}`,
+              credits: unit.credits || 0,
+              image: unit.image || "default-image.jpg",
+            }));
+          } else if (response && response.data && Array.isArray(response.data)) {
+            fetchedUnits = response.data.map((unit, index) => ({
+              title: unit.title || "Untitled",
+              unitId: unit._id || `unit-${index}`,
+              credits: unit.credits || 0,
+              image: unit.image || "default-image.jpg",
+            }));
+          }else {
+            throw new Error("Unexpected response format");
+          }
+  
+          setUnits(fetchedUnits);
+  
+          const initialProgress = {};
+          const initialEnrolled = {};
+          fetchedUnits.forEach((unit) => {
+            initialProgress[unit.unitId] = Math.floor(Math.random() * 100);
+            initialEnrolled[unit.unitId] = Math.random() > 0.3;
+          });
+          setProgressData(initialProgress);
+          setEnrolledUnits(initialEnrolled);
+          calculateProgress(initialEnrolled, initialProgress);
+        } catch (err) {
+          setError(err.message || "Failed to fetch units. Please try again later.");
+          console.error("fetchUnits error:", err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchUnits();
+    }, [dispatch]);
+  //==========================================================================================
+
   // Initializing state for units with sample data
-  const [units, setUnits] = useState([
-    {
-      id: 1,
-      title: "Introduction to React",
-      code: "CS101",
-      students: 50,
-      description:
-        "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
-      image:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      state: "enabled",
-    },
-    {
-      id: 2,
-      title: "Advanced JavaScript",
-      code: "CS202",
-      students: 35,
-      description:
-        "Dive deep into JavaScript concepts like closures, prototypes, async/await. Master the language that powers modern web development.",
-      image:
-        "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      state: "disabled",
-    },
-    {
-      id: 3,
-      title: "Web Development",
-      code: "CS303",
-      students: 45,
-      description:
-        "Full-stack web development unit covering HTML, CSS, JavaScript, and backend technologies. Build complete web applications from scratch.",
-      image:
-        "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80",
-      state: "enabled",
-    },
-  ]);
+  // const [units, setUnits] = useState([
+  //   {
+  //     id: 1,
+  //     title: "Introduction to React",
+  //     code: "CS101",
+  //     students: 50,
+  //     description:
+  //       "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+  //     state: "enabled",
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "Advanced JavaScript",
+  //     code: "CS202",
+  //     students: 35,
+  //     description:
+  //       "Dive deep into JavaScript concepts like closures, prototypes, async/await. Master the language that powers modern web development.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+  //     state: "disabled",
+  //   },
+  //   {
+  //     id: 3,
+  //     title: "Web Development",
+  //     code: "CS303",
+  //     students: 45,
+  //     description:
+  //       "Full-stack web development unit covering HTML, CSS, JavaScript, and backend technologies. Build complete web applications from scratch.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80",
+  //     state: "enabled",
+  //   },
+  // ]);
 
   // Managing state for modal visibility, form data, and active tab
   const [isModalOpen, setIsModalOpen] = useState(false);
