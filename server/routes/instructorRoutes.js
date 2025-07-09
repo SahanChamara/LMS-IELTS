@@ -10,6 +10,7 @@ const {
   addCourse,
   addNotification,
   addCalendarEvent,
+  getAllUnitsByInstructor,
 } = require("../controllers/instructorController");
 
 router.post('/', auth(['SuperAdmin']), createInstructor);
@@ -20,5 +21,9 @@ router.delete('/:id', auth(['SuperAdmin']), deleteInstructor);
 router.post('/:id/courses', auth(['SuperAdmin', 'Instructor']), addCourse);
 router.post('/:id/notifications', auth(['SuperAdmin', 'Instructor']), addNotification);
 router.post('/:id/calendarEvents', auth(['SuperAdmin', 'Instructor']), addCalendarEvent);
+
+//=========================================================================================
+router.get('/:id/units', auth(['SuperAdmin', 'Instructor']), getAllUnitsByInstructor);
+//=========================================================================================
 
 module.exports = router;

@@ -7,6 +7,7 @@ const UnitSchema = new Schema({
   subUnits: [{ type: Schema.Types.ObjectId, ref: 'Unit' }],
   lessons: [{ type: Schema.Types.ObjectId, ref: 'Lesson' }],
   image: { type: String },
+  unitCode: { type: String, unique: true },
   assessments: [{ type: Schema.Types.ObjectId, ref: 'Assessment' }],
   credits: { type: String },
   exams: [{ type: Schema.Types.ObjectId, ref: 'Exam' }],
