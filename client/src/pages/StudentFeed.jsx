@@ -10,11 +10,14 @@ import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../redux/store-config/store';
 import { getStudentDetailsAPI } from '../redux/features/studentSlice';
 import { createPost, getPostsByCourseId, reactPost, commentPost } from '../service/postService';
+import { AwsS3Service } from '../service/s3/s3'; // New service for S3 file upload
 
 const StudentFeed = () => {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [newComments, setNewComments] = useState({});
   const { student, loading, error } = useAppSelector((state) => state.students);
@@ -39,7 +42,6 @@ const StudentFeed = () => {
       getPostsByCourseId(courseId, { status: 'approved' })
         .then((response) => {
           setPosts(response.posts || []);
-          console.log(posts);
         })
         .catch((err) => {
           toast.error('Failed to fetch posts: ' + err.message, {
@@ -50,8 +52,48 @@ const StudentFeed = () => {
     }
   }, [dispatch, courseId]);
 
+  const handleFileSelected = (e) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+    setAttachmentUrl(''); // Reset attachment URL when new file is selected
+    if (file) {
+      toast.info(`Selected: ${file.name} (${formatFileSize(file.size)})`, {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleUploadFile = async () => {
+    if (!selectedFile) {
+      toast.error('Please select a file to upload', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const url = await uploadFileToS3(selectedFile); // Call S3 upload service
+      setAttachmentUrl(url);
+      toast.success('File uploaded successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+        className: 'bg-green-100 text-green-800 border border-green-200',
+      });
+    } catch (err) {
+      toast.error('File upload failed', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleCreatePost = async () => {
-    if (!newPost.trim() && !selectedFile) {
+    if (!newPost.trim() && !attachmentUrl) {
       toast.error('Please add some content or upload a file to share', {
         position: 'top-right',
         autoClose: 3000,
@@ -75,12 +117,12 @@ const StudentFeed = () => {
     try {
       const postData = {
         textContent: newPost,
-        attachments: selectedFile
+        attachments: attachmentUrl
           ? [{
               name: selectedFile.name,
               type: selectedFile.type,
               size: selectedFile.size,
-              url: URL.createObjectURL(selectedFile), // TODO: Replace with actual file upload service
+              url: attachmentUrl,
             }]
           : [],
         visibility: 'public',
@@ -89,7 +131,6 @@ const StudentFeed = () => {
         userName: currentUser.name,
         userRole: currentUser.role,
       };
-      console.log(postData);
       await createPost(postData);
       toast.success('Your post has been submitted for approval and will appear in the feed once approved.', {
         position: 'top-right',
@@ -103,6 +144,7 @@ const StudentFeed = () => {
 
       setNewPost('');
       setSelectedFile(null);
+      setAttachmentUrl('');
     } catch (error) {
       toast.error('Error creating post: ' + error.message, {
         position: 'top-right',
@@ -115,13 +157,12 @@ const StudentFeed = () => {
     try {
       const existingReaction = posts.find(post => post._id === postId)?.reactions.find(r => r.userId === currentUser.id);
       if (existingReaction && existingReaction.type === type) {
-        // If the user already reacted with the same type, remove the reaction
         setPosts(posts.map(post => 
           post._id === postId 
             ? { ...post, reactions: post.reactions.filter(r => r.userId !== currentUser.id) }
             : post
         ));
-        return; // TODO: Add DELETE API call to remove reaction if backend supports it
+        return;
       }
 
       const reactionData = { type, userId: currentUser.id, userName: currentUser.name };
@@ -228,13 +269,29 @@ const StudentFeed = () => {
                     id="file-upload"
                     type="file"
                     accept=".pdf,.docx,.png,.jpg,.jpeg"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    onChange={handleFileSelected}
                     className="hidden"
                   />
                 </label>
                 <button
+                  onClick={handleUploadFile}
+                  disabled={isUploading || !selectedFile}
+                  className={`text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out ${
+                    isUploading || !selectedFile
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
+                  }`}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload File'}
+                </button>
+                <button
                   onClick={handleCreatePost}
-                  className="text-sm px-3 py-1 bg-white text-blue-600 border border-blue-600 rounded-md shadow-sm hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out"
+                  disabled={isUploading}
+                  className={`text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out ${
+                    isUploading
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
+                  }`}
                 >
                   Post
                 </button>
@@ -242,6 +299,7 @@ const StudentFeed = () => {
               {selectedFile && (
                 <p className="text-xs text-gray-600 mt-2 ml-12">
                   Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                  {attachmentUrl && ' - Uploaded'}
                 </p>
               )}
             </motion.div>
