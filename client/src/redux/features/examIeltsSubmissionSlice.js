@@ -1,5 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { createSubmission, updateSubmission } from "../../service/examIeltsSubmissionService";
+import {
+  createSubmission,
+  getSubmissionById,
+  gradeSubmission,
+  updateSubmission,
+} from "../../service/examIeltsSubmissionService";
 
 const initialState = {
   submission: {},
@@ -10,33 +15,63 @@ const initialState = {
 };
 
 export const createSubmissionAPI = createAsyncThunk(
-  'examIeltsSubmission/createSubmission',
+  "examIeltsSubmission/createSubmissionAPI",
   async (submission, { rejectWithValue }) => {
-    try{
-        const response = await createSubmission(submission);
-        if(!response.success){
-            return rejectWithValue(response.message);
-        }
-        return response.data;
-    }catch(error){
-        return rejectWithValue("Create Submission Failed...", error.message);
+    try {
+      const response = await createSubmission(submission);
+      if (!response.success) {
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Create Submission Failed...", error.message);
     }
   }
 );
 
 export const updateSubmissionAPI = createAsyncThunk(
-    `examIeltsSubmission/updateSubmission`,
-    async (updatedSubmission,id, {rejectWithValue}) => {
-        try{
-            const response = await updateSubmission(updatedSubmission, id);
-            if(!response.success){
-                return rejectWithValue(response.message);
-            }
-            return response.data;
-        }catch(error){
-            return rejectWithValue("Update Submission Failed...", error.message);
-        }
+  `examIeltsSubmission/updateSubmissionAPI`,
+  async (updatedSubmission, id, { rejectWithValue }) => {
+    try {
+      const response = await updateSubmission(updatedSubmission, id);
+      if (!response.success) {
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Update Submission Failed...", error.message);
     }
+  }
+);
+
+export const getSubmissionByIdAPI = createAsyncThunk(
+  `examIeltsSubmission/getSubmissionByIdAPI`,
+  async (submissionId, { rejectWithValue }) => {
+    try {
+      const response = await getSubmissionById(submissionId);
+      if (!response.success) {
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Get Submission By ID Failed...", error.message);
+    }
+  }
+);
+
+export const gradeSubmissionAPI = createAsyncThunk(
+  `examIeltsSubmission/gradeSubmissionAPI`,
+  async (submissionId, grade, { rejectWithValue }) => {
+    try {
+      const response = await gradeSubmission(submissionId, grade);
+      if (!response.success) {
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Grade Submission Failed", error.message);
+    }
+  }
 );
 
 const examIeltsSubmissionSlice = createSlice({
@@ -50,10 +85,9 @@ const examIeltsSubmissionSlice = createSlice({
       Object.assign(state.initialState);
     },
   },
-  extraReducers: (builder) => {
-    
-  }
+  extraReducers: (builder) => {},
 });
 
-export const {setCurrentSubmissionId, resetState} = examIeltsSubmissionSlice.actions;
-export default examIeltsSubmissionSlice.reducer
+export const { setCurrentSubmissionId, resetState } =
+  examIeltsSubmissionSlice.actions;
+export default examIeltsSubmissionSlice.reducer;
