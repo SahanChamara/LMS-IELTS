@@ -11,12 +11,12 @@ export const createSubmission = async (submission) => {
     return ApiService.callApi(apiObject);
 };
 
-export const updateSubmission = async (updates) => {
+export const updateSubmission = async (id,updates) => {
     const apiObject = {  
         method: "PUT",
         withCredentials: true,
         prefix: "examIeltsSubmission",
-        endpoint: "update",
+        endpoint: `update/${id}`,
         body: updates,        
     }
     return ApiService.callApi(apiObject);

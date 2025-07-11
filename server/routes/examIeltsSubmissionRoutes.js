@@ -4,7 +4,7 @@ const ExamIeltsSubmissionController = require("../controllers/examIeltsSubmissio
 const authMiddleware = require("../middleware/auth");
 
 router.post('/', authMiddleware(["Student"]), ExamIeltsSubmissionController.createSubmission);
-router.put('/update', authMiddleware(["Student"]), ExamIeltsSubmissionController.updateSubmission);
+router.put('/update/:id', authMiddleware(["Student"]), ExamIeltsSubmissionController.updateSubmission);
 router.get('/getSubmission/:id', authMiddleware(["Instructor", "SuperAdmin"]), ExamIeltsSubmissionController.getSubmissionById);
 router.post('/gradeSubmission/:id', authMiddleware(["Instructor", "SuperAdmin"]), ExamIeltsSubmissionController.gradeSubmission);
 
