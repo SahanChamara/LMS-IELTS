@@ -67,6 +67,9 @@ const Admindashboard = () => {
             { id: 1, title: "Course Access Request", type: "course", date: "2025-06-10" },
             { id: 2, title: "Grade Review Request", type: "grade", date: "2025-06-11" },
             { id: 3, title: "System Maintenance", type: "system", date: "2025-06-12" },
+             { id: 1, title: "Student Access Request", type: "course", date: "2025-06-10" },
+            { id: 2, title: "password reset", type: "grade", date: "2025-06-11" },
+            { id: 3, title: " Maintenance", type: "system", date: "2025-06-12" },
           ],
           loginStats: generateRandomLogins(),
         };
