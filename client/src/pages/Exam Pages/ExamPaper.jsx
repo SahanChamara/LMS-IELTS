@@ -124,12 +124,15 @@ const ExamPaper = ({ exam, onBack }) => {
         answers: answers,
         status: "in-progress",
       };
-      dispatch(createSubmissionAPI(initialSubmission));
-      //setSubmissionId(action.payload._id);
+      dispatch(createSubmissionAPI(initialSubmission)).then((action) => {
+        if (createSubmissionAPI.fulfilled.match(action)) {
+          setSubmissionId(action.payload._id);
+        }
+      });
     } else if (submissionId && !loading) {
       saveProgress();
     }
-  }, [currentSectionIndex, submissionId, answers, loading, dispatch]);
+  }, []);
 
   if (exam.type === "Listening") {
     return (
@@ -175,11 +178,15 @@ const ExamPaper = ({ exam, onBack }) => {
 
   const saveProgress = async () => {
     if (submissionId && !loading) {
+      console.log("save progress",submissionId, answers);
+      
       dispatch(updateSubmissionAPI({ id: submissionId, updates: { answers, status: "in-progress" } }));
     }
   };
 
   const handleSubmit = async () => {
+    console.log("handle submit", submissionId, answers);
+    
     if (submissionId && allSectionsCompleted && !loading) {
       dispatch(updateSubmissionAPI({ id: submissionId, updates: { status: "submitted", answers } }));
       showToast(
