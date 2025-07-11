@@ -145,7 +145,7 @@ const ExamPaper = ({ exam, onBack }) => {
           status: "in-progress",
         };
         try {
-          const response = await fetch("/api/submissions", {
+          /* const response = await fetch("/api/submissions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(initialSubmission),
@@ -155,7 +155,7 @@ const ExamPaper = ({ exam, onBack }) => {
             setSubmissionId(result.data._id);
           } else {
             showToast("Error", result.message || "Failed to start submission.", "destructive");
-          }
+          } */
         } catch (error) {
           showToast("Error", "Failed to connect to the server.", "destructive");
         }
@@ -211,7 +211,7 @@ const ExamPaper = ({ exam, onBack }) => {
   const saveProgress = async () => {
     if (submissionId) {
       try {
-        const response = await fetch(`/api/submissions/${submissionId}`, {
+        /* const response = await fetch(`/api/submissions/${submissionId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ answers, status: "in-progress" }),
@@ -219,7 +219,7 @@ const ExamPaper = ({ exam, onBack }) => {
         const result = await response.json();
         if (!response.ok) {
           showToast("Error", result.message || "Failed to save progress.", "destructive");
-        }
+        } */
       } catch (error) {
         showToast("Error", "Failed to connect to the server.", "destructive");
       }
@@ -227,7 +227,7 @@ const ExamPaper = ({ exam, onBack }) => {
   };
 
   const handleSubmit = async () => {
-    if (submissionId && allSectionsCompleted) {
+    /* if (submissionId && allSectionsCompleted) {
       try {
         const response = await fetch(`/api/submissions/${submissionId}`, {
           method: "PUT",
@@ -261,7 +261,7 @@ const ExamPaper = ({ exam, onBack }) => {
         "Please answer all questions in every section before submitting.",
         "destructive"
       );
-    }
+    } */
   };
 
   const currentQ = questions[currentQuestionIndex];

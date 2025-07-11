@@ -25,7 +25,7 @@ const ExamDashboard = () => {
   const [loadings, setLoadings] = useState(false);
 
   useEffect(() => {
-    dispatch(getAllPublishedExamsAPI());
+    dispatch(getAllPublishedExamsAPI());    
   }, [dispatch])
 
   /* const exams = [
