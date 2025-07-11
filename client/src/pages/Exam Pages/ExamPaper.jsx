@@ -3,36 +3,13 @@ import { Clock, CheckCircle, AlertCircle, Send } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import ListeningTest from "./ListeningTest";
 import SpeakingTest from "./SpeakingTest";
-
-/**
- * @typedef {Object} Exam
- * @property {string} id
- * @property {string} title
- * @property {number} duration
- * @property {number} questions
- * @property {"Beginner" | "Intermediate" | "Advanced"} difficulty
- * @property {"Reading" | "Writing" | "Listening" | "Speaking"} type
- * @property {string} description
- * @property {boolean} available
- * @property {Array} sections - Array of section objects with questions
- */
-
-/**
- * @typedef {Object} ExamPaperProps
- * @property {Exam} exam
- * @property {() => void} onBack
- */
-
-/**
- * @typedef {Object} Question
- * @property {string} id
- * @property {"mcq" | "reading" | "typing" | "essay" | "form-completion" | "matching" | "short-answer"} type
- * @property {string} question
- * @property {string[]=} options
- * @property {string=} passage
- */
+import { createSubmissionAPI, updateSubmissionAPI } from "../../redux/features/examIeltsSubmissionSlice";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
 
 const ExamPaper = ({ exam, onBack }) => {
+  const dispatch = useAppDispatch();
+  const {loading,error, success} = useAppSelector((state) => state.examIeltsSubmission);
+
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -49,6 +26,11 @@ const ExamPaper = ({ exam, onBack }) => {
     document.body.appendChild(toastElement);
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
+
+  useEffect(() => {
+    if (error) showToast("Error", error, "destructive");
+    if (success) showToast("Success", "Operation completed.", "success");
+  }, [error, success]);
 
   const sections = exam.sections || [];
   const currentSection = sections[currentSectionIndex];
@@ -134,37 +116,23 @@ const ExamPaper = ({ exam, onBack }) => {
   }, []);
 
   useEffect(() => {
-    // Initialize or update submission on mount or section change
-    const initializeOrUpdateSubmission = async () => {
-      if (!submissionId) {
-        const initialSubmission = {
-          studentId: JSON.parse(localStorage.getItem("user"))?.id || "defaultStudentId",
-          examId: exam.id,
-          sectionId: sections[0]?._id || "defaultSectionId",
-          answers: answers,
-          status: "in-progress",
-        };
-        try {
-          /* const response = await fetch("/api/submissions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(initialSubmission),
-          });
-          const result = await response.json();
-          if (response.ok) {
-            setSubmissionId(result.data._id);
-          } else {
-            showToast("Error", result.message || "Failed to start submission.", "destructive");
-          } */
-        } catch (error) {
-          showToast("Error", "Failed to connect to the server.", "destructive");
+    if (!submissionId && !loading) {
+      const initialSubmission = {
+        studentId: JSON.parse(localStorage.getItem("user"))?.id || "defaultStudentId",
+        examId: exam.id,
+        sectionId: sections[0]?._id || "defaultSectionId",
+        answers: answers,
+        status: "in-progress",
+      };
+      dispatch(createSubmissionAPI(initialSubmission)).then((action) => {
+        if (createSubmissionAPI.fulfilled.match(action)) {
+          setSubmissionId(action.payload._id);
         }
-      } else {
-        await saveProgress();
-      }
-    };
-    initializeOrUpdateSubmission();
-  }, [currentSectionIndex, submissionId, answers]);
+      });
+    } else if (submissionId && !loading) {
+      saveProgress();
+    }
+  }, [currentSectionIndex, submissionId, answers, loading, dispatch]);
 
   if (exam.type === "Listening") {
     return (
@@ -209,59 +177,26 @@ const ExamPaper = ({ exam, onBack }) => {
   };
 
   const saveProgress = async () => {
-    if (submissionId) {
-      try {
-        /* const response = await fetch(`/api/submissions/${submissionId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers, status: "in-progress" }),
-        });
-        const result = await response.json();
-        if (!response.ok) {
-          showToast("Error", result.message || "Failed to save progress.", "destructive");
-        } */
-      } catch (error) {
-        showToast("Error", "Failed to connect to the server.", "destructive");
-      }
+    if (submissionId && !loading) {
+      dispatch(updateSubmissionAPI({ id: submissionId, updates: { answers, status: "in-progress" } }));
     }
   };
 
   const handleSubmit = async () => {
-    /* if (submissionId && allSectionsCompleted) {
-      try {
-        const response = await fetch(`/api/submissions/${submissionId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "submitted", answers }),
-        });
-        const result = await response.json();
-        if (response.ok) {
-          showToast(
-            "Exam Submitted Successfully",
-            "Your answers have been recorded. You will receive your results soon."
-          );
-          onBack();
-        } else {
-          showToast(
-            "Submission Failed",
-            result.message || "An error occurred while submitting the exam.",
-            "destructive"
-          );
-        }
-      } catch (error) {
-        showToast(
-          "Submission Error",
-          "Failed to connect to the server. Please try again.",
-          "destructive"
-        );
-      }
+    if (submissionId && allSectionsCompleted && !loading) {
+      dispatch(updateSubmissionAPI({ id: submissionId, updates: { status: "submitted", answers } }));
+      showToast(
+        "Exam Submitted Successfully",
+        "Your answers have been recorded. You will receive your results soon."
+      );
+      onBack();
     } else if (!allSectionsCompleted) {
       showToast(
         "Incomplete Submission",
         "Please answer all questions in every section before submitting.",
         "destructive"
       );
-    } */
+    }
   };
 
   const currentQ = questions[currentQuestionIndex];
@@ -296,9 +231,9 @@ const ExamPaper = ({ exam, onBack }) => {
               </div>
               <button
                 onClick={() => setShowSubmitDialog(true)}
-                disabled={!allSectionsCompleted}
+                disabled={!allSectionsCompleted || loading}
                 className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 ${
-                  !allSectionsCompleted ? "opacity-50 cursor-not-allowed" : ""
+                  !allSectionsCompleted || loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <Send className="h-4 w-4" />
@@ -480,7 +415,10 @@ const ExamPaper = ({ exam, onBack }) => {
                     </button>
                     <button
                       onClick={handleSubmit}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      disabled={loading}
+                      className={`flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
+                        loading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
                       Submit Exam
                     </button>
