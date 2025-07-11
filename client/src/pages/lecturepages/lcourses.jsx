@@ -24,7 +24,8 @@ const Leccorces = () => {
         try {
           setLoading(true);
            const response = await dispatch(getUnitByInstructorIdAPI(localStorage.getItem("user"))).unwrap();
-           console.log("::: -> Unit Response ",response);
+          //  console.log(localStorage.getItem("user")).unwrap()
+          //  console.log("::: -> Unit Response ",response);
            
   
           let fetchedUnits = [];
@@ -32,14 +33,14 @@ const Leccorces = () => {
             //console.log(response.data._id);
             fetchedUnits = response.map((unit, index) => ({
               title: unit.title || "Untitled",
-              unitId: unit._id || `unit-${index}`,
+              unitId: unit.id || `unit-${index}`,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
             }));
           } else if (response && response.data && Array.isArray(response.data)) {
             fetchedUnits = response.data.map((unit, index) => ({
               title: unit.title || "Untitled",
-              unitId: unit._id || `unit-${index}`,
+              unitId: unit.id || `unit-${index}`,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
             }));
@@ -55,9 +56,9 @@ const Leccorces = () => {
             initialProgress[unit.unitId] = Math.floor(Math.random() * 100);
             initialEnrolled[unit.unitId] = Math.random() > 0.3;
           });
-          setProgressData(initialProgress);
-          setEnrolledUnits(initialEnrolled);
-          calculateProgress(initialEnrolled, initialProgress);
+          // setProgressData(initialProgress);
+          // setEnrolledUnits(initialEnrolled);
+          // calculateProgress(initialEnrolled, initialProgress);
         } catch (err) {
           setError(err.message || "Failed to fetch units. Please try again later.");
           console.error("fetchUnits error:", err.message);
@@ -206,8 +207,9 @@ const Leccorces = () => {
 
   // Navigating to unit details page
   const handleAccessUnit = (unit) => {
-    navigate(`/unit/lecture/${unit.id}`, { state: { unit } }); // Navigate to unit details page with unit data
+    navigate(`/unit/lecture/${unit.unitId}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
+  console.log(":::::--->", units)
 
   // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {
@@ -288,17 +290,17 @@ const Leccorces = () => {
                   Both
                 </button>
               </div>
-              <button
+              {/* <button
                 onClick={openCreateModal}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
               >
                 + Add New Unit
-              </button>
+              </button> */}
             </div>
           </div>
 
           {/* Rendering table view */}
-          {(activeTab === "table" || activeTab === "both") && (
+          {/* {(activeTab === "table" || activeTab === "both") && (
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-base sm:text-lg font-semibold">
@@ -419,7 +421,7 @@ const Leccorces = () => {
                 </table>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Rendering card view */}
           {(activeTab === "cards" || activeTab === "both") && (
