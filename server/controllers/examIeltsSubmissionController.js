@@ -68,36 +68,26 @@ exports.createSubmission = async (req, res) => {
 
 // Update Submission - this is used to partial updates during "in progress"
 exports.updateSubmission = async (req, res) => {
-    const {id} = req.params;
-    const {answers, status, totalScore, feedback, metadata} = req.body;
+    const { id } = req.params;
+    const { answers, status, totalScore, feedback, metadata, sectionIds } = req.body;
 
     try {
         const submission = await ExamIeltsSubmission.findById(id);
         if (!submission) {
-            return res.status(HttpStatus.NOT_FOUND).json({
-                success: false,
-                message: "Submission not found",
-            });
+            return res.status(HttpStatus.NOT_FOUND).json({ success: false, message: "Submission not found" });
         }
 
-        if (answers) submission.answers = {...submission.answers, ...answers};
+        if (answers) submission.answers = { ...submission.answers, ...answers };
         if (status && ["in-progress", "submitted", "graded", "reviewed"].includes(status)) submission.status = status;
         if (totalScore !== undefined) submission.totalScore = totalScore;
         if (feedback) submission.feedback = feedback;
-        if (metadata) submission.metadata = {...submission.metadata, ...metadata};
+        if (metadata) submission.metadata = { ...submission.metadata, ...metadata };
+        if (sectionIds) submission.sectionIds = sectionIds; // Add or update sectionIds
 
         await submission.save();
-        return res.status(HttpStatus.OK).json({
-            success: true,
-            data: submission,
-            message: "Submission updated successfully",
-        });
+        return res.status(HttpStatus.OK).json({ success: true, data: submission, message: "Submission updated successfully" });
     } catch (error) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-            success: false,
-            message: "Error updating submission",
-            error: error.message,
-        });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: "Error updating submission", error: error.message });
     }
 };
 
