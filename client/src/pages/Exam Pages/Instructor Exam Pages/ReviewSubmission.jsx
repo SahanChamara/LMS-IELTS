@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Download, Send, RotateCcw } from 'lucide-react';
 import QuestionReview from './QuestionReview';
 import SubmissionSummary from './SubmissionSummary';
-// import GradingForm from './GradingForm';
-// import FinalizeReviewModal from './FinalizeReviewModal';
+import GradingForm from './GradingForm';
+import FinalizeReviewModal from './FinalizeReviewModal';
 
 const ReviewSubmission = ({ submission, onBack }) => {
   const [submissionDetails, setSubmissionDetails] = useState(null);

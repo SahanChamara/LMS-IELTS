@@ -34,8 +34,10 @@ import SpeakingTest from "./SpeakingTest";
 
 const ExamPaper = ({ exam, onBack }) => {
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [submissionId, setSubmissionId] = useState(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const showToast = (title, description, variant) => {
@@ -48,17 +50,26 @@ const ExamPaper = ({ exam, onBack }) => {
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  const questions = exam.sections
-    ? exam.sections.flatMap((section) =>
-        section.questions.map((q) => ({
-          id: q._id,
-          type: q.type,
-          question: q.question,
-          options: q.options || [],
-          passage: q.passage || "",
-        }))
-      )
+  const sections = exam.sections || [];
+  const currentSection = sections[currentSectionIndex];
+  const questions = currentSection
+    ? currentSection.questions.map((q) => ({
+        id: q._id,
+        type: q.type,
+        question: q.question,
+        options: q.options || [],
+        passage: q.passage || "",
+      }))
     : [];
+
+  const totalQuestions = sections.reduce(
+    (total, section) => total + section.questions.length,
+    0
+  );
+  const answeredQuestions = Object.keys(answers).length;
+  const allSectionsCompleted = sections.every((section) =>
+    section.questions.every((q) => answers[q._id])
+  );
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -122,10 +133,43 @@ const ExamPaper = ({ exam, onBack }) => {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    // Initialize or update submission on mount or section change
+    const initializeOrUpdateSubmission = async () => {
+      if (!submissionId) {
+        const initialSubmission = {
+          studentId: JSON.parse(localStorage.getItem("user"))?.id || "defaultStudentId",
+          examId: exam.id,
+          sectionId: sections[0]?._id || "defaultSectionId",
+          answers: answers,
+          status: "in-progress",
+        };
+        try {
+          const response = await fetch("/api/submissions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(initialSubmission),
+          });
+          const result = await response.json();
+          if (response.ok) {
+            setSubmissionId(result.data._id);
+          } else {
+            showToast("Error", result.message || "Failed to start submission.", "destructive");
+          }
+        } catch (error) {
+          showToast("Error", "Failed to connect to the server.", "destructive");
+        }
+      } else {
+        await saveProgress();
+      }
+    };
+    initializeOrUpdateSubmission();
+  }, [currentSectionIndex, submissionId, answers]);
+
   if (exam.type === "Listening") {
     return (
       <ListeningTest
-        exam={exam} // Pass the full exam object
+        exam={exam}
         onComplete={(answers) => {
           console.log("Listening test completed:", answers);
           onBack();
@@ -138,7 +182,7 @@ const ExamPaper = ({ exam, onBack }) => {
   if (exam.type === "Speaking") {
     return (
       <SpeakingTest
-      exam={exam}
+        exam={exam}
         onComplete={(recordings) => {
           console.log("Speaking test completed:", recordings);
           onBack();
@@ -164,15 +208,63 @@ const ExamPaper = ({ exam, onBack }) => {
     }));
   };
 
-  const handleSubmit = () => {
-    showToast(
-      "Exam Submitted Successfully",
-      "Your answers have been recorded. You will receive your results soon."
-    );
-    onBack();
+  const saveProgress = async () => {
+    if (submissionId) {
+      try {
+        const response = await fetch(`/api/submissions/${submissionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers, status: "in-progress" }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          showToast("Error", result.message || "Failed to save progress.", "destructive");
+        }
+      } catch (error) {
+        showToast("Error", "Failed to connect to the server.", "destructive");
+      }
+    }
   };
 
-  const currentQ = questions[currentQuestion];
+  const handleSubmit = async () => {
+    if (submissionId && allSectionsCompleted) {
+      try {
+        const response = await fetch(`/api/submissions/${submissionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "submitted", answers }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+          showToast(
+            "Exam Submitted Successfully",
+            "Your answers have been recorded. You will receive your results soon."
+          );
+          onBack();
+        } else {
+          showToast(
+            "Submission Failed",
+            result.message || "An error occurred while submitting the exam.",
+            "destructive"
+          );
+        }
+      } catch (error) {
+        showToast(
+          "Submission Error",
+          "Failed to connect to the server. Please try again.",
+          "destructive"
+        );
+      }
+    } else if (!allSectionsCompleted) {
+      showToast(
+        "Incomplete Submission",
+        "Please answer all questions in every section before submitting.",
+        "destructive"
+      );
+    }
+  };
+
+  const currentQ = questions[currentQuestionIndex];
 
   return (
     <div className="flex h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
@@ -185,7 +277,8 @@ const ExamPaper = ({ exam, onBack }) => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{exam.title}</h1>
               <p className="text-gray-600">
-                Question {currentQuestion + 1} of {questions.length}
+                Section {currentSectionIndex + 1} of {sections.length} - Question{" "}
+                {currentQuestionIndex + 1} of {questions.length} (Progress: {answeredQuestions}/{totalQuestions})
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -203,7 +296,10 @@ const ExamPaper = ({ exam, onBack }) => {
               </div>
               <button
                 onClick={() => setShowSubmitDialog(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+                disabled={!allSectionsCompleted}
+                className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 ${
+                  !allSectionsCompleted ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <Send className="h-4 w-4" />
                 <span>Submit Exam</span>
@@ -215,16 +311,38 @@ const ExamPaper = ({ exam, onBack }) => {
             <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm border border-blue-200 sticky top-6 rounded-lg shadow">
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold">Question Navigation</h3>
+                  <h3 className="text-lg font-semibold">Section Navigation</h3>
                 </div>
                 <div className="p-4">
+                  <div className="grid grid-cols-1 gap-2">
+                    {sections.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          saveProgress();
+                          setCurrentSectionIndex(index);
+                          setCurrentQuestionIndex(0);
+                        }}
+                        className={`px-3 py-1 rounded-lg text-sm ${
+                          currentSectionIndex === index
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Section {index + 1} ({sections[index].questions.length} questions)
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold">Question Navigation</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {questions.map((_, index) => (
                       <button
                         key={index}
-                        onClick={() => setCurrentQuestion(index)}
+                        onClick={() => setCurrentQuestionIndex(index)}
                         className={`px-3 py-1 rounded-lg text-sm ${
-                          currentQuestion === index
+                          currentQuestionIndex === index
                             ? "bg-blue-600 text-white"
                             : "bg-gray-200 text-gray-800 hover:bg-gray-300"
                         } ${
@@ -258,7 +376,7 @@ const ExamPaper = ({ exam, onBack }) => {
 
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4">
-                      Question {currentQuestion + 1}
+                      Question {currentQuestionIndex + 1}
                     </h3>
                     <p className="text-gray-800 mb-4">{currentQ.question}</p>
 
@@ -312,20 +430,20 @@ const ExamPaper = ({ exam, onBack }) => {
                   <div className="flex justify-between">
                     <button
                       onClick={() =>
-                        setCurrentQuestion(Math.max(0, currentQuestion - 1))
+                        setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))
                       }
-                      disabled={currentQuestion === 0}
+                      disabled={currentQuestionIndex === 0}
                       className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() =>
-                        setCurrentQuestion(
-                          Math.min(questions.length - 1, currentQuestion + 1)
+                        setCurrentQuestionIndex(
+                          Math.min(questions.length - 1, currentQuestionIndex + 1)
                         )
                       }
-                      disabled={currentQuestion === questions.length - 1}
+                      disabled={currentQuestionIndex === questions.length - 1}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
@@ -351,8 +469,7 @@ const ExamPaper = ({ exam, onBack }) => {
                     changes after submission.
                   </p>
                   <div className="text-sm text-gray-600 mb-4">
-                    Answered: {Object.keys(answers).length} of {questions.length}{" "}
-                    questions
+                    Answered: {answeredQuestions} of {totalQuestions} questions
                   </div>
                   <div className="flex space-x-3 p-6">
                     <button
