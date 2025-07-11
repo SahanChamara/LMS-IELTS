@@ -116,32 +116,32 @@ const examIeltsSubmissionSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(getSubmissionById.pending, (state) => {
+      .addCase(getSubmissionByIdAPI.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = false;
       })
-      .addCase(getSubmissionById.fulfilled, (state, action) => {
+      .addCase(getSubmissionByIdAPI.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
         state.submission[action.payload._id] = action.payload;
         state.currentSubmissionId = action.payload._id;
       })
-      .addCase(getSubmissionById.rejected, (state, action) => {
+      .addCase(getSubmissionByIdAPI.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(gradeSubmission.pending, (state) => {
+      .addCase(gradeSubmissionAPI.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = false;
       })
-      .addCase(gradeSubmission.fulfilled, (state, action) => {
+      .addCase(gradeSubmissionAPI.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
         state.submission[action.payload._id] = action.payload;
       })
-      .addCase(gradeSubmission.rejected, (state, action) => {
+      .addCase(gradeSubmissionAPI.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
