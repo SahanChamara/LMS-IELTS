@@ -85,7 +85,67 @@ const examIeltsSubmissionSlice = createSlice({
       Object.assign(state.initialState);
     },
   },
-  extraReducers: (builder) => {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(createSubmissionAPI.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(createSubmissionAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.submission[action.payload._id] = action.payload;
+        state.currentSubmissionId = action.payload._id;
+      })
+      .addCase(createSubmissionAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateSubmissionAPI.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(updateSubmissionAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.submission[action.payload._id] = action.payload;
+      })
+      .addCase(updateSubmissionAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getSubmissionById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(getSubmissionById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.submission[action.payload._id] = action.payload;
+        state.currentSubmissionId = action.payload._id;
+      })
+      .addCase(getSubmissionById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(gradeSubmission.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(gradeSubmission.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.submissions[action.payload._id] = action.payload;
+      })
+      .addCase(gradeSubmission.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  },
 });
 
 export const { setCurrentSubmissionId, resetState } =
