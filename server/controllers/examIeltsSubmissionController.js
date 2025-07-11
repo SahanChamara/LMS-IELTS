@@ -37,12 +37,12 @@ exports.createSubmission = async (req, res) => {
             });
         }
 
-        if (Object.keys(answers).length === 0) {
+/*        if (Object.keys(answers).length === 0) {
             return res.status(HttpStatus.BAD_REQUEST).json({
                 success: false,
                 message: "At least one answer is required",
             });
-        }
+        }*/
 
         const submission = new ExamIeltsSubmission({
             studentId,

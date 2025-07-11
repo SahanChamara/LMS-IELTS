@@ -22,6 +22,8 @@ export const createSubmissionAPI = createAsyncThunk(
       if (!response.success) {
         return rejectWithValue(response.message);
       }
+      console.log("Create Submission API Rrespone", response);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue("Create Submission Failed...", error.message);

@@ -118,17 +118,14 @@ const ExamPaper = ({ exam, onBack }) => {
   useEffect(() => {
     if (!submissionId && !loading) {
       const initialSubmission = {
-        studentId: JSON.parse(localStorage.getItem("user"))?.id || "defaultStudentId",
-        examId: exam.id,
+        studentId: localStorage.getItem("user"),
+        examId: exam._id,
         sectionId: sections[0]?._id || "defaultSectionId",
         answers: answers,
         status: "in-progress",
       };
-      dispatch(createSubmissionAPI(initialSubmission)).then((action) => {
-        if (createSubmissionAPI.fulfilled.match(action)) {
-          setSubmissionId(action.payload._id);
-        }
-      });
+      dispatch(createSubmissionAPI(initialSubmission));
+      //setSubmissionId(action.payload._id);
     } else if (submissionId && !loading) {
       saveProgress();
     }
