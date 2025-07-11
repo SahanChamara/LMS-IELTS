@@ -139,7 +139,7 @@ const examIeltsSubmissionSlice = createSlice({
       .addCase(gradeSubmission.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.submissions[action.payload._id] = action.payload;
+        state.submission[action.payload._id] = action.payload;
       })
       .addCase(gradeSubmission.rejected, (state, action) => {
         state.loading = false;
@@ -148,6 +148,5 @@ const examIeltsSubmissionSlice = createSlice({
   },
 });
 
-export const { setCurrentSubmissionId, resetState } =
-  examIeltsSubmissionSlice.actions;
+export const { setCurrentSubmissionId, resetState } = examIeltsSubmissionSlice.actions;
 export default examIeltsSubmissionSlice.reducer;
