@@ -23,7 +23,6 @@ import CourseDetails from '../pages/student/unitDetails'
 import StudentFeed from '../pages/student/StudentFeed'
 import ExamDashboard from '../pages/Exam Pages/ExamDashboard'
 
-
 // Routes
 import ProtectedRoute from './protectedRoute'
 
@@ -39,6 +38,7 @@ import InstructorFeed from '../pages/lecturepages/InstructorFeed'
 import StudentAllHistory from '../components/lecpagescomponents/lecUnitDetails/StudentAllHistory'
 import StudandTabel from '../components/lecpagescomponents/studandTabel'
 import Response from '../pages/lecturepages/Response'
+import AssignmentReceive from '../components/lecpagescomponents/AssignmentReceive'
 
 // Admin
 // import Exams from '../pages/exams'
@@ -48,8 +48,6 @@ import SuperAdminstudentcontrol from '../pages/Adminpages/adminstudents'
 import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
-
-
 
 // Defining the application routes
 const AppRoutes = () => {
@@ -88,15 +86,15 @@ const AppRoutes = () => {
         <Route path='dashboard/lecture' element={<Lecdashboard />} />
         <Route path='courses/lecture' element={<Leccorces />} />
         <Route path='assignments/lecture' element={<Lassignments />} />
-        <Route path='students/lecture' element={<Lstudents />} />`
+        <Route path='students/lecture' element={<Lstudents />} />
         <Route path='/calendar/lecture' element={<Leccalander />} />
         <Route path='/settings/lecture' element={<Lecsettings />} />
         <Route path='/unit/lecture/:id' element={<LecUnitDetails />} />
         <Route path='/feed/lecture' element={<InstructorFeed />} />
         <Route path='/student-history/:quizId' element={<StudentAllHistory />} />
         <Route path='/response/:id' element={<Response />} />
-        <Route path='/students/lecture/records/:unitId' element={<StudandTabel />}/>
-        
+        <Route path='/students/lecture/records/:unitId' element={<StudandTabel />} />
+        <Route path='/assignments/receive' element={<AssignmentReceive />} />
       </Route>
 
       {/* Protected routes for SuperAdmin */}
@@ -104,8 +102,7 @@ const AppRoutes = () => {
         <Route path='/dashboard/admin' element={<SuperAdmin />} />
         <Route path='/students/admin' element={<SuperAdminstudentcontrol />} />
         <Route path='/lectures/admin' element={<SuperAdminlecturercontrol />} />
-        <Route path='/notifications/admin' element={<SuperAdminnotifications />}/>
-      
+        <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
       </Route>
     </Routes>
   )
