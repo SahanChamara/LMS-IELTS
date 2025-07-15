@@ -108,7 +108,7 @@ const ExamPaper = ({ exam, onBack }) => {
           handleSubmit();
           return 0;
         }
-        return prev - 1;
+        return prev - 1; 
       });
     }, 1000);
 
@@ -190,7 +190,7 @@ const ExamPaper = ({ exam, onBack }) => {
     if (submissionId && allSectionsCompleted && !loading) {
       console.log("Handle Submit", submissionId, answers);
       
-      dispatch(updateSubmissionAPI({ id: submissionId, updates: { status: "submitted", answers } }));
+      dispatch(updateSubmissionAPI({ id: submissionId, updates: {answers, status: "submitted" } }));
       showToast(
         "Exam Submitted Successfully",
         "Your answers have been recorded. You will receive your results soon."
