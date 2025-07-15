@@ -12,6 +12,9 @@ export const createSubmission = async (submission) => {
 };
 
 export const updateSubmission = async (id,updates) => {
+
+    console.log("Update submission service log", id, updates);
+    
     const apiObject = {  
         method: "PUT",
         withCredentials: true,

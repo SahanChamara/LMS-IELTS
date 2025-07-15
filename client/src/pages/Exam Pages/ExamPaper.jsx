@@ -120,7 +120,7 @@ const ExamPaper = ({ exam, onBack }) => {
       const initialSubmission = {
         studentId: localStorage.getItem("user"),
         examId: exam._id,
-        sectionId: sections[0]?._id || "defaultSectionId",
+        sectionIds: sections[0]?._id || "defaultSectionId",
         answers: answers,
         status: "in-progress",
       };
@@ -188,6 +188,8 @@ const ExamPaper = ({ exam, onBack }) => {
     console.log("handle submit", submissionId, answers);
     
     if (submissionId && allSectionsCompleted && !loading) {
+      console.log("Handle Submit", submissionId, answers);
+      
       dispatch(updateSubmissionAPI({ id: submissionId, updates: { status: "submitted", answers } }));
       showToast(
         "Exam Submitted Successfully",
