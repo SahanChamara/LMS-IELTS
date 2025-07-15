@@ -33,9 +33,9 @@ export const createSubmissionAPI = createAsyncThunk(
 
 export const updateSubmissionAPI = createAsyncThunk(
   `examIeltsSubmission/updateSubmissionAPI`,
-  async ({id, updatedSubmission}, { rejectWithValue }) => {
+  async ({id, updates}, { rejectWithValue }) => {
     try {
-      const response = await updateSubmission(id, updatedSubmission);
+      const response = await updateSubmission(id, updates);
       if (!response.success) {
         return rejectWithValue(response.message);
       }
