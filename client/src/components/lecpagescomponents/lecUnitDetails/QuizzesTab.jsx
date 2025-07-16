@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import QuizPreview from "./QuizPreview";
 import { User, Edit, Trash2 } from 'lucide-react';
+import { getAssessmentsByUnitId, addAssessments } from "../../../service/assessments";
 
 const QuizzesTab = ({ unit }) => {
+  
   const [quizzes, setQuizzes] = useState(unit?.quizzes || []);
+  const [assessment, setAssessment] = useState();
   const [formMode, setFormMode] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -18,6 +21,7 @@ const QuizzesTab = ({ unit }) => {
     questionCount: "",
     questions: [{ text: "", options: ["", "", "", ""], correctOption: 0, marks: "" }],
   });
+  // console.log("U :: ", unit)
   const [formErrors, setFormErrors] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,11 +51,11 @@ const QuizzesTab = ({ unit }) => {
       .slice(0, questionCount)
       .every((q, index) => {
         const isComplete = q.text.trim() !== "" && q.options.every((o) => o.trim() !== "");
-        console.log(`Question ${index + 1} complete:`, isComplete, q);
+        // console.log(`Question ${index + 1} complete:`, isComplete, q);
         return isComplete;
       });
 
-    console.log("All questions complete:", allQuestionsComplete, "Question count:", questionCount);
+    // console.log("All questions complete:", allQuestionsComplete, "Question count:", questionCount);
     setIsQuizComplete(allQuestionsComplete);
     return allQuestionsComplete;
   };
@@ -66,27 +70,50 @@ const QuizzesTab = ({ unit }) => {
     if (!formData.totalMarks) errors.totalMarks = "Total Marks is required";
     if (!formData.caMarksPercentage) errors.caMarksPercentage = "CA Marks Percentage is required";
     if (!formData.timePeriod) errors.timePeriod = "Time Period is required";
-    if (!formData.questionCount) errors.questionCount = "Question Count is required";
+    // if (!formData.questionCount) errors.questionCount = "Question Count is required";
 
-    formData.questions.slice(0, Number(formData.questionCount)).forEach((q, index) => {
-      if (!q.text) errors[`questionText${index}`] = `Question ${index + 1} text is required`;
-      q.options.forEach((o, optIndex) => {
-        if (!o) errors[`question${index}Option${optIndex}`] = `Question ${index + 1} option ${optIndex + 1} is required`;
-      });
-      if (marksDistribution === "individual" && !q.marks) {
-        errors[`questionMarks${index}`] = `Question ${index + 1} marks are required`;
-      }
-    });
+    // formData.questions.slice(0, Number(formData.questionCount)).forEach((q, index) => {
+    //   if (!q.text) errors[`questionText${index}`] = `Question ${index + 1} text is required`;
+    //   q.options.forEach((o, optIndex) => {
+    //     if (!o) errors[`question${index}Option${optIndex}`] = `Question ${index + 1} option ${optIndex + 1} is required`;
+    //   });
+    //   if (marksDistribution === "individual" && !q.marks) {
+    //     errors[`questionMarks${index}`] = `Question ${index + 1} marks are required`;
+    //   }
+    // });
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // Update quiz completion status
+  
+//=====================================================================================
   useEffect(() => {
-    console.log("FormData updated:", formData);
-    checkQuizCompletion();
-  }, [formData, questionPage]);
+  const fetchAssessments = async () => {
+    try {
+      unit.unitId = "6875d8086af9928aa7f512da";
+      const response = await getAssessmentsByUnitId(unit.unitId);
+      setAssessment(response.data);
+      // setQuizzes(response.data)
+      console.log("Assessments:", response.data);
+    } catch (error) {
+      console.error("Error fetching assessments:", error);
+    }
+  }; 
+
+  fetchAssessments();
+  checkQuizCompletion();
+}, [formData, questionPage]);
+
+
+console.log("assessment ::: ", assessment);
+//=====================================================================================
+
+  // Update quiz completion status
+  // useEffect(() => {
+  //   // console.log("FormData updated:", formData);
+  //   checkQuizCompletion();
+  // }, [formData, questionPage]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -465,7 +492,7 @@ const QuizzesTab = ({ unit }) => {
             disabled={isLoading}
             aria-label="Add new quiz"
           >
-            Add Quiz
+            Add Assessment
           </button>
         )}
       </div>
@@ -906,6 +933,8 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
+      
+
       {/* Quizzes Table - Hidden when form is active */}
       {!formMode && (
         <>
@@ -919,7 +948,7 @@ const QuizzesTab = ({ unit }) => {
               aria-label="Search quizzes"
             />
           </div>
-          {quizzes.length > 0 ? (
+          {quizzes.length == 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
                 <thead className="bg-gray-100 sticky top-0">
@@ -963,11 +992,13 @@ const QuizzesTab = ({ unit }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {quizzes
-                    .slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage)
-                    .map((quiz) => (
+                  {
+                  // quizzes
+                  //   .slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage)
+                  //   .map((quiz) => (
+                    assessment?.map((quiz) => (
                       <tr
-                        key={quiz.id}
+                        key={quiz._id}
                         className="border-t hover:bg-gray-50 transition-all duration-200"
                       >
                         <td className="py-4 px-4 text-center align-middle text-sm text-neutral-900">
@@ -977,7 +1008,7 @@ const QuizzesTab = ({ unit }) => {
                           {quiz.dueDate}
                         </td>
                         <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
-                          {quiz.passingScore !== null ? `${quiz.passingScore}%` : 'N/A'}
+                          {quiz.passPercentage !== null ? `${quiz.passPercentage}%` : 'N/A'}
                         </td>
                         <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
                           {quiz.totalMarks}
