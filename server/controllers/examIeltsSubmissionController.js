@@ -81,11 +81,19 @@ exports.updateSubmission = async (req, res) => {
             return res.status(HttpStatus.NOT_FOUND).json({ success: false, message: "Submission not found" });
         }
 
-        if (answers) submission.answers = { ...submission.answers, ...answers };
+        if(answers && typeof answers === "object" && !Array.isArray(answers)){
+            const existingAnswers = Object.fromEntries(submission.answers);
+            const updatedAnswers = {...existingAnswers, ...answers};
+            submission.answers = new Map(Object.entries(updatedAnswers));
+        }
         if (status && ["in-progress", "submitted", "graded", "reviewed"].includes(status)) submission.status = status;
         if (totalScore !== undefined) submission.totalScore = totalScore;
         if (feedback) submission.feedback = feedback;
-        if (metadata) submission.metadata = { ...submission.metadata, ...metadata };
+        if(metadata && typeof metadata === "object" && !Array.isArray(metadata)){
+            const existingMetadata = Object.fromEntries(submission.metadata);
+            const updatedMetadata = {...existingMetadata, ...metadata};
+            submission.metadata = new Map(Object.entries(updatedMetadata));
+        }
         if (sectionIds) submission.sectionIds = sectionIds; // Add or update sectionIds
 
         await submission.save();
