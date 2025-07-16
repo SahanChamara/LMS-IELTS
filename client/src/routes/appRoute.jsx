@@ -48,6 +48,7 @@ import SuperAdminstudentcontrol from '../pages/Adminpages/adminstudents'
 import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
+import AdminFeed from '../pages/Adminpages/AdminFeed'
 
 // Defining the application routes
 const AppRoutes = () => {
