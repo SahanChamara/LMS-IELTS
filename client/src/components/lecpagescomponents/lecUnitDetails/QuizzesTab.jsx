@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Edit, Trash2, Eye } from 'lucide-react'
+import { User, Edit, Trash2, Eye , CircleFadingPlus } from 'lucide-react'
 import QuizPreview from './QuizPreview'
 import QuestionDetailsModal from '../Models/QuestionDetailsModal'
 import QuestionPreviewModal from '../Models/QuestionPreviewModal'
@@ -602,7 +602,7 @@ const QuizzesTab = ({ unit }) => {
             disabled={isLoading}
             aria-label='Add new quiz'
           >
-            Add Quiz
+            Add Assessment
           </button>
         )}
       </div>
@@ -1073,7 +1073,7 @@ const QuizzesTab = ({ unit }) => {
                               aria-label={`Edit quiz ${quiz.title}`}
                               title='Edit'
                             >
-                              <Edit className='w-5 h-5' />
+                              <CircleFadingPlus className='w-5 h-5' />
                             </button>
                             
                             <button
@@ -1085,20 +1085,7 @@ const QuizzesTab = ({ unit }) => {
                               aria-label={`Add questions to quiz ${quiz.title}`}
                               title='Add Questions'
                             >
-                              <svg
-                                className='w-5 h-5'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                                xmlns='http://www.w3.org/2000/svg'
-                              >
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  strokeWidth='2'
-                                  d='M12 4v16m8-8H4'
-                                />
-                              </svg>
+                             <Edit className='w-5 h-5' />
                             </button>
                             <button
                               onClick={() => handlePreviewQuestions(quiz)}
