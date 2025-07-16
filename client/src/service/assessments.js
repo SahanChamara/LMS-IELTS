@@ -27,7 +27,7 @@ export const getAssessmentsByUnitId = async (unitId) => {
   const apiObject = {
     method: "GET",
     withCredentials: true,
-    prefix: "assessments",  // <-- Remove trailing slash
+    prefix: "assessments/unit",
     endpoint: `${unitId}`,
   };
   return ApiService.callApi(apiObject);

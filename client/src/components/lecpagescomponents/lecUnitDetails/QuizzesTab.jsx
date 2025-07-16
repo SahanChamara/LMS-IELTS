@@ -7,7 +7,7 @@ import { getAssessmentsByUnitId, addAssessments } from "../../../service/assessm
 const QuizzesTab = ({ unit }) => {
   
   const [quizzes, setQuizzes] = useState(unit?.quizzes || []);
-  const [assessment, setAssessment] = useState();
+  const [assessment, setAssessment] = useState([]);
   const [formMode, setFormMode] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -88,22 +88,59 @@ const QuizzesTab = ({ unit }) => {
 
   
 //=====================================================================================
-  useEffect(() => {
+//   useEffect(() => {
+//   const fetchAssessments = async () => {
+//     try {
+//       // unit.unitId = "6858498c33c8b7d374ed743e";
+//       const response = await getAssessmentsByUnitId(unit.unitId);
+//       setAssessment(res.data);
+//       // console.log("Unit ID :: ", unit.unitId)
+//       // setQuizzes(response.data)
+//       console.log("Assessments:", response.data);
+//     } catch (error) {
+//       console.error("Error fetching assessments:", error);
+//     }
+//   }; 
+
+//   fetchAssessments();
+//   checkQuizCompletion();
+// }, [formData, questionPage]);
+
+// const [assessment, setAssessment] = useState([]);
+
+useEffect(() => {
   const fetchAssessments = async () => {
+    if (!unit?.unitId) {
+      console.warn("unitId missing, skipping fetch");
+      setAssessment([]);
+      return;
+    }
+
     try {
-      unit.unitId = "6875d8086af9928aa7f512da";
       const response = await getAssessmentsByUnitId(unit.unitId);
-      setAssessment(response.data);
-      // setQuizzes(response.data)
-      console.log("Assessments:", response.data);
+      console.log("API response:", response);
+
+      if (response.data.success) {
+        console.log("Fetched data:", response.data.data);
+        setAssessment(response.data.data);
+      } else {
+        setAssessment([]);
+      }
     } catch (error) {
       console.error("Error fetching assessments:", error);
+      setAssessment([]);
     }
-  }; 
+  };
 
   fetchAssessments();
-  checkQuizCompletion();
-}, [formData, questionPage]);
+  // consider moving checkQuizCompletion() to a separate effect
+}, [unit.unitId, formData, questionPage]);
+
+
+
+
+
+
 
 
 console.log("assessment ::: ", assessment);
@@ -948,7 +985,7 @@ console.log("assessment ::: ", assessment);
               aria-label="Search quizzes"
             />
           </div>
-          {quizzes.length == 0 ? (
+          {/* {Array.isArray(assessment) && assessment.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
                 <thead className="bg-gray-100 sticky top-0">
@@ -1058,7 +1095,57 @@ console.log("assessment ::: ", assessment);
             </div>
           ) : (
             <p className="text-neutral-600 text-sm text-center">No quizzes available. Add a quiz to get started.</p>
-          )}
+          )} */}
+          {/* ======================================================================================= */}
+          {assessment.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
+              <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                  <th onClick={() => handleSort("title")}>Title {sortConfig.key === "title" && (sortConfig.direction === "ascending" ? "↑" : "↓")}</th>
+                  <th onClick={() => handleSort("dueDate")}>Due Date {sortConfig.key === "dueDate" && (sortConfig.direction === "ascending" ? "↑" : "↓")}</th>
+                  <th onClick={() => handleSort("passingScore")}>Pass Score (%) {sortConfig.key === "passingScore" && (sortConfig.direction === "ascending" ? "↑" : "↓")}</th>
+                  <th onClick={() => handleSort("totalMarks")}>Total Marks {sortConfig.key === "totalMarks" && (sortConfig.direction === "ascending" ? "↑" : "↓")}</th>
+                  <th onClick={() => handleSort("answeredStudents")}>Answered Students {sortConfig.key === "answeredStudents" && (sortConfig.direction === "ascending" ? "↑" : "↓")}</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assessment.map((quiz) => (
+                  <tr key={quiz._id}>
+                    <td>{quiz.title}</td>
+                    <td>{quiz.dueDate}</td>
+                    <td>{quiz.passPercentage !== null ? `${quiz.passPercentage}%` : 'N/A'}</td>
+                    <td>{quiz.totalMarks}</td>
+                    <td>
+                      <div className="flex items-center justify-center space-x-2">
+                        <span>{quiz.answeredStudents}</span>
+                        <button onClick={() => handleViewHistory(quiz.id)} className="h-8 w-8 flex items-center justify-center hover:bg-green-200 text-green-600 bg-green-100 rounded-full">
+                          <User className="w-5 h-5 text-green-700" />
+                        </button>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex justify-center items-center space-x-2">
+                        <button onClick={() => handleEditQuiz(quiz)} disabled={isLoading} className={`p-2 rounded-full hover:bg-blue-100 text-blue-600 transition ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}>
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleDeleteQuiz(quiz.id)} disabled={isLoading} className={`p-2 rounded-full hover:bg-red-100 text-red-600 transition ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}>
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-neutral-600 text-sm text-center">No quizzes available. Add a quiz to get started.</p>
+        )}
+
+        {/* ======================================================================================= */}
+
 
           {/* Quiz Pagination */}
           {quizzes.length > quizzesPerPage && (

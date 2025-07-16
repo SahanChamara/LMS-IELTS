@@ -88,6 +88,22 @@ exports.getAssessmentById = async (req, res) => {
   }
 };
 
+exports.getAssessmentsByUnitId = async (req, res) => {
+  try {
+    const assessments = await Assessment.find({ unit: req.params.unitId })
+        .populate('unit', 'title');
+
+    if (!assessments || assessments.length === 0) {
+      return res.status(404).json({ success: false, message: 'No assessments found for this unit' });
+    }
+
+    res.status(200).json({ success: true, data: assessments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching assessments', error: error.message });
+  }
+};
+
+
 exports.updateAssessment = async (req, res) => {
   try {
     const { title, unit, description, dueDate, totalMarks, questionsCount, duration, passPercentage, caMarksPercetage, status } = req.body;
