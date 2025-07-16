@@ -1,9 +1,9 @@
 import { Routes, Route } from 'react-router-dom'
 
 // Students
-import Home from '../pages/Home'
-import Courses from '../pages/Courses'
-import Dashboard from '../pages/Dashboard'
+// import Home from '../pages/Home'
+// import Courses from '../pages/Courses'
+// import Dashboard from '../pages/Dashboard'
 import Exam from '../pages/Exam'
 import Login from '../pages/student/Login'
 import Register from '../pages/student/Register'
@@ -38,15 +38,16 @@ import InstructorFeed from '../pages/lecturepages/InstructorFeed'
 import StudentAllHistory from '../components/lecpagescomponents/lecUnitDetails/StudentAllHistory'
 import StudandTabel from '../components/lecpagescomponents/studandTabel'
 import Response from '../pages/lecturepages/Response'
+import AssignmentReceive from '../components/lecpagescomponents/AssignmentReceive'
 
 // Admin
+// import Exams from '../pages/exams'
+// import AdminFeed from '../pages/Adminpages/AdminFeed'
 import SuperAdmin from '../pages/Adminpages/admindashboard'
 import SuperAdminstudentcontrol from '../pages/Adminpages/adminstudents'
 import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
-import Exams from '../pages/exams'
-import AdminFeed from '../pages/Adminpages/AdminFeed'
 
 // Defining the application routes
 const AppRoutes = () => {
@@ -85,20 +86,15 @@ const AppRoutes = () => {
         <Route path='dashboard/lecture' element={<Lecdashboard />} />
         <Route path='courses/lecture' element={<Leccorces />} />
         <Route path='assignments/lecture' element={<Lassignments />} />
-        <Route path='students/lecture' element={<Lstudents />} />`
+        <Route path='students/lecture' element={<Lstudents />} />
         <Route path='/calendar/lecture' element={<Leccalander />} />
         <Route path='/settings/lecture' element={<Lecsettings />} />
         <Route path='/unit/lecture/:id' element={<LecUnitDetails />} />
         <Route path='/feed/lecture' element={<InstructorFeed />} />
-        <Route
-          path='/student-history/:quizId'
-          element={<StudentAllHistory />}
-        />
+        <Route path='/student-history/:quizId' element={<StudentAllHistory />} />
         <Route path='/response/:id' element={<Response />} />
-        <Route
-          path='/students/lecture/records/:unitId'
-          element={<StudandTabel />}
-        />
+        <Route path='/students/lecture/records/:unitId' element={<StudandTabel />} />
+        <Route path='/assignments/receive' element={<AssignmentReceive />} />
       </Route>
 
       {/* Protected routes for SuperAdmin */}
@@ -106,10 +102,7 @@ const AppRoutes = () => {
         <Route path='/dashboard/admin' element={<SuperAdmin />} />
         <Route path='/students/admin' element={<SuperAdminstudentcontrol />} />
         <Route path='/lectures/admin' element={<SuperAdminlecturercontrol />} />
-        <Route
-          path='/notifications/admin'
-          element={<SuperAdminnotifications />}
-        />
+        <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
       </Route>
     </Routes>
   )
