@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { MessageCircle, BookOpen, FileUp } from 'lucide-react';
-import ReactionBar from '../components/ReactionBar';
-import AttachmentDisplay from '../components/AttachmentDisplay';
-import Sidebar from '../components/Sidebar';
-import Card from '../components/card';
+import { Upload, MessageCircle, BookOpen, FileUp } from 'lucide-react';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { mockPosts, currentUser } from '../../data/mockData';
+import ReactionBar from '../../components/ReactionBar';
+import AttachmentDisplay from '../../components/AttachmentDisplay';
+import Sidebar from '../../components/Sidebar';
+import Card from '../../components/card';
 import { motion } from 'framer-motion';
-import { useAppSelector, useAppDispatch } from '../redux/store-config/store';
-import { getStudentDetailsAPI } from '../redux/features/studentSlice';
-import { createPost, getPostsByCourseId, reactPost, commentPost } from '../service/postService';
-import { AwsS3Service } from '../service/s3/s3'; // New service for S3 file upload
+import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
+import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
+import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../service/postService';
+
+// S3 Configuration
+const S3ClientConfig = {
+  region: import.meta.env.VITE_S3_REGION || 'eu-north-1',
+  credentials: {
+    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY,
+    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
+  },
+};
 
 const StudentFeed = () => {
   const [posts, setPosts] = useState([]);
@@ -30,6 +40,14 @@ const StudentFeed = () => {
   };
 
   const courseId = student?.enrolledCourse?._id;
+
+  // Debug environment variables
+  useEffect(() => {
+    console.log('Environment variables:', import.meta.env);
+    console.log("bucket name", import.meta.env.VITE_S3_BUCKET_NAME);
+    console.log("access key", import.meta.env.VITE_S3_ACCESS_KEY);
+    
+  }, []);
 
   // Fetch student details and posts
   useEffect(() => {
@@ -75,15 +93,28 @@ const StudentFeed = () => {
 
     try {
       setIsUploading(true);
-      const url = await uploadFileToS3(selectedFile); // Call S3 upload service
+      const s3Client = new S3Client(S3ClientConfig);
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const command = new PutObjectCommand({
+        Bucket: import.meta.env.VITE_S3_BUCKET_NAME ,
+        Key: `media/${selectedFile.name}`,
+        Body: new Uint8Array(arrayBuffer),
+        ContentType: selectedFile.type,
+      });
+
+      await s3Client.send(command);
+      const url = `https://residuelmsbucket.s3.eu-north-1.amazonaws.com/media/${selectedFile.name}`;
+      console.log('S3 Upload URL:', url);
       setAttachmentUrl(url);
+
       toast.success('File uploaded successfully!', {
         position: 'top-right',
         autoClose: 3000,
         className: 'bg-green-100 text-green-800 border border-green-200',
       });
     } catch (err) {
-      toast.error('File upload failed', {
+      console.error('Upload error:', err);
+      toast.error('File upload failed: ' + err.message, {
         position: 'top-right',
         autoClose: 3000,
       });

@@ -59,8 +59,8 @@ apiClient.interceptors.response.use(
           //store.dispatch(logout());
           isRefreshing = false;
           refreshPromise = null;
-          /* store.dispatch(logout());
-          window.location.href = "/login"; */
+          store.dispatch(logout());
+          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       }else{

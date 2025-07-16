@@ -1,7 +1,7 @@
 import React from "react";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import Card, { CardContent } from "../components/Card";
+import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/Sidebar";
+import Card, { CardContent } from "../../components/Card";
 import { Settings } from "lucide-react";
 
 // Reusable Toggle Switch

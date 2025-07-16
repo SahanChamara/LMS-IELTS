@@ -8,7 +8,7 @@
 // import ProgramAdvantages from "../components/ProgramAdvantages";
 // import HeroSection from "../components/HeroSection";
 // import Team from "../components/Team";
-import Login from "../pages/Login";
+import Login from "./student/Login";
 
 const Home = () => {
   return (
