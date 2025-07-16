@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Upload, MessageCircle, BookOpen, FileUp } from 'lucide-react';
+import { MessageCircle, BookOpen, Image } from 'lucide-react';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { mockPosts, currentUser } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
@@ -17,9 +17,27 @@ import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../se
 const S3ClientConfig = {
   region: import.meta.env.VITE_S3_REGION || 'eu-north-1',
   credentials: {
-    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY,
-    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
+    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY || '',
+    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY || '',
   },
+};
+
+// Validate S3 configuration
+const validateS3Config = () => {
+  const missing = [];
+  if (!import.meta.env.VITE_S3_ACCESS_KEY) missing.push('VITE_S3_ACCESS_KEY');
+  if (!import.meta.env.VITE_S3_SECRET_ACCESS_KEY) missing.push('VITE_S3_SECRET_ACCESS_KEY');
+  if (!import.meta.env.VITE_S3_BUCKET_NAME) missing.push('VITE_S3_BUCKET_NAME');
+  if (!import.meta.env.VITE_S3_REGION) missing.push('VITE_S3_REGION');
+  if (missing.length > 0) {
+    console.error('Missing S3 configuration:', missing.join(', '));
+    toast.error(`Missing AWS configuration: ${missing.join(', ')}`, {
+      position: 'top-right',
+      autoClose: 5000,
+    });
+    return false;
+  }
+  return true;
 };
 
 const StudentFeed = () => {
@@ -32,6 +50,7 @@ const StudentFeed = () => {
   const [newComments, setNewComments] = useState({});
   const { student, loading, error } = useAppSelector((state) => state.students);
   const dispatch = useAppDispatch();
+  const fileInputRef = useRef(null);
 
   const currentUser = {
     id: localStorage.getItem('user'),
@@ -43,10 +62,13 @@ const StudentFeed = () => {
 
   // Debug environment variables
   useEffect(() => {
-    console.log('Environment variables:', import.meta.env);
-    console.log("bucket name", import.meta.env.VITE_S3_BUCKET_NAME);
-    console.log("access key", import.meta.env.VITE_S3_ACCESS_KEY);
-    
+    console.log('Environment variables:', {
+      VITE_S3_ACCESS_KEY: import.meta.env.VITE_S3_ACCESS_KEY ? 'Set' : 'Missing',
+      VITE_S3_SECRET_ACCESS_KEY: import.meta.env.VITE_S3_SECRET_ACCESS_KEY ? 'Set' : 'Missing',
+      VITE_S3_BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME,
+      VITE_S3_REGION: import.meta.env.VITE_S3_REGION,
+    });
+    validateS3Config();
   }, []);
 
   // Fetch student details and posts
@@ -70,62 +92,71 @@ const StudentFeed = () => {
     }
   }, [dispatch, courseId]);
 
-  const handleFileSelected = (e) => {
+  const handleFileSelected = async (e) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
     setAttachmentUrl(''); // Reset attachment URL when new file is selected
-    if (file) {
-      toast.info(`Selected: ${file.name} (${formatFileSize(file.size)})`, {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-    }
-  };
-
-  const handleUploadFile = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a file to upload', {
+    if (!file) {
+      toast.error('No file selected', {
         position: 'top-right',
         autoClose: 3000,
       });
       return;
     }
 
+    toast.info(`Selected: ${file.name} (${formatFileSize(file.size)})`, {
+      position: 'top-right',
+      autoClose: 3000,
+    });
+
+    // Automatically upload to S3
+    if (!validateS3Config()) {
+      setIsUploading(false);
+      return;
+    }
+
+    const bucketName = import.meta.env.VITE_S3_BUCKET_NAME;
+
     try {
       setIsUploading(true);
       const s3Client = new S3Client(S3ClientConfig);
-      const arrayBuffer = await selectedFile.arrayBuffer();
+      const arrayBuffer = await file.arrayBuffer();
       const command = new PutObjectCommand({
-        Bucket: import.meta.env.VITE_S3_BUCKET_NAME ,
-        Key: `media/${selectedFile.name}`,
+        Bucket: bucketName,
+        Key: `media/${file.name}`,
         Body: new Uint8Array(arrayBuffer),
-        ContentType: selectedFile.type,
+        ContentType: file.type,
+        ACL: 'public-read', // Ensure file is publicly accessible
       });
 
       await s3Client.send(command);
-      const url = `https://residuelmsbucket.s3.eu-north-1.amazonaws.com/media/${selectedFile.name}`;
+      const url = `https://${bucketName}.s3.${S3ClientConfig.region}.amazonaws.com/media/${file.name}`;
       console.log('S3 Upload URL:', url);
       setAttachmentUrl(url);
 
-      toast.success('File uploaded successfully!', {
+      toast.success('Image uploaded successfully!', {
         position: 'top-right',
         autoClose: 3000,
         className: 'bg-green-100 text-green-800 border border-green-200',
       });
     } catch (err) {
       console.error('Upload error:', err);
-      toast.error('File upload failed: ' + err.message, {
+      toast.error(`Image upload failed: ${err.message}`, {
         position: 'top-right',
         autoClose: 3000,
       });
     } finally {
       setIsUploading(false);
+      // Clear file input to allow re-selecting the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   const handleCreatePost = async () => {
     if (!newPost.trim() && !attachmentUrl) {
-      toast.error('Please add some content or upload a file to share', {
+      toast.error('Please add some content or upload an image to share', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -150,9 +181,9 @@ const StudentFeed = () => {
         textContent: newPost,
         attachments: attachmentUrl
           ? [{
-              name: selectedFile.name,
-              type: selectedFile.type,
-              size: selectedFile.size,
+              name: selectedFile?.name || 'Unknown',
+              type: selectedFile?.type || 'image/jpeg',
+              size: selectedFile?.size || 0,
               url: attachmentUrl,
             }]
           : [],
@@ -162,6 +193,7 @@ const StudentFeed = () => {
         userName: currentUser.name,
         userRole: currentUser.role,
       };
+      console.log('Sending postData to backend:', postData);
       await createPost(postData);
       toast.success('Your post has been submitted for approval and will appear in the feed once approved.', {
         position: 'top-right',
@@ -176,7 +208,11 @@ const StudentFeed = () => {
       setNewPost('');
       setSelectedFile(null);
       setAttachmentUrl('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
+      console.error('Post creation error:', error);
       toast.error('Error creating post: ' + error.message, {
         position: 'top-right',
         autoClose: 3000,
@@ -294,27 +330,26 @@ const StudentFeed = () => {
                   onChange={(e) => setNewPost(e.target.value)}
                   className="flex-1 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-800 text-sm"
                 />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <FileUp className="h-5 w-5 text-gray-600 hover:text-blue-500" />
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.docx,.png,.jpg,.jpeg"
-                    onChange={handleFileSelected}
-                    className="hidden"
-                  />
-                </label>
                 <button
-                  onClick={handleUploadFile}
-                  disabled={isUploading || !selectedFile}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
                   className={`text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out ${
-                    isUploading || !selectedFile
+                    isUploading
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
                   }`}
                 >
-                  {isUploading ? 'Uploading...' : 'Upload File'}
+                  <Image className="h-5 w-5 inline-block mr-1" />
+                  {isUploading ? 'Uploading...' : 'Add File'}
                 </button>
+                <input
+                  ref={fileInputRef}
+                  id="file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelected}
+                  className="hidden"
+                />
                 <button
                   onClick={handleCreatePost}
                   disabled={isUploading}

@@ -106,6 +106,7 @@ const AppRoutes = () => {
         <Route path='/dashboard/admin' element={<SuperAdmin />} />
         <Route path='/students/admin' element={<SuperAdminstudentcontrol />} />
         <Route path='/lectures/admin' element={<SuperAdminlecturercontrol />} />
+        <Route path='/feed/admin' element={<AdminFeed />} />
         <Route
           path='/notifications/admin'
           element={<SuperAdminnotifications />}
