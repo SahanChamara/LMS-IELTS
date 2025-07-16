@@ -48,6 +48,7 @@ import SuperAdminstudentcontrol from '../pages/Adminpages/adminstudents'
 import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
+import AdminFeed from '../pages/Adminpages/AdminFeed'
 
 // Defining the application routes
 const AppRoutes = () => {
@@ -102,7 +103,14 @@ const AppRoutes = () => {
         <Route path='/dashboard/admin' element={<SuperAdmin />} />
         <Route path='/students/admin' element={<SuperAdminstudentcontrol />} />
         <Route path='/lectures/admin' element={<SuperAdminlecturercontrol />} />
+
+        <Route path='/feed/admin' element={<AdminFeed />} />
+        <Route
+          path='/notifications/admin'
+          element={<SuperAdminnotifications />}
+        />
         <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
+
       </Route>
     </Routes>
   )

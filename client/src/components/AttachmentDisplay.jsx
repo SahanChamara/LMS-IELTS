@@ -27,7 +27,7 @@ const AttachmentDisplay = ({ attachments }) => {
             {isImage(attachment.type) ? (
               <div className="rounded-lg overflow-hidden border border-gray-200">
                 <img
-                  src={`https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop`}
+                  src={attachment.url}
                   alt={attachment.name}
                   className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
                   onClick={() => window.open(attachment.url, '_blank')}
