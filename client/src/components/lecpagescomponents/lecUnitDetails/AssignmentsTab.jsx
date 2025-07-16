@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Upload, CheckCircle, X } from "lucide-react";
+import { Upload, CheckCircle, X, Bell , ExternalLink } from "lucide-react";
 
 const AssignmentsTab = ({ unit }) => {
   const navigate = useNavigate();
@@ -8,6 +8,7 @@ const AssignmentsTab = ({ unit }) => {
   const [reflection, setReflection] = useState("");
   const [images, setImages] = useState([]);
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
+  const [receivedAssignments, setReceivedAssignments] = useState([]);
   const fileInputRef = useRef(null);
 
   // Retrieve tableId from navigation state or unit prop
@@ -32,6 +33,8 @@ const AssignmentsTab = ({ unit }) => {
       timestamp: new Date().toISOString(),
     };
 
+    // Add to received assignments
+    setReceivedAssignments((prev) => [submission, ...prev]);
     setToast({
       message: "Assignment update submitted successfully",
       type: "success",
@@ -121,7 +124,7 @@ const AssignmentsTab = ({ unit }) => {
       )}
 
       {/* Form Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
+      <div className="bg-white p-6 rounded-lg shadow-md space-y-6 mb-6">
         <div>
           <label htmlFor="reflection" className="block text-lg font-semibold text-neutral-900 mb-2">
             Your Assignment Reflection
@@ -188,12 +191,62 @@ const AssignmentsTab = ({ unit }) => {
           <button
             onClick={handleSubmit}
             disabled={!reflection.trim() && images.length === 0}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-from-blue-500 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
             aria-label="Submit assignment update"
           >
             Submit Update
           </button>
         </div>
+      </div>
+
+      {/* Received Assignments Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Bell size={24} className="text-blue-600 mr-2" />
+            <h2 className="text-lg font-semibold text-neutral-900">Received Assignments</h2>
+          </div>
+         <button
+  onClick={() =>
+    navigate(`/assignments/receive`, {
+      state: { assignments: receivedAssignments },
+    })
+  }
+  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-sm font-semibold"
+  aria-label="View Assignment Responses"
+>
+  View Responses
+  <ExternalLink className="w-4 h-4" />
+</button>
+          
+        </div>
+        {receivedAssignments.length === 0 ? (
+          <p className="text-neutral-600">No assignments submitted yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {receivedAssignments.map((assignment) => (
+              <div key={assignment.id} className="border-b border-gray-200 pb-4">
+                <p className="text-sm text-neutral-600">
+                  Submitted on: {new Date(assignment.timestamp).toLocaleString()}
+                </p>
+                {assignment.reflection && (
+                  <p className="text-neutral-900 mt-2">{assignment.reflection}</p>
+                )}
+                {assignment.images.length > 0 && (
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {assignment.images.map((imageName, index) => (
+                      <div key={index} className="relative">
+                        <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-sm text-neutral-600">{imageName}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
