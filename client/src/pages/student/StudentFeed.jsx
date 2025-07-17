@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
 import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../service/postService';
-import { uploadImageToS3, validateS3Config } from '../../service/s3/s3';
+import { uploadImageToS3, validateS3Config } from '../../service/s3/s3Service';
 
 // Utility function to format file size
 const formatFileSize = (bytes) => {
