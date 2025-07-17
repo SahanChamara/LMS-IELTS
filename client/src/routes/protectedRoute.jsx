@@ -12,6 +12,20 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   console.log("Protected Route auth", isAuthenticated, data, loading, error);
 
+  useEffect(() => {
+  let isMounted = true;
+  const accessToken = Cookies.get("accessToken");
+  if (!isAuthenticated && !loading && !accessToken) {
+    console.log("refresh api calling");
+    dispatch(refreshTokenAPI())
+      .unwrap()
+      .catch((err) => console.error("Refresh Token Failed", err));
+  }
+  return () => {
+    isMounted = false;
+  };
+}, [dispatch, isAuthenticated, loading]);
+
   /* useEffect(() => {
     let isMounted = true;
     const accessToken = Cookies.get("accessToken");

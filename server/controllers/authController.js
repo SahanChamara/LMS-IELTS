@@ -134,22 +134,17 @@ const login = async (req, res) => {
             expiresIn: "1h",
         });*/
 
-        const accessToken = generateToken(payload, "2m");
+        const accessToken = generateToken(payload, "15m");
         const refreshToken = generateToken(payload, "7d");
 
         user.refreshToken = refreshToken
-
-        console.log("Before Save Refresh Token:",refreshToken);
-
         await user.save();
-
-        console.log("Saved Refresh Token:", user.refreshToken);
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 2 * 60 * 1000
+            maxAge: 15 * 60 * 1000
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -161,7 +156,6 @@ const login = async (req, res) => {
 
         res.success(
             {
-
                 user: {id: user._id, name: user.name, email: user.email, role},
             },
             "User Login Successfully",
@@ -539,13 +533,25 @@ const refreshToken = async (req,res) => {
         }
 
         const payload = {id: user._id, role: user.role || decoded.role};
-        const newAccessToken = generateToken(payload, "2m");
+        const newAccessToken = generateToken(payload, "15m");
+        const newRefreshToken = generateToken(payload, "7d");
+
+        user.refreshToken = newRefreshToken;
+        await user.save();
+        console.log("New refreshToken saved:", newRefreshToken);
 
         res.cookie("accessToken", newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 2 * 60 * 1000 , // 15 minutes
+            maxAge: 15 * 60 * 1000 , // 15 minutes
+        });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
         res.success(

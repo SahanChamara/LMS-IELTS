@@ -27,6 +27,17 @@ let refreshPromise = null;
 //   }
 // );
 
+let refreshSubscribers = [];
+
+const addRefreshSubscriber = (callback) => {
+  refreshSubscribers.push(callback);
+};
+
+const onRefreshed = (newToken) => {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+};
+
 // Response Interceptor
 apiClient.interceptors.response.use(
   (response) => response,
@@ -43,14 +54,25 @@ apiClient.interceptors.response.use(
 
       if (!isRefreshing) {
         isRefreshing = true;
-        refreshPromise = store.dispatch(refreshTokenAPI()).unwrap();
+        //refreshPromise = store.dispatch(refreshTokenAPI()).unwrap();
 
         try {
           const response = await store.dispatch(refreshTokenAPI()).unwrap();
           console.log("axios config response", response);
 
+          const newAccessToken = response.accessToken;
           isRefreshing = false;
-          refreshPromise = null;
+          onRefreshed(newAccessToken);
+          // // Update cookie manually if needed
+          // Cookies.set("accessToken", newAccessToken, {
+          //   httpOnly: true,
+          //   secure: process.env.NODE_ENV === "production",
+          //   sameSite: "strict",
+          //   maxAge: 15 * 60 * 1000,
+          // });
+
+          //isRefreshing = false;
+          //refreshPromise = null;
 
           return apiClient(originalRequest);
 
@@ -58,15 +80,20 @@ apiClient.interceptors.response.use(
           // Refresh token failed - logout user
           //store.dispatch(logout());
           isRefreshing = false;
-          refreshPromise = null;
+          //refreshPromise = null;
           store.dispatch(logout());
           window.location.href = "/login";
           return Promise.reject(refreshError);
         }
-      }else{
-        await refreshPromise;
-        return apiClient(originalRequest);
       }
+
+      return new Promise((resolve) => {
+        addRefreshSubscriber((newToken) => {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(apiClient(originalRequest));
+        });
+      });
+
     }
 
     // Handle 403 Forbidden (role-based access)
