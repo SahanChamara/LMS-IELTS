@@ -49,6 +49,7 @@ import SuperAdminlecturercontrol from '../pages/Adminpages/adminlecturer'
 import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
 import AdminFeed from '../pages/Adminpages/AdminFeed'
+import InstructorDashboard from "../pages/Exam Pages/Instructor Exam Pages/InstructorDashboard";
 
 // Defining the application routes
 const AppRoutes = () => {
@@ -96,6 +97,7 @@ const AppRoutes = () => {
         <Route path='/response/:id' element={<Response />} />
         <Route path='/students/lecture/records/:unitId' element={<StudandTabel />} />
         <Route path='/assignments/receive' element={<AssignmentReceive />} />
+        <Route path="/exam/lecture" element={<InstructorDashboard />} />
       </Route>
 
       {/* Protected routes for SuperAdmin */}
