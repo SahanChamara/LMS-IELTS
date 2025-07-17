@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import QuizPreview from "./QuizPreview";
-import { User, Edit, Trash2 } from 'lucide-react';
+import { User, Edit, Trash2, CircleFadingPlus, Eye } from 'lucide-react';
+import QuestionDetailsModal from "../Models/QuestionDetailsModal";
+import { addAssessments } from '../../../service/assessments';
+
+
 
 const QuizzesTab = ({ unit }) => {
   const initialQuizzes = [
@@ -611,6 +615,7 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
+      {/* ADD Form */}
       {formMode && (
         <div className='bg-white p-6 rounded-lg shadow-md mb-6 max-w-7xl mx-auto w-full'>
           <h4 className='text-lg font-medium text-neutral-900 mb-4'>
@@ -947,7 +952,7 @@ const QuizzesTab = ({ unit }) => {
       )}
 
       
-
+      {/* Table Assessment */}
       {!formMode && (
         <>
           <div className='mb-6'>
@@ -1150,7 +1155,7 @@ const QuizzesTab = ({ unit }) => {
         </>
       )}
 
-      <QuestionPreviewModal
+      <QuizPreview
         isOpen={showQuestionPreviewModal}
         onClose={() => {
           setShowQuestionPreviewModal(false)
