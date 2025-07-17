@@ -1,72 +1,73 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Define Attachment schema as a subdocument
+// Attachment subdocument schema
 const AttachmentSchema = new Schema({
-    // Name of the file
-    name: { type: String, required: true },
-    // MIME type of the file (e.g., 'application/pdf', 'image/png')
-    type: { type: String, required: true },
-    // Size of the file in bytes
-    size: { type: Number, required: true },
-    // URL to access the file (assumed to be stored in a cloud storage like S3)
-    url: { type: String, required: true }
+    name: { type: String, required: true, trim: true },
+    type: { type: String, required: true, trim: true },
+    size: { type: Number, required: true, min: 0 },
+    url: { type: String, required: true, trim: true }
 });
 
-// Define Reaction schema as a subdocument
+// Reaction subdocument schema
 const ReactionSchema = new Schema({
-    // Type of reaction (e.g., 'like', 'love', 'helpful')
-    type: { type: String, required: true },
-    // User who made the reaction
-    userId: { type: String, required: true },
-    // Name of the user for display purposes
-    userName: { type: String, required: true },
-    // Timestamp for reaction creation
+    type: {
+        type: String,
+        required: true,
+        enum: ['like', 'love', 'helpful', 'dislike'], // Define allowed reaction types
+        trim: true
+    },
+    userId: { type: String, required: true, trim: true },
+    userName: { type: String, required: true, trim: true },
     createdAt: { type: Date, default: Date.now }
 });
 
-// Define Comment schema as a subdocument
+// Comment subdocument schema
 const CommentSchema = new Schema({
-    // Text content of the comment
-    content: { type: String, required: true },
-    // User who made the comment
-    userId: { type: String, required: true },
-    // Name of the user for display purposes
-    userName: { type: String, required: true },
-    // Role of the user for display purposes
-    userRole: { type: String, enum: ['student', 'instructor', 'admin'], required: true },
-    // Timestamp for comment creation
+    content: { type: String, required: true, trim: true },
+    userId: { type: String, required: true, trim: true },
+    userName: { type: String, required: true, trim: true },
+    userRole: {
+        type: String,
+        enum: ['student', 'instructor', 'admin'],
+        required: true
+    },
     createdAt: { type: Date, default: Date.now }
 });
 
-const Post = new Schema({
-    // Text content of the post
-    textContent: { type: String },
-    // Array of embedded attachments
+// Post schema
+const PostSchema = new Schema({
+    textContent: { type: String, trim: true },
     attachments: [AttachmentSchema],
-    // Visibility of the post (e.g., 'public', 'private')
     visibility: {
         type: String,
         enum: ['public', 'private'],
         default: 'public'
     },
-    // Status of the post (e.g., 'pending', 'approved', 'rejected')
+    course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
-    userId: { type: String, required: true },
-    // Name of the user for display purposes
-    userName: { type: String, required: true },
-    // Role of the user for display purposes
-    userRole: { type: String, enum: ['student', 'instructor', 'admin'], required: true },
-    // Timestamp for post creation
-    createdAt: { type: Date, default: Date.now },
-    // Array of embedded reactions
+    userId: { type: String, required: true, trim: true },
+    userName: { type: String, required: true, trim: true },
+    userRole: {
+        type: String,
+        enum: ['student', 'instructor', 'admin'],
+        required: true
+
+    },
     reactions: [ReactionSchema],
-    // Array of embedded comments
     comments: [CommentSchema]
+}, {
+    timestamps: true, // Automatically adds createdAt and updatedAt
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = mongoose.model('Post', Post);
+// Indexes for better query performance
+PostSchema.index({ course: 1, createdAt: -1 });
+PostSchema.index({ userId: 1, status: 1 });
+
+module.exports = mongoose.model('Post', PostSchema);
