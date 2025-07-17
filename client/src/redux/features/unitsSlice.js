@@ -3,6 +3,7 @@ import {
   getAllunits,
   getCourseId,
   getUnitById,
+  getUnitByInstructorId,
 } from "../../service/unitsService";
 
 // Get All Units
@@ -47,13 +48,62 @@ export const getUnitBytIdAPI = createAsyncThunk(
   }
 );
 
-
+//=======================================================================
+export const getUnitByInstructorIdAPI = createAsyncThunk(
+  "getUnitByInstructorIdAPI",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await getUnitByInstructorId(id); // or getUnitByInstructorId
+      console.log("Get Unit By ID response", response);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || "Unit Fetch Failed...");
+    }
+  }
+);
+//=======================================================================
 
 const initialState = {
   loading: false,
   units: { allUnits: [] },
   error: null,
 };
+
+// const unitsSlice = createSlice({
+//   name: "unitsSlice",
+//   initialState,
+//   reducers: {},
+//   extraReducers: (builder) => {
+//     builder
+//       // 🔄 Get All Units
+//       .addCase(getAllUnitsAPI.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(getAllUnitsAPI.fulfilled, (state, action) => {
+//         state.loading = false;
+//         // console.log("All units payload:", action.payload);
+//         state.units.allUnits = action.payload;
+//       })
+//       .addCase(getAllUnitsAPI.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       })
+
+//       // 🔄 Get Unit(s) by Instructor ID
+//       .addCase(getUnitByIdAPI.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(getUnitByIdAPI.fulfilled, (state, action) => {
+//         state.loading = false;
+//         // console.log("Unit by ID payload:", action.payload);
+//         state.units.byInstructor = action.payload;
+//       })
+//       .addCase(getUnitByIdAPI.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       });
+//   },
+// });
 
 const unitsSlice = createSlice({
   name: "unitsSlice",
@@ -74,7 +124,23 @@ const unitsSlice = createSlice({
       .addCase(getAllUnitsAPI.rejected, (state, action) => {
         state.loading = true;
         state.error = action.payload;
+      })
+
+      //=============================================================================
+      // 🔄 Get Unit(s) by Instructor ID
+      .addCase(getUnitByInstructorIdAPI.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getUnitByInstructorIdAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        // console.log("Unit by ID payload:", action.payload);
+        state.units.byInstructor = action.payload;
+      })
+      .addCase(getUnitByInstructorIdAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
+      //=============================================================================
   },
 });
 

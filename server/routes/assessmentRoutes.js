@@ -8,5 +8,6 @@ router.get('/', authMiddleware(['Student', 'Instructor', 'SuperAdmin']), assessm
 router.get('/:id', authMiddleware(['Instructor', 'SuperAdmin']), assessmentController.getAssessmentById);
 router.put('/:id', authMiddleware(['Instructor', 'SuperAdmin']), assessmentController.updateAssessment);
 router.delete('/:id', authMiddleware(['Instructor', 'SuperAdmin']), assessmentController.deleteAssessment);
+router.get('/unit/:unitId', authMiddleware(['Instructor', 'SuperAdmin']), assessmentController.getAssessmentsByUnitId);
 
 module.exports = router;

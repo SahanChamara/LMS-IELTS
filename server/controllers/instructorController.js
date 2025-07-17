@@ -1,5 +1,7 @@
 const Instructor = require('../models/Instructor');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
+const { Unit } = require('../models');
 
 exports.createInstructor = async (req, res) => {
   try {

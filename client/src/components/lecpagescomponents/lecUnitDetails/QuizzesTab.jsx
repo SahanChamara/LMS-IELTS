@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { User, Edit, Trash2, Eye , CircleFadingPlus } from 'lucide-react'
-import QuizPreview from './QuizPreview'
-import QuestionDetailsModal from '../Models/QuestionDetailsModal'
-import QuestionPreviewModal from '../Models/QuestionPreviewModal'
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import QuizPreview from "./QuizPreview";
+import { User, Edit, Trash2, CircleFadingPlus, Eye } from 'lucide-react';
+import QuestionDetailsModal from "../Models/QuestionDetailsModal";
+import { addAssessments } from '../../../service/assessments';
+
+
 
 const QuizzesTab = ({ unit }) => {
   const initialQuizzes = [
@@ -145,64 +147,56 @@ const QuizzesTab = ({ unit }) => {
     }
     const allQuestionsComplete = formData.questions
       .slice(0, questionCount)
-      .every(
-        (q, index) =>
-          q.text.trim() !== '' && q.options.every(o => o.trim() !== '')
-      )
-    setIsQuizComplete(allQuestionsComplete)
-    return allQuestionsComplete
-  }
+      .every((q, index) => {
+        const isComplete = q.text.trim() !== "" && q.options.every((o) => o.trim() !== "");
+        console.log(`Question ${index + 1} complete:`, isComplete, q);
+        return isComplete;
+      });
 
+    console.log("All questions complete:", allQuestionsComplete, "Question count:", questionCount);
+    setIsQuizComplete(allQuestionsComplete);
+    return allQuestionsComplete;
+  };
+
+  // Validate form fields
   const validateForm = () => {
-    const errors = {}
-    if (!formData.title) errors.title = 'Quiz Title is required'
-    if (!formData.instructions) errors.instructions = 'Instructions is required'
-    if (allowPassingScore === 'yes' && !formData.passingScore)
-      errors.passingScore = 'Passing Score is required'
-    if (!formData.dueDate) errors.dueDate = 'Due Date is required'
-    if (!formData.totalMarks) errors.totalMarks = 'Total Marks is required'
-    if (!formData.caMarksPercentage)
-      errors.caMarksPercentage = 'CA Marks Percentage is required'
-    if (!formData.timePeriod) errors.timePeriod = 'Time Period is required'
-    if (!formData.questionCount)
-      errors.questionCount = 'Question Count is required'
+    const errors = {};
+    if (!formData.title) errors.title = "Quiz Title is required";
+    if (!formData.instructions) errors.instructions = "Instructions is required";
+    if (allowPassingScore === "yes" && !formData.passingScore) errors.passingScore = "Passing Score is required";
+    if (!formData.dueDate) errors.dueDate = "Due Date is required";
+    if (!formData.totalMarks) errors.totalMarks = "Total Marks is required";
+    if (!formData.caMarksPercentage) errors.caMarksPercentage = "CA Marks Percentage is required";
+    if (!formData.timePeriod) errors.timePeriod = "Time Period is required";
+    if (!formData.questionCount) errors.questionCount = "Question Count is required";
 
-    const validQuestionCount = Math.min(
-      Number(formData.questionCount) || 0,
-      formData.questions.length
-    )
-    formData.questions.slice(0, validQuestionCount).forEach((q, index) => {
-      if (!q.text)
-        errors[`questionText${index}`] = `Question ${
-          index + 1
-        } text is required`
+    formData.questions.slice(0, Number(formData.questionCount)).forEach((q, index) => {
+      if (!q.text) errors[`questionText${index}`] = `Question ${index + 1} text is required`;
       q.options.forEach((o, optIndex) => {
-        if (!o)
-          errors[`question${index}Option${optIndex}`] = `Question ${
-            index + 1
-          } option ${optIndex + 1} is required`
-      })
-      if (marksDistribution === 'individual' && !q.marks) {
-        errors[`questionMarks${index}`] = `Question ${
-          index + 1
-        } marks are required`
+        if (!o) errors[`question${index}Option${optIndex}`] = `Question ${index + 1} option ${optIndex + 1} is required`;
+      });
+      if (marksDistribution === "individual" && !q.marks) {
+        errors[`questionMarks${index}`] = `Question ${index + 1} marks are required`;
       }
-    })
+    });
 
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
+  // Update quiz completion status
   useEffect(() => {
-    checkQuizCompletion()
-  }, [formData, questionPage])
+    console.log("FormData updated:", formData);
+    checkQuizCompletion();
+  }, [formData, questionPage]);
 
-  const handleInputChange = e => {
-    const { name, value } = e.target
-    setFormData(prev => {
-      const updatedFormData = { ...prev, [name]: value }
-      if (name === 'questionCount' && value !== '') {
-        const count = parseInt(value)
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const updatedFormData = { ...prev, [name]: value };
+      if (name === "questionCount" && value !== "") {
+        const count = parseInt(value);
         if (!isNaN(count) && count > 0) {
           updatedFormData.questions = Array.from({ length: count }, (_, i) => ({
             text: prev.questions[i]?.text || '',
@@ -621,6 +615,7 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
+      {/* ADD Form */}
       {formMode && (
         <div className='bg-white p-6 rounded-lg shadow-md mb-6 max-w-7xl mx-auto w-full'>
           <h4 className='text-lg font-medium text-neutral-900 mb-4'>
@@ -956,6 +951,8 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
+      
+      {/* Table Assessment */}
       {!formMode && (
         <>
           <div className='mb-6'>
@@ -969,9 +966,9 @@ const QuizzesTab = ({ unit }) => {
             />
           </div>
           {quizzes.length > 0 ? (
-            <div className='overflow-x-auto'>
-              <table className='min-w-full bg-white border border-gray-200 rounded-lg shadow-md'>
-                <thead className='bg-gray-100 sticky top-0'>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
+                <thead className="bg-gray-100 sticky top-0">
                   <tr>
                     <th
                       className='py-3 px-4 text-center text-sm font-medium text-neutral-700 cursor-pointer hover:bg-gray-200'
@@ -1027,14 +1024,11 @@ const QuizzesTab = ({ unit }) => {
                 </thead>
                 <tbody>
                   {quizzes
-                    .slice(
-                      (currentPage - 1) * quizzesPerPage,
-                      currentPage * quizzesPerPage
-                    )
-                    .map(quiz => (
+                    .slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage)
+                    .map((quiz) => (
                       <tr
                         key={quiz.id}
-                        className='border-t hover:bg-gray-50 transition-all duration-200'
+                        className="border-t hover:bg-gray-50 transition-all duration-200"
                       >
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-900'>
                           {quiz.title}
@@ -1042,10 +1036,8 @@ const QuizzesTab = ({ unit }) => {
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-600'>
                           {quiz.dueDate}
                         </td>
-                        <td className='py-4 px-4 text-center align-middle text-sm text-neutral-600'>
-                          {quiz.passingScore !== null
-                            ? `${quiz.passingScore}%`
-                            : 'N/A'}
+                        <td className="py-4 px-4 text-center align-middle text-sm text-neutral-600">
+                          {quiz.passingScore !== null ? `${quiz.passingScore}%` : 'N/A'}
                         </td>
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-600'>
                           {quiz.totalMarks}
@@ -1107,7 +1099,7 @@ const QuizzesTab = ({ unit }) => {
                               aria-label={`Delete quiz ${quiz.title}`}
                               title='Delete'
                             >
-                              <Trash2 className='w-5 h-5' />
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </div>
                         </td>
@@ -1117,9 +1109,7 @@ const QuizzesTab = ({ unit }) => {
               </table>
             </div>
           ) : (
-            <p className='text-neutral-600 text-sm text-center'>
-              No quizzes available. Add a quiz to get started.
-            </p>
+            <p className="text-neutral-600 text-sm text-center">No quizzes available. Add a quiz to get started.</p>
           )}
 
           {quizzes.length > quizzesPerPage && (
@@ -1165,7 +1155,7 @@ const QuizzesTab = ({ unit }) => {
         </>
       )}
 
-      <QuestionPreviewModal
+      <QuizPreview
         isOpen={showQuestionPreviewModal}
         onClose={() => {
           setShowQuestionPreviewModal(false)
