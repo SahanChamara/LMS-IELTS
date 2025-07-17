@@ -82,25 +82,6 @@ const register = async (req, res) => {
         await user.save();
 
         const payload = {id: user._id, role};
-        /*const token = jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: "1h",
-        });*/
-        /*const accessToken = generateToken(payload, "15m");
-        const refreshToken = generateToken(payload, "7d");
-
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge:  15 * 60 * 1000         //15min                                   //24 * 60 * 60 * 1000
-        });
-
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });*/
 
         res.success(
             {
@@ -157,12 +138,7 @@ const login = async (req, res) => {
         const refreshToken = generateToken(payload, "7d");
 
         user.refreshToken = refreshToken
-
-        console.log("Before Save Refresh Token:",refreshToken);
-
         await user.save();
-
-        console.log("Saved Refresh Token:", user.refreshToken);
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
@@ -180,7 +156,6 @@ const login = async (req, res) => {
 
         res.success(
             {
-
                 user: {id: user._id, name: user.name, email: user.email, role},
             },
             "User Login Successfully",
@@ -549,8 +524,8 @@ const refreshToken = async (req,res) => {
             return res.error("Invalid refresh Token", HttpsStatus.FORBIDDEN);
         } */
 
-        console.log("Request Refresh Token:", refreshToken);
-        console.log("User Stored Refresh Token:", user.refreshToken);
+/*        console.log("Request Refresh Token:", refreshToken);
+        console.log("User Stored Refresh Token:", user.refreshToken);*/
 
         if (user.refreshToken !== refreshToken) {
             console.log("Token mismatch detected");
@@ -559,12 +534,24 @@ const refreshToken = async (req,res) => {
 
         const payload = {id: user._id, role: user.role || decoded.role};
         const newAccessToken = generateToken(payload, "15m");
+        const newRefreshToken = generateToken(payload, "7d");
+
+        user.refreshToken = newRefreshToken;
+        await user.save();
+        console.log("New refreshToken saved:", newRefreshToken);
 
         res.cookie("accessToken", newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 15 * 60 * 1000 , // 5 minutes
+            maxAge: 15 * 60 * 1000 , // 15 minutes
+        });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
         res.success(

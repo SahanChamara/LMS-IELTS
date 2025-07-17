@@ -12,6 +12,7 @@ import {
   FiSettings, // Added for settings
 } from "react-icons/fi";
 import PropTypes from "prop-types";
+import { GlobeIcon,FilePenLine  } from "lucide-react";
 
 // Sidebar component for lecturer navigation
 const Lecsidebar = ({ onLogout }) => {
@@ -27,24 +28,30 @@ const Lecsidebar = ({ onLogout }) => {
       icon: <FiHome className="text-lg" />,
     },
     {
-      name: "My Courses",
+      name: "Units",
       path: "/courses/lecture",
       icon: <FiBook className="text-lg" />,
     },
     {
-      name: "Assignments",
-      path: "/assignments/lecture",
-      icon: <FiFileText className="text-lg" />,
+      name: "Exam",
+      path: "/exam/lecture",
+      icon: <FilePenLine size={20} className="text-lg" />,
     },
     {
       name: "Students",
       path: "/students/lecture",
       icon: <FiUsers className="text-lg" />,
     },
+    
     {
       name: "Calendar", // Fixed typo "calender" to "Calendar"
       path: "/calendar/lecture", // Fixed path to "/calendar/lecture"
       icon: <FiCalendar className="text-lg" />, // Proper calendar icon
+    },
+        {
+      name: "Feed", // Fixed typo "calender" to "Calendar"
+      path: "/feed/lecture", // Fixed path to "/calendar/lecture"
+      icon: <GlobeIcon size={20} className="text-lg" />, // Proper calendar icon
     },
     {
       name: "Settings",

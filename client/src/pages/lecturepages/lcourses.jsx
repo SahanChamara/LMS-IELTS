@@ -1,44 +1,114 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
 
-const Leccorces = () => {
-  const [units, setUnits] = useState([
-    {
-      id: 1,
-      title: "Introduction to React",
-      code: "CS101",
-      students: 50,
-      description:
-        "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
-      image:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      state: "enabled",
-    },
-    {
-      id: 2,
-      title: "Advanced JavaScript",
-      code: "CS202",
-      students: 35,
-      description:
-        "Dive deep into JavaScript concepts like closures, prototypes, async/await. Master the language that powers modern web development.",
-      image:
-        "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      state: "disabled",
-    },
-    {
-      id: 3,
-      title: "Web Development",
-      code: "CS303",
-      students: 45,
-      description:
-        "Full-stack web development unit covering HTML, CSS, JavaScript, and backend technologies. Build complete web applications from scratch.",
-      image:
-        "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80",
-      state: "enabled",
-    },
-  ]);
+//=============================================================================================
+import { useAppDispatch } from "../../redux/store-config/store";
+import { getUnitByInstructorIdAPI } from "../../redux/features/unitsSlice";
+import { motion } from "framer-motion";
+//=============================================================================================
 
+// Defining the Leccorces component to manage and display course units for instructors
+const Leccorces = () => {
+  const navigate = useNavigate(); // Initialize navigate hook for routing
+
+  //==========================================================================================
+  const dispatch = useAppDispatch();
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+      const fetchUnits = async () => {
+        try {
+          setLoading(true);
+           const response = await dispatch(getUnitByInstructorIdAPI(localStorage.getItem("user"))).unwrap();
+          //  console.log(localStorage.getItem("user")).unwrap()
+          //  console.log("::: -> Unit Response ",response);
+           
+  
+          let fetchedUnits = [];
+          if (Array.isArray(response)) {
+            //console.log(response.data._id);
+            fetchedUnits = response.map((unit, index) => ({
+              title: unit.title || "Untitled",
+              unitId: unit.id || `unit-${index}`,
+              credits: unit.credits || 0,
+              image: unit.image || "default-image.jpg",
+            }));
+          } else if (response && response.data && Array.isArray(response.data)) {
+            fetchedUnits = response.data.map((unit, index) => ({
+              title: unit.title || "Untitled",
+              unitId: unit.id || `unit-${index}`,
+              credits: unit.credits || 0,
+              image: unit.image || "default-image.jpg",
+            }));
+          }else {
+            throw new Error("Unexpected response format");
+          }
+  
+          setUnits(fetchedUnits);
+  
+          const initialProgress = {};
+          const initialEnrolled = {};
+          fetchedUnits.forEach((unit) => {
+            initialProgress[unit.unitId] = Math.floor(Math.random() * 100);
+            initialEnrolled[unit.unitId] = Math.random() > 0.3;
+          });
+          // setProgressData(initialProgress);
+          // setEnrolledUnits(initialEnrolled);
+          // calculateProgress(initialEnrolled, initialProgress);
+        } catch (err) {
+          setError(err.message || "Failed to fetch units. Please try again later.");
+          console.error("fetchUnits error:", err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchUnits();
+    }, [dispatch]);
+  //==========================================================================================
+
+  // Initializing state for units with sample data
+  // const [units, setUnits] = useState([
+  //   {
+  //     id: 1,
+  //     title: "Introduction to React",
+  //     code: "CS101",
+  //     students: 50,
+  //     description:
+  //       "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+  //     state: "enabled",
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "Advanced JavaScript",
+  //     code: "CS202",
+  //     students: 35,
+  //     description:
+  //       "Dive deep into JavaScript concepts like closures, prototypes, async/await. Master the language that powers modern web development.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+  //     state: "disabled",
+  //   },
+  //   {
+  //     id: 3,
+  //     title: "Web Development",
+  //     code: "CS303",
+  //     students: 45,
+  //     description:
+  //       "Full-stack web development unit covering HTML, CSS, JavaScript, and backend technologies. Build complete web applications from scratch.",
+  //     image:
+  //       "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80",
+  //     state: "enabled",
+  //   },
+  // ]);
+
+  // Managing state for modal visibility, form data, and active tab
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState(null);
   const [formData, setFormData] = useState({
@@ -51,10 +121,12 @@ const Leccorces = () => {
   });
   const [activeTab, setActiveTab] = useState("both");
 
+  // Handling logout action
   const handleLogout = () => {
     console.log("Logout triggered");
   };
 
+  // Updating form data on input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -63,6 +135,7 @@ const Leccorces = () => {
     });
   };
 
+  // Handling image file upload and converting to base64
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -76,6 +149,7 @@ const Leccorces = () => {
     }
   };
 
+  // Updating form data based on selected course code
   const handleCodeChange = (e) => {
     const selectedCode = e.target.value;
     const selectedCourse = courses.find((course) => course.id === selectedCode);
@@ -89,6 +163,7 @@ const Leccorces = () => {
     });
   };
 
+  // Toggling unit state between enabled and disabled
   const toggleUnitState = (unitId) => {
     setUnits(
       units.map((unit) =>
@@ -102,6 +177,7 @@ const Leccorces = () => {
     );
   };
 
+  // Opening modal for creating a new unit
   const openCreateModal = () => {
     setCurrentUnit(null);
     setFormData({
@@ -115,6 +191,7 @@ const Leccorces = () => {
     setIsModalOpen(true);
   };
 
+  // Opening modal for editing an existing unit
   const openEditModal = (unit) => {
     setCurrentUnit(unit);
     setFormData({
@@ -128,11 +205,13 @@ const Leccorces = () => {
     setIsModalOpen(true);
   };
 
+  // Navigating to unit details page
   const handleAccessUnit = (unit) => {
-    console.log("Accessing unit:", unit);
-    alert(`Accessing unit: ${unit.title}`);
+    navigate(`/unit/lecture/${unit.unitId}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
+  console.log(":::::--->", units)
 
+  // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -157,20 +236,25 @@ const Leccorces = () => {
     setIsModalOpen(false);
   };
 
+  // Deleting a unit with confirmation
   const handleDelete = (unitId) => {
     if (window.confirm("Are you sure you want to delete this unit?")) {
       setUnits(units.filter((unit) => unit.id !== unitId));
     }
   };
 
+  // Rendering the main component layout
   return (
     <div className="flex min-h-screen">
+      {/* Rendering the sidebar */}
       <div className="fixed top-0 left-0 h-full w-64 z-50">
         <Lecsidebar onLogout={handleLogout} />
       </div>
 
+      {/* Rendering the main content area */}
       <div className="flex-1 ml-64 bg-neutral-100 overflow-x-auto">
         <div className="p-4 sm:p-6">
+          {/* Displaying header and view toggle buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-xl sm:text-2xl font-bold text-neutral-800">
               My Courses
@@ -206,16 +290,17 @@ const Leccorces = () => {
                   Both
                 </button>
               </div>
-              <button
+              {/* <button
                 onClick={openCreateModal}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
               >
                 + Add New Unit
-              </button>
+              </button> */}
             </div>
           </div>
 
-          {(activeTab === "table" || activeTab === "both") && (
+          {/* Rendering table view */}
+          {/* {(activeTab === "table" || activeTab === "both") && (
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-base sm:text-lg font-semibold">
@@ -336,8 +421,9 @@ const Leccorces = () => {
                 </table>
               </div>
             </div>
-          )}
+          )} */}
 
+          {/* Rendering card view */}
           {(activeTab === "cards" || activeTab === "both") && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">
@@ -405,6 +491,7 @@ const Leccorces = () => {
             </div>
           )}
 
+          {/* Rendering create/edit unit modal */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-md my-8">

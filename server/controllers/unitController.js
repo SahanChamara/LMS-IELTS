@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Unit = require('../models/Unit');
 const Instructor = require('../models/Instructor'); // Import Instructor model for validation
+const { Logs } = require('../models');
 
 class ApiError extends Error {
     constructor(statusCode, message) {
@@ -195,7 +196,6 @@ exports.getAllUnits = async (req, res) => {
 exports.getUnitById = async (req, res) => {
     try {
         const unit = await findUnitById(req.params.id, populateOptions);
-
 
         return res.status(200).json({
             success: true,
@@ -524,3 +524,54 @@ exports.addDiscussion = async (req, res) => {
 };*/
 
 
+//=========================================================================================
+exports.getAllUnitsByInstructor = async (req, res) => {
+  try {
+    // const { page = 1, limit = 10, course } = req.query;
+    const { page = 1, limit = 10 } = req.query;
+    const instructorId = req.params.id;
+
+    if (!mongoose.isValidObjectId(instructorId)) {
+      return res.status(400).json({ message: 'Invalid instructor ID' });
+    }
+
+    const query = { instructor: instructorId };
+
+    // if (course) {
+    //   validateObjectId(course, 'course ID');
+    //   query.course = course;
+    // }
+
+    const units = await Unit.find(query)
+      .select('unitCode title description image') // Only fetch the needed fields
+      .limit(Number(limit))
+      .skip((page - 1) * Number(limit))
+      .sort({ order: 1 })
+      .lean();
+
+    const total = await Unit.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: units.map(unit => ({
+        id: unit._id,
+        unitCode: unit.unitCode,
+        title: unit.title,
+        description: unit.description,
+        image: unit.image
+      })),
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: 'Error fetching units by instructor',
+      error: error.message
+    });
+  }
+};
+//=========================================================================================

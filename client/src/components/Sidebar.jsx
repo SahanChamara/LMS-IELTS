@@ -13,6 +13,15 @@ import {
   Accessibility,
   Landmark,
   User,
+  LayoutDashboard,
+  BookText,
+  Folders,
+  BellRing,
+  Percent,
+  FileText,
+  FilePen,
+  Globe2,
+  GlobeIcon,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -43,37 +52,28 @@ const Sidebar = () => {
           md:translate-x-0 md:static md:block`}
       >
         {/* Heading */}
-        <h2 className="text-lg font-semibold mb-10 mt-16">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-3 text-white border shadow-md rounded px-3 py-2 transition"
-          >
-            Dashboard
-          </Link>
-        </h2>
-
-        {/* Nav Links */}
+        <h1 className="text-3xl font-bold mb-8 mt-2">IELTS PRO</h1>
         <ul className="space-y-6 text-sm font-semibold">
           {[
             {
-              icon: <Landmark size={20} />,
-              label: "Home",
-              to: "/institution",
+              icon: <LayoutDashboard size={20} />,
+              label: "Dashboard",
+              to: "/dashboard",
             },
+            // {
+            //   icon: <Globe size={20} />,
+            //   label: "Activity",
+            //   to: "/activity",
+            // },
             {
-              icon: <Globe size={20} />,
-              label: "Activity",
-              to: "/activity",
-            },
-            {
-              icon: <Package size={20} />,
+              icon: <Folders size={20} />,
               label: "Units",
               to: "/units",
             },
             {
-              icon: <ClipboardList size={20} />,
-              label: "Marks",
-              to: "/marks",
+              icon: <FilePen size={20} />,
+              label: "Exams",
+              to: "/exams",
             },
             {
               icon: <Calendar size={20} />,
@@ -81,15 +81,25 @@ const Sidebar = () => {
               to: "/calendar",
             },
             {
-              icon: <MessageSquare size={20} />,
+              icon: <GlobeIcon size={20} />,
+              label: "Study Feed",
+              to: "/feed",
+            },
+            {
+              icon: <Percent size={20} />,
+              label: "Marks",
+              to: "/marks",
+            },
+            {
+              icon: <BellRing size={20} />,
               label: "Notifications",
               to: "/messages",
             },
-            {
-              icon: <Settings size={20} />,
-              label: "Settings",
-              to: "/tools",
-            },
+            // {
+            //   icon: <Settings size={20} />,
+            //   label: "Settings",
+            //   to: "/settings",
+            // },
             {
               icon: <User size={20} />,
               label: "profile",
@@ -129,13 +139,6 @@ const Sidebar = () => {
           >
             <ScrollText size={16} />
             Terms
-          </Link>
-          <Link
-            to="/accessibility"
-            className="flex items-center gap-2 hover:text-blue-400 dark:hover:text-blue-200 transition"
-          >
-            <Accessibility size={16} />
-            Accessibility
           </Link>
         </div>
       

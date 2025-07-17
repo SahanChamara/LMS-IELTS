@@ -53,7 +53,7 @@ exports.addChat = async (req, res) => {
             });
         }
 
-        discussion.content.push({user: role, msg: newMessage});
+        discussion.content.push({user: role, msg: newMessage, timestamp: Date.now()});
         discussion.updatedAt = Date.now();
         await discussion.save();
 
@@ -87,11 +87,11 @@ exports.getMessageByUnit = async (req, res) => {
             if (!discussion) throw new ApiError(404, 'No discussion found');
 
             const messages = discussion.content.map(c => ({
-                senderId: discussion.instructor._id,
-                senderName: discussion.instructor.name,
+                senderId: discussion.student._id,
+                senderName: discussion.student.name,
                 user: c.user,
                 msg: c.msg,
-                timestamp: c.date
+                timestamp: c.timestamp
             }));
             return res.status(HttpsStatus.OK).json({success: true, data: messages});
         } else if (role === 'Instructor') {
@@ -103,8 +103,8 @@ exports.getMessageByUnit = async (req, res) => {
                 .lean();
 
             const messages = discussions.flatMap(d => d.content.map(c => ({
-                senderId: d.student._id,
-                senderName: d.student.name,
+                senderId: d.instructor._id,
+                senderName: d.instructor.name,
                 user: c.user,
                 msg: c.msg,
                 timestamp: c.date

@@ -59,7 +59,7 @@ const Lecdashboard = () => {
   };
 
   return (
-    <div className="font-sans min-h-screen bg-neutral-100 flex flex-col md:flex-row">
+    <div className="font-sans min-h-screen bg-gray-100 flex flex-col md:flex-row">
       {/* Fixed Sidebar */}
       <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-10 md:block">
         <Lecsidebar onLogout={handleLogout} />
@@ -111,14 +111,14 @@ const Lecdashboard = () => {
               <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
                 <FiBook className="text-2xl sm:text-3xl text-blue-600" />
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Courses</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Units</h3>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.courses.length}</p>
                 </div>
               </div>
               <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
                 <FiFileText className="text-2xl sm:text-3xl text-blue-600" />
                 <div>
-                  <h3 className elegido="text-base sm:text-lg font-semibold text-gray-800">Assignments</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Assignments</h3>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.assignments.length}</p>
                 </div>
               </div>
@@ -132,7 +132,7 @@ const Lecdashboard = () => {
               <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
                 <FiBell className="text-2xl sm:text-3xl text-blue-600" />
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Announcements</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Notifications</h3>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.announcements.length}</p>
                 </div>
               </div>

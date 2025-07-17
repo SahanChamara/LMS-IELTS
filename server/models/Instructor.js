@@ -6,7 +6,7 @@ const InstructorSchema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   courses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
-  refreshToken: {type: String},
+  refreshToken: {type: String, index: true},
   notifications: [{ type: Schema.Types.ObjectId, ref: 'Notification' }],
   calendarEvents: [{ type: Schema.Types.ObjectId, ref: 'CalendarEvent' }],
   resetPasswordOTP: { type: String },
@@ -15,4 +15,4 @@ const InstructorSchema = new Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Instructor', InstructorSchema);
+module.exports = mongoose.models.Instructor || mongoose.model('Instructor', InstructorSchema);

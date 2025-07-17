@@ -28,6 +28,12 @@ const assessmentMarkRoutes = require("./routes/assessmentMarksRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const assignmentMarkRoutes = require("./routes/assignmentMarksRoutes");
 const examMarkRoutes = require("./routes/examMarksRoutes");
+const submitAssignmentRoutes = require("./routes/submitAssignmentRoutes");
+const onlineSessionRoutes = require("./routes/onlineSessionRoutes");
+const logsRoutes= require("./routes/logsRoutes");
+const examIeltsRoutes = require("./routes/examIeltsRoutes");
+const examIeltsSubmissionRoutes = require("./routes/examIeltsSubmissionRoutes");
+const postRoutes = require("./routes/postRoutes");
 const responseFormatter = require("./middleware/responseFormatter");
 const { default: mongoose } = require("mongoose");
 
@@ -72,6 +78,12 @@ app.use("/api/assessmentMarks", assessmentMarkRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/assignmentMarks", assignmentMarkRoutes);
 app.use("/api/examMarks", examMarkRoutes);
+app.use("/api/submitAssignment", submitAssignmentRoutes);
+app.use("/api/onlineSession", onlineSessionRoutes);
+app.use("/api/logs", logsRoutes);
+app.use("/api/examIelts", examIeltsRoutes);
+app.use("/api/posts", postRoutes );
+app.use("/api/examIeltsSubmission", examIeltsSubmissionRoutes);
 
 app.use(require("./middleware/errorHandler"));
 

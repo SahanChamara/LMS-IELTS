@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiAlertCircle, FiFileText, FiUsers, FiBell } from "react-icons/fi";
-import { Line } from "react-chartjs-2";
+import { FiAlertCircle, FiFileText, FiUsers, FiBell, FiArrowRight } from "react-icons/fi";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -17,8 +16,7 @@ import Adminsidebar from "../Adminpages/Adminsidebars";
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -29,32 +27,53 @@ const Admindashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
-    registeredStudents: [],
-    lectures: [],
-    requestMessages: [],
+    studentCount: 0,
+    lecturerCount: 0,
+    notificationCount: 0,
+    recentNotifications: [],
+    loginStats: [],
   });
+
+  // Function to generate last 7 days dates
+  const getLast7Days = () => {
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(date.toLocaleDateString("en-US", { month: 'short', day: 'numeric' }));
+    }
+    return dates;
+  };
 
   // Simulated API fetch for dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const mockData = {
-          registeredStudents: [
-            { id: 1, name: "Alice Johnson", course: "CS101", registeredDate: "2025-06-01" },
-            { id: 2, name: "Bob Williams", course: "Math201", registeredDate: "2025-06-05" },
-            { id: 3, name: "Clara Davis", course: "CS201", registeredDate: "2025-06-10" },
-          ],
-          lectures: [
-            { id: 1, title: "Introduction to Algorithms", course: "CS101", date: "2025-06-15" },
-            { id: 2, title: "Calculus I", course: "MATH201", date: "2025-06-16" },
-            { id: 3, title: "Data Structures", course: "CS201", date: "2025-06-17" },
-          ],
-          requestMessages: [
-            { id: 1, title: "Course Access Request", date: "2025-06-10" },
-            { id: 2, title: "Grade Review Request", date: "2025-06-11" },
-          ],
+        
+        // Generate random login data for the last 7 days
+        const generateRandomLogins = () => {
+          return Array.from({ length: 7 }, () => ({
+            students: Math.floor(Math.random() * 200) + 50,
+            lecturers: Math.floor(Math.random() * 30) + 5,
+          }));
         };
+        
+        const mockData = {
+          studentCount: 1245,
+          lecturerCount: 48,
+          notificationCount: 12,
+          recentNotifications: [
+            { id: 1, title: "Course Access Request", type: "course", date: "2025-06-10" },
+            { id: 2, title: "Grade Review Request", type: "grade", date: "2025-06-11" },
+            { id: 3, title: "System Maintenance", type: "system", date: "2025-06-12" },
+             { id: 1, title: "Student Access Request", type: "course", date: "2025-06-10" },
+            { id: 2, title: "password reset", type: "grade", date: "2025-06-11" },
+            { id: 3, title: " Maintenance", type: "system", date: "2025-06-12" },
+          ],
+          loginStats: generateRandomLogins(),
+        };
+        
         setTimeout(() => {
           setDashboardData(mockData);
           setLoading(false);
@@ -71,26 +90,42 @@ const Admindashboard = () => {
     navigate("/login");
   };
 
+  const getBadgeColor = (type) => {
+    switch(type) {
+      case 'course': return 'bg-blue-100 text-blue-800';
+      case 'grade': return 'bg-purple-100 text-purple-800';
+      case 'system': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="font-sans min-h-screen bg-neutral-100 flex flex-col lg:flex-row">
+    <div className="font-sans h-screen bg-neutral-100 flex flex-col lg:flex-row overflow-hidden">
       {/* Sidebar */}
       <Adminsidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
         {/* Welcome Banner */}
-        <div className="mb-6 bg-gradient-to-r from-teal-600 to-teal-800 text-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome, Super Admin!</h2>
-          <p className="text-xs sm:text-sm mt-2">
-            Manage students, lectures, and facilities with ease. Today is{" "}
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-            .
-          </p>
+        <div className="mb-8 bg-gradient-to-r from-teal-600 to-teal-800 text-white p-6 rounded-lg shadow-lg">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome, Super Admin!</h2>
+              <p className="text-xs sm:text-sm mt-2">
+                Manage students, lecturers, and facilities with ease. Today is{" "}
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+                .
+              </p>
+            </div>
+            <div className="text-xs sm:text-sm bg-white bg-opacity-20 px-3 py-1 rounded-lg">
+              Last updated: {new Date().toLocaleTimeString()}
+            </div>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -117,121 +152,117 @@ const Admindashboard = () => {
           </div>
         ) : (
           /* Dashboard Content */
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-6 mt-16">
             {/* Summary Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiFileText className="text-2xl sm:text-3xl text-teal-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                    Registered Students
-                  </h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {dashboardData.registeredStudents.length}
-                  </p>
+              {/* Students Card */}
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg border-l-4 border-teal-500 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      Registered Students
+                    </h3>
+                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                      {dashboardData.studentCount.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      <span className="text-green-600 font-semibold">+12.5%</span> from last month
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-full bg-teal-100 text-teal-600">
+                    <FiUsers className="text-2xl" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => navigate("/students/admin")}
+                    className="flex items-center text-sm font-medium text-teal-600 hover:text-teal-800"
+                  >
+                    View all students <FiArrowRight className="ml-1" />
+                  </button>
                 </div>
               </div>
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiUsers className="text-2xl sm:text-3xl text-teal-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                    Lectures
-                  </h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {dashboardData.lectures.length}
-                  </p>
+
+              {/* Lecturers Card */}
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      Registered Lecturers
+                    </h3>
+                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                      {dashboardData.lecturerCount}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      <span className="text-green-600 font-semibold">+2</span> new this month
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <FiFileText className="text-2xl" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => navigate("/lectures/admin")}
+                    className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    View all lecturers <FiArrowRight className="ml-1" />
+                  </button>
                 </div>
               </div>
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiBell className="text-2xl sm:text-3xl text-teal-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                    Notifications
-                  </h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {dashboardData.requestMessages.length}
-                  </p>
+
+              {/* Notifications Card */}
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg border-l-4 border-purple-500 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      Pending Notifications
+                    </h3>
+                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                      {dashboardData.notificationCount}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      <span className="text-red-600 font-semibold">3</span> require attention
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <FiBell className="text-2xl" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => navigate("/notifications/admin")}
+                    className="flex items-center text-sm font-medium text-purple-600 hover:text-purple-800"
+                  >
+                    View all notifications <FiArrowRight className="ml-1" />
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Detailed Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Registered Students */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  Registered Students
+            {/* Charts and Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
+              {/* Usage Chart - Made taller */}
+              <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-12">
+                  System Login Activity (Last 7 Days)
                 </h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.registeredStudents.slice(0, 3).map((student) => (
-                    <li
-                      key={student.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-teal-600 cursor-pointer"
-                      onClick={() => navigate(`/admin/students/${student.id}`)}
-                    >
-                      {student.name} (Course: {student.course}, Registered: {student.registeredDate})
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/admin/students")}
-                  className="px-3 sm:px-4 py-1 sm:py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm"
-                  aria-label="View all students"
-                >
-                  View All Students
-                </button>
-              </div>
-
-              {/* Registered Lectures */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  Registered Lectures
-                </h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.lectures.slice(0, 3).map((lecture) => (
-                    <li
-                      key={lecture.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-teal-600 cursor-pointer"
-                      onClick={() => navigate(`/admin/lectures/${lecture.id}`)}
-                    >
-                      {lecture.title} (Course: {lecture.course}, Date: {lecture.date})
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/admin/lectures")}
-                  className="px-3 sm:px-4 py-1 sm:py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm"
-                  aria-label="View all lectures"
-                >
-                  View All Lectures
-                </button>
-              </div>
-
-              {/* VLE Usage Chart */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  VLE Usage Chart
-                </h3>
-                <div className="h-64">
-                  <Line
+                <div className="h-80"> {/* Increased height */}
+                  <Bar
                     data={{
-                      labels: ["June 1", "June 5", "June 10", "June 15"],
+                      labels: getLast7Days(),
                       datasets: [
                         {
-                          label: "Registered Students",
-                          data: [2, 1, 2.5, 2],
-                          borderColor: "#14B8A6",
+                          label: "Student Logins",
+                          data: dashboardData.loginStats.map(stat => stat.students),
                           backgroundColor: "#14B8A6",
-                          fill: false,
-                          tension: 0.4,
+                          borderRadius: 4,
                         },
                         {
-                          label: "Lectures",
-                          data: [1, 2, 3, 3.5],
-                          borderColor: "#3B82F6",
+                          label: "Lecturer Logins",
+                          data: dashboardData.loginStats.map(stat => stat.lecturers),
                           backgroundColor: "#3B82F6",
-                          fill: false,
-                          tension: 0.4,
+                          borderRadius: 4,
                         },
                       ],
                     }}
@@ -240,20 +271,53 @@ const Admindashboard = () => {
                       maintainAspectRatio: false,
                       plugins: {
                         legend: { position: "top" },
-                        title: { display: true, text: "VLE Usage Over Time" },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.dataset.label}: ${context.raw}`;
+                            }
+                          }
+                        },
                       },
                       scales: {
                         y: {
                           beginAtZero: true,
-                          title: { display: true, text: "Count" },
-                        },
-                        x: {
-                          title: { display: true, text: "Date" },
+                          ticks: {
+                            precision: 0
+                          }
                         },
                       },
                     }}
                   />
                 </div>
+              </div>
+
+              {/* Recent Notifications - Made taller */}
+              <div className="bg-white p-6 rounded-lg shadow-lg h-full flex flex-col">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Recent Notifications
+                </h3>
+                <ul className="space-y-3 flex-1">
+                  {dashboardData.recentNotifications.map((notification) => (
+                    <li key={notification.id} className="text-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-900">{notification.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">{notification.date}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${getBadgeColor(notification.type)}`}>
+                          {notification.type}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => navigate("/notifications/admin")}
+                  className="mt-4 w-full text-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
+                >
+                  View All Notifications
+                </button>
               </div>
             </div>
           </div>

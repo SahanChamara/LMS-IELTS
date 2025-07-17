@@ -8,7 +8,7 @@ const DiscussionSchema = new Schema({
     content: [{
         user: String, enum: ['Student', 'Instructor'],
         msg: String,
-        date: Date
+        timestamp: Date,
     }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
