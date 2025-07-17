@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { MessageCircle, BookOpen, Image } from 'lucide-react';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { mockPosts, currentUser } from '../../data/mockData';
+import { MessageCircle, BookOpen, Image, X } from 'lucide-react';
+import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
 import Sidebar from '../../components/Sidebar';
@@ -12,39 +11,24 @@ import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
 import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../service/postService';
+import { uploadImageToS3, validateS3Config } from '../../service/s3/s3Service';
 
-// S3 Configuration
-const S3ClientConfig = {
-  region: import.meta.env.VITE_S3_REGION || 'eu-north-1',
-  credentials: {
-    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY || '',
-    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY || '',
-  },
-};
-
-// Validate S3 configuration
-const validateS3Config = () => {
-  const missing = [];
-  if (!import.meta.env.VITE_S3_ACCESS_KEY) missing.push('VITE_S3_ACCESS_KEY');
-  if (!import.meta.env.VITE_S3_SECRET_ACCESS_KEY) missing.push('VITE_S3_SECRET_ACCESS_KEY');
-  if (!import.meta.env.VITE_S3_BUCKET_NAME) missing.push('VITE_S3_BUCKET_NAME');
-  if (!import.meta.env.VITE_S3_REGION) missing.push('VITE_S3_REGION');
-  if (missing.length > 0) {
-    console.error('Missing S3 configuration:', missing.join(', '));
-    toast.error(`Missing AWS configuration: ${missing.join(', ')}`, {
-      position: 'top-right',
-      autoClose: 5000,
-    });
-    return false;
-  }
-  return true;
+// Utility function to format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 const StudentFeed = () => {
+  // State
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [newComments, setNewComments] = useState({});
@@ -52,22 +36,16 @@ const StudentFeed = () => {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef(null);
 
+  // Derived data
   const currentUser = {
     id: localStorage.getItem('user'),
     name: student?.name || 'User',
     role: 'student',
   };
-
   const courseId = student?.enrolledCourse?._id;
 
-  // Debug environment variables
+  // Debug environment variables on mount
   useEffect(() => {
-    console.log('Environment variables:', {
-      VITE_S3_ACCESS_KEY: import.meta.env.VITE_S3_ACCESS_KEY ? 'Set' : 'Missing',
-      VITE_S3_SECRET_ACCESS_KEY: import.meta.env.VITE_S3_SECRET_ACCESS_KEY ? 'Set' : 'Missing',
-      VITE_S3_BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME,
-      VITE_S3_REGION: import.meta.env.VITE_S3_REGION,
-    });
     validateS3Config();
   }, []);
 
@@ -92,68 +70,41 @@ const StudentFeed = () => {
     }
   }, [dispatch, courseId]);
 
+  // Handle file selection and upload
   const handleFileSelected = async (e) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
-    setAttachmentUrl(''); // Reset attachment URL when new file is selected
-    if (!file) {
-      toast.error('No file selected', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-      return;
-    }
+    setAttachmentUrl(''); // Reset attachment URL
+    if (!file) return;
 
     toast.info(`Selected: ${file.name} (${formatFileSize(file.size)})`, {
       position: 'top-right',
       autoClose: 3000,
     });
 
-    // Automatically upload to S3
-    if (!validateS3Config()) {
-      setIsUploading(false);
-      return;
-    }
+    await uploadImageToS3(file, setIsUploading, setAttachmentUrl);
 
-    const bucketName = import.meta.env.VITE_S3_BUCKET_NAME;
-
-    try {
-      setIsUploading(true);
-      const s3Client = new S3Client(S3ClientConfig);
-      const arrayBuffer = await file.arrayBuffer();
-      const command = new PutObjectCommand({
-        Bucket: bucketName,
-        Key: `media/${file.name}`,
-        Body: new Uint8Array(arrayBuffer),
-        ContentType: file.type,
-        ACL: 'public-read', // Ensure file is publicly accessible
-      });
-
-      await s3Client.send(command);
-      const url = `https://${bucketName}.s3.${S3ClientConfig.region}.amazonaws.com/media/${file.name}`;
-      console.log('S3 Upload URL:', url);
-      setAttachmentUrl(url);
-
-      toast.success('Image uploaded successfully!', {
-        position: 'top-right',
-        autoClose: 3000,
-        className: 'bg-green-100 text-green-800 border border-green-200',
-      });
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast.error(`Image upload failed: ${err.message}`, {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-    } finally {
-      setIsUploading(false);
-      // Clear file input to allow re-selecting the same file
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
+  // Handle discard post
+  const handleDiscardPost = () => {
+    setNewPost('');
+    setSelectedFile(null);
+    setAttachmentUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    toast.info('Post discarded', {
+      position: 'top-right',
+      autoClose: 3000,
+    });
+  };
+
+  // Handle post creation
   const handleCreatePost = async () => {
     if (!newPost.trim() && !attachmentUrl) {
       toast.error('Please add some content or upload an image to share', {
@@ -176,6 +127,7 @@ const StudentFeed = () => {
       return;
     }
 
+    setIsPosting(true);
     try {
       const postData = {
         textContent: newPost,
@@ -217,9 +169,12 @@ const StudentFeed = () => {
         position: 'top-right',
         autoClose: 3000,
       });
+    } finally {
+      setIsPosting(false);
     }
   };
 
+  // Handle reaction to a post
   const handleReaction = async (postId, type) => {
     try {
       const existingReaction = posts.find(post => post._id === postId)?.reactions.find(r => r.userId === currentUser.id);
@@ -247,6 +202,7 @@ const StudentFeed = () => {
     }
   };
 
+  // Handle comment submission
   const handleAddComment = async (postId) => {
     const commentText = newComments[postId];
     if (!commentText?.trim()) return;
@@ -273,6 +229,7 @@ const StudentFeed = () => {
     }
   };
 
+  // Toggle comments visibility
   const toggleComments = (postId) => {
     const newExpanded = new Set(expandedComments);
     if (newExpanded.has(postId)) {
@@ -283,14 +240,7 @@ const StudentFeed = () => {
     setExpandedComments(newExpanded);
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
+  // Handle loading and error states
   if (loading) {
     return <div>Loading student details...</div>;
   }
@@ -304,19 +254,21 @@ const StudentFeed = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 text-neutral-800 overflow-hidden">
+      {/* Sidebar */}
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
         <Sidebar />
       </aside>
+
+      {/* Main Content */}
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-semibold text-gray-900 mb-4">
             Study Feed
           </h1>
+
           {/* Create Post Form */}
           <Card>
-            <motion.div
-              className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
-            >
+            <motion.div className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6">
               <div className="flex items-center space-x-2">
                 <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
                   <span className="text-gray-700 font-semibold text-lg">
@@ -332,15 +284,15 @@ const StudentFeed = () => {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={isUploading || isPosting || !!attachmentUrl}
                   className={`text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out ${
-                    isUploading
+                    isUploading || isPosting || !!attachmentUrl
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
                   }`}
                 >
                   <Image className="h-5 w-5 inline-block mr-1" />
-                  {isUploading ? 'Uploading...' : 'Add File'}
+                  {isUploading ? 'Uploading...' : 'Add Image'}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -352,15 +304,24 @@ const StudentFeed = () => {
                 />
                 <button
                   onClick={handleCreatePost}
-                  disabled={isUploading}
+                  disabled={isUploading || isPosting}
                   className={`text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out ${
-                    isUploading
+                    isUploading || isPosting
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
                   }`}
                 >
-                  Post
+                  {isPosting ? 'Posting...' : 'Post'}
                 </button>
+                {attachmentUrl && (
+                  <button
+                    onClick={handleDiscardPost}
+                    className="text-sm px-3 py-1 border rounded-md shadow-sm transition duration-300 ease-in-out bg-white text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                  >
+                    <X className="h-5 w-5 inline-block mr-1" />
+                    Discard Post
+                  </button>
+                )}
               </div>
               {selectedFile && (
                 <p className="text-xs text-gray-600 mt-2 ml-12">
@@ -375,9 +336,7 @@ const StudentFeed = () => {
           <div className="space-y-6 mt-6">
             {posts.length === 0 ? (
               <Card>
-                <motion.div
-                  className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12"
-                >
+                <motion.div className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12">
                   <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     No Posts Available
@@ -390,9 +349,7 @@ const StudentFeed = () => {
             ) : (
               posts.map((post) => (
                 <Card key={post._id}>
-                  <motion.div
-                    className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6"
-                  >
+                  <motion.div className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6">
                     <div className="border-b border-gray-100 pb-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">

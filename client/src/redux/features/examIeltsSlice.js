@@ -1,5 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getAllPublishedExam } from "../../service/examIeltsService";
+import {
+  getAllPublishedExam,
+  getexamById,
+} from "../../service/examIeltsService";
 
 // Create Asynk thunks
 export const  getAllPublishedExamsAPI = createAsyncThunk(
@@ -13,6 +16,22 @@ export const  getAllPublishedExamsAPI = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue("Get All Published Exam Failed...", error.message);
+    }
+  }
+);
+
+export const getExamByIdAPI = createAsyncThunk(
+  "exam/getExamByIdAPI",
+  async (examId, { rejectWithValue }) => {
+    try {
+      const response = await getexamById(examId);
+      console.log("Get ExamBy ID API Response", response);
+      if (!response.success) {
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Get Exam By Id Failed...", error.message);
     }
   }
 );
@@ -56,16 +75,29 @@ const examSlice = createSlice({
       .addCase(getAllPublishedExamsAPI.fulfilled, (state, action) => {
         state.loading = false;
         action.payload.forEach((exam) => {
-          state.exams[exam._id] = exam;
+          state.exams[exam._id] = exam;          
           addSectionsToState(state, exam.sections);
         });
       })
       .addCase(getAllPublishedExamsAPI.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
-      });
+      })
+
+      .addCase(getExamByIdAPI.pending, (state) =>{
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getExamByIdAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentExam = action.payload;
+      })
+      .addCase(getExamByIdAPI.rejected, (state,action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
   },
 });
 
-export const {clearCurrentExam} = examSlice.actions;
+export const { clearCurrentExam } = examSlice.actions;
 export default examSlice.reducer;

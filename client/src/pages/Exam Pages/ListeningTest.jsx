@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Clock, Volume2, CheckCircle, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Clock, Volume2, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import AudioPlayer from "./AudioPlayer";
 
-const ListeningTest = ({ onComplete, onBack }) => {
+const ListeningTest = React.memo(({ exam, onComplete, onBack }) => {
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
   const [sectionCompleted, setSectionCompleted] = useState({});
-  const [isTransferTime, setIsTransferTime] = useState(false);
   const [transferTimeRemaining, setTransferTimeRemaining] = useState(600); // 10 minutes
-  const [testPhase, setTestPhase] = useState("listening")
+  const [testPhase, setTestPhase] = useState("listening");
+  const [isAudioPlaying, setIsAudioPlaying] = useState(true); // Track audio playback status
 
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
@@ -20,26 +20,39 @@ const ListeningTest = ({ onComplete, onBack }) => {
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  // Dynamically generate listeningSections from exam prop (if provided)
-  const listeningSections = [
-    {
-      id: "section1",
-      title: "Section 1: Social Needs",
-      audioUrl: "/audio/section1.mp3",
-      context: "You will hear a conversation between a student and a receptionist at a sports center.",
-      questions: [
-        { id: "1", type: "form-completion", question: "Name: Sarah ______" },
-        { id: "2", type: "mcq", question: "What sport is Sarah most interested in?", options: ["Tennis", "Swimming", "Basketball", "Yoga"] },
-        { id: "3", type: "short-answer", question: "How much does a monthly membership cost? £______" },
-        { id: "4", type: "mcq", question: "When does the sports center close on weekends?", options: ["8:00 PM", "9:00 PM", "10:00 PM", "11:00 PM"] },
-      ],
-    },
-    // ... other sections
-  ];
+  // Use useMemo with stable dependency on exam.sections to prevent re-computation
+  const listeningSections = useMemo(() => {
+    return exam.sections.map((section) => ({
+      id: section._id,
+      title: section.title,
+      audioUrl: section.audioUrl,
+      context: section.context,
+      questions: section.questions.map((q) => ({
+        id: q._id,
+        type: q.type,
+        question: q.question,
+        options: q.options || [],
+        passage: q.passage || "",
+      })),
+    }));
+  }, [exam.sections]);
 
+  // Derive questions from listeningSections to ensure stability
+  const questions = useMemo(() => {
+    return listeningSections.flatMap((section) => section.questions);
+  }, [listeningSections]);
+
+  // Debug render cycle
   useEffect(() => {
+    console.log("Listening page render", { currentSection, testPhase, exam, isAudioPlaying });
+    return () => console.log("Listening page cleanup");
+  }, [currentSection, testPhase, exam, isAudioPlaying]);
+
+  // Manage transfer timer
+  useEffect(() => {
+    let timer;
     if (testPhase === "transfer" && transferTimeRemaining > 0) {
-      const timer = setInterval(() => {
+      timer = setInterval(() => {
         setTransferTimeRemaining((prev) => {
           if (prev <= 1) {
             setTestPhase("completed");
@@ -48,9 +61,8 @@ const ListeningTest = ({ onComplete, onBack }) => {
           return prev - 1;
         });
       }, 1000);
-
-      return () => clearInterval(timer);
     }
+    return () => clearInterval(timer);
   }, [testPhase, transferTimeRemaining]);
 
   const handleAnswerChange = (questionId, answer) => {
@@ -67,16 +79,35 @@ const ListeningTest = ({ onComplete, onBack }) => {
     }));
 
     if (currentSection < listeningSections.length - 1) {
-      showToast("Section Complete", `Section ${currentSection + 1} completed. Moving to next section.`);
+      showToast(
+        "Section Complete",
+        `Section ${currentSection + 1} completed. Moving to next section.`
+      );
       setCurrentSection((prev) => prev + 1);
+      setIsAudioPlaying(true); // Reset for next section
     } else {
       setTestPhase("transfer");
-      showToast("Listening Complete", "You now have 10 minutes to transfer your answers.");
+      showToast(
+        "Listening Complete",
+        "You now have 10 minutes to transfer your answers."
+      );
     }
   };
 
   const handleSubmit = () => {
     onComplete(answers);
+  };
+
+  const goToPreviousSection = () => {
+    if (currentSection > 0) {
+      setCurrentSection((prev) => prev - 1);
+    }
+  };
+
+  const goToNextSection = () => {
+    if (currentSection < listeningSections.length - 1) {
+      setCurrentSection((prev) => prev + 1);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -112,7 +143,6 @@ const ListeningTest = ({ onComplete, onBack }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -121,7 +151,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                 {testPhase === "listening"
                   ? `${currentListeningSection.title} - Questions ${
                       currentSection * 4 + 1
-                    }-${(currentSection + 1) * 4}`
+                    }-${Math.min((currentSection + 1) * 4, questions.length)}`
                   : "Transfer Time - Review and finalize your answers"}
               </p>
             </div>
@@ -142,7 +172,6 @@ const ListeningTest = ({ onComplete, onBack }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Section Navigation */}
           <div className="lg:col-span-1">
             <div className="bg-white/80 backdrop-blur-sm border border-blue-200 sticky top-6 rounded-lg shadow">
               <div className="p-4">
@@ -171,7 +200,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                         )}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        Questions {index * 4 + 1}-{(index + 1) * 4}
+                        Questions {index * 4 + 1}-{Math.min((index + 1) * 4, questions.length)}
                       </div>
                     </div>
                   ))}
@@ -180,31 +209,39 @@ const ListeningTest = ({ onComplete, onBack }) => {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-2">
             {testPhase === "listening" && (
               <>
-                {/* Audio Player */}
                 <div className="mb-6">
                   <AudioPlayer
+                    key={currentSection}
                     audioUrl={currentListeningSection.audioUrl}
                     onSectionComplete={handleSectionComplete}
                     sectionTitle={currentListeningSection.title}
                     canReplay={false}
+                    onPlayingStatusChange={setIsAudioPlaying} // Pass playing status
                   />
                 </div>
 
-                {/* Context */}
                 <div className="bg-white/80 backdrop-blur-sm border border-blue-200 mb-6 rounded-lg shadow p-4">
                   <p className="text-gray-700 italic">{currentListeningSection.context}</p>
                 </div>
               </>
             )}
 
-            {/* Questions */}
+            {testPhase === "transfer" && (
+              <>
+                <div className="mb-6">
+                  <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow p-4">
+                    <p className="text-gray-700 italic">{currentListeningSection.context}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
               <div className="p-6">
-                <h3>Questions {currentSection * 4 + 1}-{currentSection * 4 + 4}</h3>
+                <h3>Questions {currentSection * 4 + 1} - {Math.min((currentSection + 1) * 4, questions.length)}</h3>
               </div>
               <div className="p-6">
                 <div className="space-y-6">
@@ -233,6 +270,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                                   handleAnswerChange(question.id, e.target.value)
                                 }
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                               />
                               <span className="text-gray-700">{option}</span>
                             </label>
@@ -240,8 +278,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                         </div>
                       )}
 
-                      {(question.type === "form-completion" ||
-                        question.type === "short-answer") && (
+                      {(question.type === "form-completion" || question.type === "typing") && (
                         <input
                           type="text"
                           placeholder="Type your answer here..."
@@ -250,6 +287,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                             handleAnswerChange(question.id, e.target.value)
                           }
                           className="max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                         />
                       )}
 
@@ -274,6 +312,7 @@ const ListeningTest = ({ onComplete, onBack }) => {
                                   )
                                 }
                                 className="max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={testPhase === "transfer" ? false : false} // Always enabled during listening
                               />
                             </div>
                           ))}
@@ -285,23 +324,38 @@ const ListeningTest = ({ onComplete, onBack }) => {
               </div>
             </div>
 
-            {/* Transfer Time Actions */}
             {testPhase === "transfer" && (
-              <div className="bg-white/80 backdrop-blur-sm border border-blue-200 mt-6 rounded-lg shadow p-6">
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={handleSubmit}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
-                  >
-                    Submit Test
-                  </button>
-                  <button
-                    onClick={onBack}
-                    className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg"
-                  >
-                    Back to Dashboard
-                  </button>
+              <div className="flex justify-between items-center mt-6">
+                <button
+                  onClick={goToPreviousSection}
+                  disabled={currentSection === 0}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                </button>
+                <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow p-4">
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={handleSubmit}
+                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
+                    >
+                      Submit Test
+                    </button>
+                    <button
+                      onClick={onBack}
+                      className="px-8 py-3 border border-gray-300 text-gray-800 hover:bg-gray-100 rounded-lg"
+                    >
+                      Back to Dashboard
+                    </button>
+                  </div>
                 </div>
+                <button
+                  onClick={goToNextSection}
+                  disabled={currentSection === listeningSections.length - 1}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+                </button>
               </div>
             )}
           </div>
@@ -309,6 +363,6 @@ const ListeningTest = ({ onComplete, onBack }) => {
       </div>
     </div>
   );
-};
+});
 
 export default ListeningTest;

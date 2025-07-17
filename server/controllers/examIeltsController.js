@@ -292,3 +292,27 @@ exports.getAllPublishedExams = async (req, res) => {
     }
 };
 
+exports.getAllExams = async (req, res) => {
+    try {
+        const exams = await ExamIelts.find();
+        if (!exams || exams.length === 0) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                success: false,
+                message: "No exams found",
+            });
+        }
+
+        return res.status(HttpStatus.OK).json({
+            success: true,
+            data: exams,
+            message: "exams retrieved successfully",
+        });
+    } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Error retrieving exams",
+            error: error.message,
+        });
+    }
+};
+

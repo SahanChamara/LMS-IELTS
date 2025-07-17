@@ -135,9 +135,9 @@ const authSlice = createSlice({
         // }
       })
       .addCase(refreshTokenAPI.rejected, (state, action) => {
-        state.loading = false;
+        state.loading = false;        
         state.error = action.payload;
-        //state.isAuthenticated = false;    // Logout on refresh fail
+        state.isAuthenticated = false;    // Logout on refresh fail
         state.error = action.payload;
       });
   },
