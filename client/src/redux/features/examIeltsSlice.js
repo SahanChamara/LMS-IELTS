@@ -5,7 +5,7 @@ import {
 } from "../../service/examIeltsService";
 
 // Create Asynk thunks
-export const getAllPublishedExamsAPI = createAsyncThunk(
+export const  getAllPublishedExamsAPI = createAsyncThunk(
   "exam/getAllPublishedExamsAPI",
   async (_, { rejectWithValue }) => {
     try {

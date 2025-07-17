@@ -1,6 +1,6 @@
 import React from "react";
-import Sidebar from "../components/Sidebar";
-import Card, { CardContent } from "../components/Card";
+import Sidebar from "../../components/Sidebar";
+import Card, { CardContent } from "../../components/Card";
 import { BellIcon } from "@heroicons/react/24/outline";
 
 // Mock data simulating backend notifications for admin and lecturer

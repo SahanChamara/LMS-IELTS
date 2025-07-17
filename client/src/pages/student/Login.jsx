@@ -2,15 +2,18 @@ import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import Footer from "../components/Footer";
-import { useAppDispatch, useAppSelector } from "../redux/store-config/store";
-import { loginUserAPI } from "../redux/features/authSlice";
+import Footer from "../../components/Footer";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
+import { loginUserAPI } from "../../redux/features/authSlice";
+import { getStudentDetailsAPI } from "../../redux/features/studentSlice";
+
 
 const Login = () => {
   const dispatch = useAppDispatch();
   const { loading, data, isAuthenticated, error } = useAppSelector(
     (state) => state.auth
   );
+
 
   console.log("logging page auth data", data);
   
@@ -46,7 +49,12 @@ const Login = () => {
       console.log("Login user Result ", result);
 
       console.log("after login authh state", isAuthenticated, data);
-
+      
+      if(result.data.user.role=="Student"){
+        const userId = localStorage.getItem("user");
+        dispatch(getStudentDetailsAPI(userId));
+        console.log("hello")
+      }
       if (result.success) {
         if (result.data.user.role === "Student") {
           navigate("/dashboard");
