@@ -3,135 +3,61 @@ import { Clock, CheckCircle, AlertCircle, Send } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import ListeningTest from "./ListeningTest";
 import SpeakingTest from "./SpeakingTest";
-
-/**
- * @typedef {Object} Exam
- * @property {string} id
- * @property {string} title
- * @property {number} duration
- * @property {number} questions
- * @property {"Beginner" | "Intermediate" | "Advanced"} difficulty
- * @property {"Reading" | "Writing" | "Listening" | "Speaking"} type
- * @property {string} description
- * @property {boolean} available
- */
-
-/**
- * @typedef {Object} ExamPaperProps
- * @property {Exam} exam
- * @property {() => void} onBack
- */
-
-/**
- * @typedef {Object} Question
- * @property {string} id
- * @property {"mcq" | "reading" | "typing" | "essay"} type
- * @property {string} question
- * @property {string[]=} options
- * @property {string=} passage
-/** @type {React.FC<ExamPaperProps>} */
+import { createSubmissionAPI, updateSubmissionAPI } from "../../redux/features/examIeltsSubmissionSlice";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
 
 const ExamPaper = ({ exam, onBack }) => {
-  // Always call hooks at the top level
+  const dispatch = useAppDispatch();
+  const {loading,error, success} = useAppSelector((state) => state.examIeltsSubmission);
+
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [submissionId, setSubmissionId] = useState(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  // Custom toast function as a replacement for useToast
   const showToast = (title, description, variant) => {
     const toastElement = document.createElement("div");
     toastElement.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-      variant === "destructive"
-        ? "bg-red-500 text-white"
-        : "bg-green-500 text-white"
+      variant === "destructive" ? "bg-red-500 text-white" : "bg-green-500 text-white"
     }`;
     toastElement.innerHTML = `<strong>${title}</strong><br>${description}`;
     document.body.appendChild(toastElement);
     setTimeout(() => document.body.removeChild(toastElement), 3000);
   };
 
-  // Sample questions based on exam type
-  const questions =
-    exam.type === "Reading"
-      ? [
-          {
-            id: "1",
-            type: "reading",
-            passage: `Climate change represents one of the most pressing challenges of our time. The scientific consensus is clear: human activities, particularly the burning of fossil fuels, are the primary drivers of recent climate change. The consequences are already visible in rising sea levels, more frequent extreme weather events, and shifts in precipitation patterns that affect agriculture and water supplies globally.
+  useEffect(() => {
+    if (error) showToast("Error", error, "destructive");
+    if (success) showToast("Success", "Operation completed.", "success");
+  }, [error, success]);
 
-The transition to renewable energy sources such as solar, wind, and hydroelectric power is essential for reducing greenhouse gas emissions. Many countries have set ambitious targets for carbon neutrality, but achieving these goals requires not only technological innovation but also significant changes in policy, economics, and individual behavior.
+  const sections = exam.sections || [];
+  const currentSection = sections[currentSectionIndex];
+  const questions = currentSection
+    ? currentSection.questions.map((q) => ({
+        id: q._id,
+        type: q.type,
+        question: q.question,
+        options: q.options || [],
+        passage: q.passage || "",
+      }))
+    : [];
 
-Education plays a crucial role in addressing climate change. By understanding the science behind climate change and its impacts, individuals can make informed decisions about their energy consumption, transportation choices, and lifestyle habits. Furthermore, climate education empowers people to advocate for policy changes and support sustainable practices in their communities.`,
-            question:
-              "According to the passage, what is the primary cause of recent climate change?",
-            options: [
-              "Natural climate variations",
-              "Solar radiation changes",
-              "Human activities, particularly burning fossil fuels",
-              "Volcanic eruptions",
-            ],
-          },
-          {
-            id: "2",
-            type: "mcq",
-            question:
-              "Which of the following is mentioned as a consequence of climate change?",
-            options: [
-              "Increased volcanic activity",
-              "Rising sea levels",
-              "Reduced solar radiation",
-              "Decreased oxygen levels",
-            ],
-          },
-          {
-            id: "3",
-            type: "typing",
-            question:
-              "Complete the sentence: The transition to renewable energy sources is essential for _____ greenhouse gas emissions.",
-          },
-        ]
-      : exam.type === "Writing"
-      ? [
-          {
-            id: "1",
-            type: "essay",
-            question:
-              "Task 1: The chart below shows the percentage of households in different income brackets in three cities. Summarize the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.",
-          },
-          {
-            id: "2",
-            type: "essay",
-            question:
-              "Task 2: Some people believe that technology has made our lives more complicated, while others argue that it has made life easier. Discuss both views and give your own opinion. Write at least 250 words.",
-          },
-        ]
-      : [
-          {
-            id: "1",
-            type: "mcq",
-            question: "What is the capital of Australia?",
-            options: ["Sydney", "Melbourne", "Canberra", "Perth"],
-          },
-          {
-            id: "2",
-            type: "typing",
-            question:
-              "Complete the sentence: The Great Wall of China was built to protect against _____.",
-          },
-        ];
+  const totalQuestions = sections.reduce(
+    (total, section) => total + section.questions.length,
+    0
+  );
+  const answeredQuestions = Object.keys(answers).length;
+  const allSectionsCompleted = sections.every((section) =>
+    section.questions.every((q) => answers[q._id])
+  );
 
-  // Security measures
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Disable common shortcuts
       if (
         e.ctrlKey &&
-        (e.key === "c" ||
-          e.key === "v" ||
-          e.key === "a" ||
-          e.key === "s" ||
-          e.key === "p")
+        (e.key === "c" || e.key === "v" || e.key === "a" || e.key === "s" || e.key === "p")
       ) {
         e.preventDefault();
         showToast(
@@ -140,12 +66,7 @@ Education plays a crucial role in addressing climate change. By understanding th
           "destructive"
         );
       }
-      // Disable F12, Ctrl+Shift+I, Ctrl+U
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && e.key === "I") ||
-        (e.ctrlKey && e.key === "u")
-      ) {
+      if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && e.key === "u")) {
         e.preventDefault();
         showToast(
           "Access Denied",
@@ -180,7 +101,6 @@ Education plays a crucial role in addressing climate change. By understanding th
     };
   }, [showToast]);
 
-  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -188,20 +108,38 @@ Education plays a crucial role in addressing climate change. By understanding th
           handleSubmit();
           return 0;
         }
-        return prev - 1;
+        return prev - 1; 
       });
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  // Handle Listening Test
+  useEffect(() => {
+    if (!submissionId && !loading) {
+      const initialSubmission = {
+        studentId: localStorage.getItem("user"),
+        examId: exam._id,
+        sectionIds: sections[0]?._id || "defaultSectionId",
+        answers: answers,
+        status: "in-progress",
+      };
+      dispatch(createSubmissionAPI(initialSubmission)).then((action) => {
+        if (createSubmissionAPI.fulfilled.match(action)) {
+          setSubmissionId(action.payload._id);
+        }
+      });
+    } else if (submissionId && !loading) {
+      saveProgress();
+    }
+  }, []);
+
   if (exam.type === "Listening") {
     return (
       <ListeningTest
+        exam={exam}
         onComplete={(answers) => {
           console.log("Listening test completed:", answers);
-          // In real app, save answers to backend
           onBack();
         }}
         onBack={onBack}
@@ -209,13 +147,12 @@ Education plays a crucial role in addressing climate change. By understanding th
     );
   }
 
-  // Handle Speaking Test
   if (exam.type === "Speaking") {
     return (
       <SpeakingTest
+        exam={exam}
         onComplete={(recordings) => {
           console.log("Speaking test completed:", recordings);
-          // In real app, upload recordings to backend
           onBack();
         }}
         onBack={onBack}
@@ -239,31 +176,50 @@ Education plays a crucial role in addressing climate change. By understanding th
     }));
   };
 
-  const handleSubmit = () => {
-    // In a real application, you would send the answers to a server
-    showToast(
-      "Exam Submitted Successfully",
-      "Your answers have been recorded. You will receive your results soon."
-    );
-    onBack();
+  const saveProgress = async () => {
+    if (submissionId && !loading) {
+      console.log("save progress",submissionId, answers);
+      
+      dispatch(updateSubmissionAPI({ id: submissionId, updates: { answers, status: "in-progress" } }));
+    }
   };
 
-  const currentQ = questions[currentQuestion];
+  const handleSubmit = async () => {
+    console.log("handle submit", submissionId, answers);
+    
+    if (submissionId && allSectionsCompleted && !loading) {
+      console.log("Handle Submit", submissionId, answers);
+      
+      dispatch(updateSubmissionAPI({ id: submissionId, updates: {answers, status: "submitted" } }));
+      showToast(
+        "Exam Submitted Successfully",
+        "Your answers have been recorded. You will receive your results soon."
+      );
+      onBack();
+    } else if (!allSectionsCompleted) {
+      showToast(
+        "Incomplete Submission",
+        "Please answer all questions in every section before submitting.",
+        "destructive"
+      );
+    }
+  };
+
+  const currentQ = questions[currentQuestionIndex];
 
   return (
-    // <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
     <div className="flex h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
         <Sidebar />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-6xl mx-auto">
-          {/* Header with Timer */}
           <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg p-4 mb-6 flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{exam.title}</h1>
               <p className="text-gray-600">
-                Question {currentQuestion + 1} of {questions.length}
+                Section {currentSectionIndex + 1} of {sections.length} - Question{" "}
+                {currentQuestionIndex + 1} of {questions.length} (Progress: {answeredQuestions}/{totalQuestions})
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -281,7 +237,10 @@ Education plays a crucial role in addressing climate change. By understanding th
               </div>
               <button
                 onClick={() => setShowSubmitDialog(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+                disabled={!allSectionsCompleted || loading}
+                className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 ${
+                  !allSectionsCompleted || loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <Send className="h-4 w-4" />
                 <span>Submit Exam</span>
@@ -290,20 +249,41 @@ Education plays a crucial role in addressing climate change. By understanding th
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Question Navigation */}
             <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm border border-blue-200 sticky top-6 rounded-lg shadow">
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold">Question Navigation</h3>
+                  <h3 className="text-lg font-semibold">Section Navigation</h3>
                 </div>
                 <div className="p-4">
+                  <div className="grid grid-cols-1 gap-2">
+                    {sections.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          saveProgress();
+                          setCurrentSectionIndex(index);
+                          setCurrentQuestionIndex(0);
+                        }}
+                        className={`px-3 py-1 rounded-lg text-sm ${
+                          currentSectionIndex === index
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Section {index + 1} ({sections[index].questions.length} questions)
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold">Question Navigation</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {questions.map((_, index) => (
                       <button
                         key={index}
-                        onClick={() => setCurrentQuestion(index)}
+                        onClick={() => setCurrentQuestionIndex(index)}
                         className={`px-3 py-1 rounded-lg text-sm ${
-                          currentQuestion === index
+                          currentQuestionIndex === index
                             ? "bg-blue-600 text-white"
                             : "bg-gray-200 text-gray-800 hover:bg-gray-300"
                         } ${
@@ -321,7 +301,6 @@ Education plays a crucial role in addressing climate change. By understanding th
               </div>
             </div>
 
-            {/* Question Content */}
             <div className="lg:col-span-3">
               <div className="bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg shadow">
                 <div className="p-6">
@@ -338,7 +317,7 @@ Education plays a crucial role in addressing climate change. By understanding th
 
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4">
-                      Question {currentQuestion + 1}
+                      Question {currentQuestionIndex + 1}
                     </h3>
                     <p className="text-gray-800 mb-4">{currentQ.question}</p>
 
@@ -389,24 +368,23 @@ Education plays a crucial role in addressing climate change. By understanding th
                     )}
                   </div>
 
-                  {/* Navigation Buttons */}
                   <div className="flex justify-between">
                     <button
                       onClick={() =>
-                        setCurrentQuestion(Math.max(0, currentQuestion - 1))
+                        setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))
                       }
-                      disabled={currentQuestion === 0}
+                      disabled={currentQuestionIndex === 0}
                       className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() =>
-                        setCurrentQuestion(
-                          Math.min(questions.length - 1, currentQuestion + 1)
+                        setCurrentQuestionIndex(
+                          Math.min(questions.length - 1, currentQuestionIndex + 1)
                         )
                       }
-                      disabled={currentQuestion === questions.length - 1}
+                      disabled={currentQuestionIndex === questions.length - 1}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
@@ -417,7 +395,6 @@ Education plays a crucial role in addressing climate change. By understanding th
             </div>
           </div>
 
-          {/* Submit Confirmation Dialog */}
           {showSubmitDialog && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <div className="bg-white max-w-md w-full mx-4 rounded-lg shadow">
@@ -433,8 +410,7 @@ Education plays a crucial role in addressing climate change. By understanding th
                     changes after submission.
                   </p>
                   <div className="text-sm text-gray-600 mb-4">
-                    Answered: {Object.keys(answers).length} of{" "}
-                    {questions.length} questions
+                    Answered: {answeredQuestions} of {totalQuestions} questions
                   </div>
                   <div className="flex space-x-3 p-6">
                     <button
@@ -445,7 +421,10 @@ Education plays a crucial role in addressing climate change. By understanding th
                     </button>
                     <button
                       onClick={handleSubmit}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      disabled={loading}
+                      className={`flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
+                        loading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
                       Submit Exam
                     </button>
@@ -457,7 +436,6 @@ Education plays a crucial role in addressing climate change. By understanding th
         </div>
       </main>
     </div>
-    // </div>
   );
 };
 

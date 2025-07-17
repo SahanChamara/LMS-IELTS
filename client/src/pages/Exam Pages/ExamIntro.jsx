@@ -2,11 +2,16 @@ import { Clock, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import ExamPaper from "./ExamPaper";
+import { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
+import { getExamByIdAPI } from "../../redux/features/examIeltsSlice";
 
 const ExamIntro = ({ exam, onBack }) => {
+  const dispatch = useAppDispatch();
+  const { currentExam, loading, error } = useAppSelector(
+    (state) => state.examIelts
+  );
   const [startExam, setStartExam] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const [selectedExam, setSelectedExam] = useState(null);
   const instructions = [
     "Read all questions carefully before answering",
     "You cannot go back to previous sections once completed",
@@ -17,15 +22,32 @@ const ExamIntro = ({ exam, onBack }) => {
     "Submit your answers before the time limit expires",
   ];
 
-const examDetails = [
+  const examDetails = [
     { label: "Duration", value: `${exam.duration} minutes`, icon: Clock },
-    { label: "Questions", value: exam.questions.toString(), icon: FileText },
+    {
+      label: "Questions",
+      value: exam.totalQuestions.toString(),
+      icon: FileText,
+    },
     { label: "Difficulty", value: exam.difficulty, icon: AlertTriangle },
     { label: "Type", value: exam.type, icon: CheckCircle },
-];
+  ];
 
-  if (startExam) {
-    return <ExamPaper exam={exam} onBack={() => setStartExam(false)} />;
+  const handleStartExamNow = async () => {
+    //setLoading(true);
+    // Simulate async operation (e.g., loading exam data)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const result = await dispatch(getExamByIdAPI(exam._id)).unwrap();
+    if (result) {      
+      console.log("get exam by id result", result);
+      setSelectedExam(result);
+      setStartExam(true);
+    }
+  };
+
+  if (startExam) {       
+    return <ExamPaper exam={selectedExam} onBack={() => setStartExam(false)} />;
   }
 
   return (
@@ -62,7 +84,9 @@ const examDetails = [
                   >
                     <detail.icon className="h-5 w-5 text-blue-600" />
                     <div>
-                      <div className="text-sm text-gray-600">{detail.label}</div>
+                      <div className="text-sm text-gray-600">
+                        {detail.label}
+                      </div>
                       <div className="font-semibold text-gray-900">
                         {detail.value}
                       </div>
@@ -123,13 +147,7 @@ const examDetails = [
               Back to Dashboard
             </button>
             <button
-              onClick={async () => {
-                setLoading(true);
-                // Simulate async operation (e.g., loading exam data)
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                setStartExam(true);
-                setLoading(false);
-              }}
+              onClick={handleStartExamNow}
               className="px-8 py-3 text-lg bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
               disabled={loading}
             >
