@@ -233,9 +233,7 @@ const AdminFeed = () => {
                     className="flex-1 flex items-center justify-center px-3 py-1 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors duration-150 text-sm"
                     onClick={() => handleApprovePost(post.id)}
                   >
-                    <CheckCircle className="溯
-
-                    mr-1 h-4 w-4" />
+                    <CheckCircle className="mr-1 h-4 w-4" />
                     Approve
                   </button>
                   <button
