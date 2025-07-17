@@ -30,7 +30,7 @@ export const validateS3Config = () => {
 };
 
 // Upload image to S3
-export const uploadImageToS3 = async (file, setIsUploading, setAttachmentUrl) => {
+export const uploadFileToS3 = async (file, setIsUploading, setAttachmentUrl) => {
   if (!file) {
     toast.error('No file selected', {
       position: 'top-right',
@@ -62,7 +62,7 @@ export const uploadImageToS3 = async (file, setIsUploading, setAttachmentUrl) =>
     console.log('S3 Upload URL:', url);
     setAttachmentUrl(url);
 
-    toast.success('Image uploaded successfully!', {
+    toast.success('File uploaded successfully!', {
       position: 'top-right',
       autoClose: 3000,
       className: 'bg-green-100 text-green-800 border border-green-200',
@@ -71,7 +71,7 @@ export const uploadImageToS3 = async (file, setIsUploading, setAttachmentUrl) =>
     return url;
   } catch (err) {
     console.error('Upload error:', err);
-    toast.error(`Image upload failed: ${err.message}`, {
+    toast.error(`File upload failed: ${err.message}`, {
       position: 'top-right',
       autoClose: 3000,
     });

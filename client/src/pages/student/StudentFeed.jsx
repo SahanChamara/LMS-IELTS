@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { MessageCircle, BookOpen, Image, X } from 'lucide-react';
+import { MessageCircle, BookOpen, File, X } from 'lucide-react';
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
 import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../service/postService';
-import { uploadImageToS3, validateS3Config } from '../../service/s3/s3Service';
+import { uploadFileToS3, validateS3Config } from '../../service/s3/s3Service';
 
 // Utility function to format file size
 const formatFileSize = (bytes) => {
@@ -82,7 +82,7 @@ const StudentFeed = () => {
       autoClose: 3000,
     });
 
-    await uploadImageToS3(file, setIsUploading, setAttachmentUrl);
+    await uploadFileToS3(file, setIsUploading, setAttachmentUrl);
 
     // Clear file input
     if (fileInputRef.current) {
@@ -107,7 +107,7 @@ const StudentFeed = () => {
   // Handle post creation
   const handleCreatePost = async () => {
     if (!newPost.trim() && !attachmentUrl) {
-      toast.error('Please add some content or upload an image to share', {
+      toast.error('Please add some content or upload a file to share', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -134,7 +134,7 @@ const StudentFeed = () => {
         attachments: attachmentUrl
           ? [{
               name: selectedFile?.name || 'Unknown',
-              type: selectedFile?.type || 'image/jpeg',
+              type: selectedFile?.type || 'application/octet-stream',
               size: selectedFile?.size || 0,
               url: attachmentUrl,
             }]
@@ -291,14 +291,14 @@ const StudentFeed = () => {
                       : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
                   }`}
                 >
-                  <Image className="h-5 w-5 inline-block mr-1" />
-                  {isUploading ? 'Uploading...' : 'Add Image'}
+                  <File className="h-5 w-5 inline-block mr-1" />
+                  {isUploading ? 'Uploading...' : 'Add File'}
                 </button>
                 <input
                   ref={fileInputRef}
                   id="file-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,application/pdf,.docx"
                   onChange={handleFileSelected}
                   className="hidden"
                 />

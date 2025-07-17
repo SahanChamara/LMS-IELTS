@@ -100,12 +100,11 @@ export async function getPosts(filters = {}) {
       page,
       limit,
     }).toString();
-    
     const apiObject = {
       method: "GET",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts${queryParams ? `?${queryParams}` : ''}`,
+      endpoint: `posts`,
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
