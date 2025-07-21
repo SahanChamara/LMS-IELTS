@@ -23,7 +23,7 @@ const InstructorDashboard = () => {
   
   useEffect(() => {
     dispatch(getAllExamsAPI());
-  }, [dispatch]);
+  }, []);
   
   const { examsIns, loading, error } = useAppSelector((state) => state.examIeltsInstructor);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -52,7 +52,7 @@ const InstructorDashboard = () => {
   };
 
   const handleExamCreated = (newExam) => {
-    setExams([...exams, newExam]);
+    setExams({...exams, newExam});
     setShowCreateForm(false);
   };
 

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getAllExams } from "../../service/examIeltsInstructorService";
+import { createExam, getAllExams } from "../../service/examIeltsInstructorService";
 
 const initialState = {
   examsIns: {},
@@ -21,6 +21,21 @@ export const getAllExamsAPI = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue("Failed to Get All Exams", error.message);
+    }
+  }
+);
+
+export const createBasicExamAPI = createAsyncThunk(
+  "examIeltsInstructor/createBasicExamAPI",
+  async (exam, {rejectWithValue}) => {
+    try{
+      const response = await createExam(exam);
+      if(!response.success){
+        return rejectWithValue(response.message);
+      }
+      return response.data;
+    }catch(error){
+      return rejectWithValue("Failed to create basic exam",error.message);
     }
   }
 );
@@ -66,6 +81,22 @@ const examIeltsInstructorSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      .addCase(createBasicExamAPI.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createBasicExamAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.examsIns[action.payload._id] = action.payload;
+        state.currentExamId = action.payload._id;
+      })
+      .addCase(createBasicExamAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+
   },
 });
 
