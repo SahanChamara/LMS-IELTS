@@ -3,13 +3,13 @@ import ApiService from "./api-service-config/api-service";
 // Create a new post
 export async function createPost(postData) {
   try {
-    console.log(postData)
+    console.log(postData);
     const apiObject = {
       method: "POST",
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, // { textContent, attachments, visibility, course, userId, userName, userRole }
+      body: postData, 
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -18,6 +18,7 @@ export async function createPost(postData) {
   }
 }
 
+
 // Approve or reject a post (admin only)
 export async function approvePost(postId, status) {
   try {
@@ -25,10 +26,10 @@ export async function approvePost(postId, status) {
       throw new Error("Invalid status");
     }
     const apiObject = {
-      method: "PATCH",
+      method: "PUT",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/approve`,
+      endpoint: `posts/approve/${postId}`,
       body: { status },
     };
     return await ApiService.callApi(apiObject);
@@ -100,7 +101,6 @@ export async function getPosts(filters = {}) {
       page,
       limit,
     }).toString();
-    
     const apiObject = {
       method: "GET",
       withCredentials: true,
@@ -133,9 +133,9 @@ export async function getPostsByCourseId(courseId, filters = {}) {
       endpoint: `posts/course/${courseId}${queryParams ? `?${queryParams}` : ''}`,
     };
     
-    const reponse = await ApiService.callApi(apiObject);
-    console.log(reponse);
-    return reponse;
+    const response = await ApiService.callApi(apiObject);
+    console.log(response);
+    return response;
   } catch (error) {
     console.error("getPostsByCourseId error:", error.message);
     throw error;
