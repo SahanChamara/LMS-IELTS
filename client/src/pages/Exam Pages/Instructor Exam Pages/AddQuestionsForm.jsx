@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Plus, Edit3, Trash2, Save } from 'lucide-react';
-import Sidebar from '../../../components/Sidebar';
+import Lecsidebar from "../../lecturepages/Lecsidebar";
 
 const AddQuestionsForm = ({ 
   section, 
@@ -139,7 +139,7 @@ const AddQuestionsForm = ({
   return (
     <div className="flex h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
-        <Sidebar />
+        <Lecsidebar />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
       <div className="max-w-6xl mx-auto">
