@@ -9,7 +9,7 @@ export async function createPost(postData) {
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, // { textContent, attachments, visibility, course, userId, userName, userRole }
+      body: postData, 
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -17,6 +17,8 @@ export async function createPost(postData) {
     throw error;
   }
 }
+hbvknd 
+
 
 // Approve or reject a post (admin only)
 export async function approvePost(postId, status) {
