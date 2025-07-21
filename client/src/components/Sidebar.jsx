@@ -22,6 +22,8 @@ import {
   FilePen,
   Globe2,
   GlobeIcon,
+  Megaphone,
+  MessageCircleWarningIcon,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -76,23 +78,18 @@ const Sidebar = () => {
               to: "/exams",
             },
             {
-              icon: <Calendar size={20} />,
-              label: "Calendar",
-              to: "/calendar",
-            },
-            {
               icon: <GlobeIcon size={20} />,
               label: "Study Feed",
               to: "/feed",
             },
             {
-              icon: <Percent size={20} />,
+              icon: <ClipboardList size={20} />,
               label: "Marks",
               to: "/marks",
             },
             {
-              icon: <BellRing size={20} />,
-              label: "Notifications",
+              icon: <MessageCircleWarningIcon size={20} />,
+              label: "Announcements",
               to: "/messages",
             },
             // {

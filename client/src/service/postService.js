@@ -17,7 +17,6 @@ export async function createPost(postData) {
     throw error;
   }
 }
-hbvknd 
 
 
 // Approve or reject a post (admin only)
