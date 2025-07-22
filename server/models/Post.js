@@ -11,6 +11,7 @@ const AttachmentSchema = new Schema({
 
 // Reaction subdocument schema
 const ReactionSchema = new Schema({
+    postId: { type: Schema.Types.ObjectId, ref: 'Post', required: true }, // Added postId field
     type: {
         type: String,
         required: true,
@@ -56,7 +57,6 @@ const PostSchema = new Schema({
         type: String,
         enum: ['student', 'instructor', 'admin'],
         required: true
-
     },
     reactions: [ReactionSchema],
     comments: [CommentSchema]

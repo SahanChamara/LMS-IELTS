@@ -9,7 +9,7 @@ export async function createPost(postData) {
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, 
+      body: postData,
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -17,7 +17,6 @@ export async function createPost(postData) {
     throw error;
   }
 }
-
 
 // Approve or reject a post (admin only)
 export async function approvePost(postId, status) {
@@ -62,12 +61,47 @@ export async function reactPost(postId, reactionData) {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/react`,
+      endpoint: `posts/react/${postId}`,
       body: reactionData, // { type, userId, userName }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
     console.error("reactPost error:", error.message);
+    throw error;
+  }
+}
+
+// Remove a reaction from a post
+export async function removeReaction(postId, userId) {
+  try {
+    console.log("Removing reaction for postId:", postId, "userId:", userId);
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/remove/${postId}`,
+      body: { userId }, // { userId }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("removeReaction error:", error.message);
+    throw error;
+  }
+}
+
+// Update a reaction type for a post
+export async function updateReaction(postId, reactionData) {
+  try {
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/edit/${postId}`,
+      body: reactionData, // { type, userId, userName }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("updateReaction error:", error.message);
     throw error;
   }
 }
@@ -79,7 +113,7 @@ export async function commentPost(postId, commentData) {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/comment`,
+      endpoint: `posts/comment/${postId}`,
       body: commentData, // { content, userId, userName, userRole }
     };
     return await ApiService.callApi(apiObject);
