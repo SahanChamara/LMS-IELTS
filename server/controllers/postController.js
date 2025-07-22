@@ -30,6 +30,7 @@ const createPost = async (req, res) => {
         res.status(500).json({ message: 'Error creating post', error: error.message });
     }
 };
+
 // Approve or reject a post (admin only)
 const approvePost = async (req, res) => {
     try {
@@ -84,7 +85,7 @@ const deletePost = async (req, res) => {
     }
 };
 
-// Add a reaction to a post
+// Add or remove a reaction to a post
 const reactPost = async (req, res) => {
     try {
         const { postId } = req.params;
@@ -98,24 +99,81 @@ const reactPost = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
+        const validReactionTypes = ['like', 'love', 'helpful', 'dislike', 'unlike'];
+        if (!validReactionTypes.includes(type)) {
+            return res.status(400).json({ message: 'Invalid reaction type' });
+        }
+
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        // Check for duplicate reaction from the same user
+        // Check for existing reaction from the same user
         const existingReaction = post.reactions.find(r => r.userId === userId);
-        if (existingReaction) {
-            return res.status(400).json({ message: 'User has already reacted to this post' });
+
+        if (type === 'unlike' || (existingReaction && existingReaction.type === type)) {
+            // Remove the existing reaction
+            post.reactions = post.reactions.filter(r => r.userId !== userId);
+            const updatedPost = await post.save();
+            return res.status(200).json({ message: 'Reaction removed', reactions: updatedPost.reactions });
         }
 
-        const reaction = { type, userId, userName, createdAt: new Date() };
+        // Add new reaction
+        const reaction = {
+            postId, // Include postId as required by ReactionSchema
+            type,
+            userId,
+            userName,
+            createdAt: new Date()
+        };
         post.reactions.push(reaction);
         const updatedPost = await post.save();
 
         res.status(201).json(updatedPost.reactions[updatedPost.reactions.length - 1]);
     } catch (error) {
         res.status(500).json({ message: 'Error adding reaction', error: error.message });
+    }
+};
+
+// Update a user's reaction type for a post
+const updateReaction = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const { type, userId, userName } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: 'Invalid post ID' });
+        }
+
+        if (!type || !userId || !userName) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const validReactionTypes = ['like', 'love', 'helpful', 'dislike'];
+        if (!validReactionTypes.includes(type)) {
+            return res.status(400).json({ message: 'Invalid reaction type' });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        // Find the existing reaction
+        const reactionIndex = post.reactions.findIndex(r => r.userId === userId);
+        if (reactionIndex === -1) {
+            return res.status(404).json({ message: 'No existing reaction found for this user' });
+        }
+
+        // Update the reaction type
+        post.reactions[reactionIndex].type = type;
+        post.reactions[reactionIndex].createdAt = new Date(); // Update timestamp
+        const updatedPost = await post.save();
+
+        res.status(200).json(updatedPost.reactions[reactionIndex]);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating reaction', error: error.message });
     }
 };
 
@@ -148,7 +206,7 @@ const commentPost = async (req, res) => {
     }
 };
 
-//learnGet posts with optional filtering
+// Get posts with optional filtering
 const getPosts = async (req, res) => {
     try {
         const { visibility, status, userId, course, page = 1, limit = 10 } = req.query;
@@ -217,6 +275,7 @@ module.exports = {
     approvePost,
     deletePost,
     reactPost,
+    updateReaction,
     commentPost,
     getPosts,
     getPostsByCourseId

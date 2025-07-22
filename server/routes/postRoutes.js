@@ -14,6 +14,7 @@ router.delete('/:postId', authMiddleware(['Student', 'Instructor', 'SuperAdmin']
 
 router.post('/react/:postId', authMiddleware(['Student', 'Instructor', 'SuperAdmin']), postController.reactPost);
 
+router.put('/react/edit/:postId', authMiddleware(['Student', 'Instructor', 'SuperAdmin']), postController.updateReaction);
 
 router.post('/comment/:postId', authMiddleware(['Student', 'Instructor', 'SuperAdmin']), postController.commentPost);
 

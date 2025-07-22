@@ -9,7 +9,7 @@ export async function createPost(postData) {
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, 
+      body: postData,
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -17,7 +17,6 @@ export async function createPost(postData) {
     throw error;
   }
 }
-
 
 // Approve or reject a post (admin only)
 export async function approvePost(postId, status) {
@@ -55,19 +54,37 @@ export async function deletePost(postId) {
   }
 }
 
-// Add a reaction to a post
+// Add or remove a reaction to a post
 export async function reactPost(postId, reactionData) {
   try {
     const apiObject = {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/react`,
+      endpoint: `posts/react/${postId}`,
       body: reactionData, // { type, userId, userName }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
     console.error("reactPost error:", error.message);
+    throw error;
+  }
+}
+
+// Update a reaction type for a post
+export async function updateReaction(postId, reactionData) {
+  try {
+    
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/edit/${postId}`,
+      body: reactionData, // { type, userId, userName }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("updateReaction error:", error.message);
     throw error;
   }
 }
