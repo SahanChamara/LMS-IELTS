@@ -54,7 +54,7 @@ export async function deletePost(postId) {
   }
 }
 
-// Add or remove a reaction to a post
+// Add a reaction to a post
 export async function reactPost(postId, reactionData) {
   try {
     const apiObject = {
@@ -71,10 +71,27 @@ export async function reactPost(postId, reactionData) {
   }
 }
 
+// Remove a reaction from a post
+export async function removeReaction(postId, userId) {
+  try {
+    console.log("Removing reaction for postId:", postId, "userId:", userId);
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/remove/${postId}`,
+      body: { userId }, // { userId }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("removeReaction error:", error.message);
+    throw error;
+  }
+}
+
 // Update a reaction type for a post
 export async function updateReaction(postId, reactionData) {
   try {
-    
     const apiObject = {
       method: "PUT",
       withCredentials: true,
@@ -96,7 +113,7 @@ export async function commentPost(postId, commentData) {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/comment`,
+      endpoint: `posts/comment/${postId}`,
       body: commentData, // { content, userId, userName, userRole }
     };
     return await ApiService.callApi(apiObject);

@@ -85,7 +85,7 @@ const deletePost = async (req, res) => {
     }
 };
 
-// Add or remove a reaction to a post
+// Add a reaction to a post
 const reactPost = async (req, res) => {
     try {
         const { postId } = req.params;
@@ -99,7 +99,7 @@ const reactPost = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const validReactionTypes = ['like', 'love', 'helpful', 'dislike', 'unlike'];
+        const validReactionTypes = ['like', 'love', 'helpful', 'dislike'];
         if (!validReactionTypes.includes(type)) {
             return res.status(400).json({ message: 'Invalid reaction type' });
         }
@@ -111,17 +111,13 @@ const reactPost = async (req, res) => {
 
         // Check for existing reaction from the same user
         const existingReaction = post.reactions.find(r => r.userId === userId);
-
-        if (type === 'unlike' || (existingReaction && existingReaction.type === type)) {
-            // Remove the existing reaction
-            post.reactions = post.reactions.filter(r => r.userId !== userId);
-            const updatedPost = await post.save();
-            return res.status(200).json({ message: 'Reaction removed', reactions: updatedPost.reactions });
+        if (existingReaction) {
+            return res.status(400).json({ message: 'User already has a reaction. Use update or remove.' });
         }
 
         // Add new reaction
         const reaction = {
-            postId, // Include postId as required by ReactionSchema
+            postId,
             type,
             userId,
             userName,
@@ -130,9 +126,45 @@ const reactPost = async (req, res) => {
         post.reactions.push(reaction);
         const updatedPost = await post.save();
 
-        res.status(201).json(updatedPost.reactions[updatedPost.reactions.length - 1]);
+        res.status(201).json(updatedPost);
     } catch (error) {
         res.status(500).json({ message: 'Error adding reaction', error: error.message });
+    }
+};
+
+// Remove a reaction from a post
+const removeReaction = async (req, res) => {
+    try {
+        console.log("Removing reaction for postId:", req.params.postId, "userId:", req.body);
+        const { postId } = req.params;
+        const { userId } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: 'Invalid post ID' });
+        }
+
+        if (!userId) {
+            return res.status(400).json({ message: 'Missing userId' });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        // Check for existing reaction
+        const reactionIndex = post.reactions.findIndex(r => r.userId === userId);
+        if (reactionIndex === -1) {
+            return res.status(404).json({ message: 'No reaction found for this user' });
+        }
+
+        // Remove the reaction
+        post.reactions.splice(reactionIndex, 1);
+        const updatedPost = await post.save();
+
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        res.status(500).json({ message: 'Error removing reaction', error: error.message });
     }
 };
 
@@ -168,10 +200,10 @@ const updateReaction = async (req, res) => {
 
         // Update the reaction type
         post.reactions[reactionIndex].type = type;
-        post.reactions[reactionIndex].createdAt = new Date(); // Update timestamp
+        post.reactions[reactionIndex].createdAt = new Date();
         const updatedPost = await post.save();
 
-        res.status(200).json(updatedPost.reactions[reactionIndex]);
+        res.status(200).json(updatedPost);
     } catch (error) {
         res.status(500).json({ message: 'Error updating reaction', error: error.message });
     }
@@ -200,7 +232,7 @@ const commentPost = async (req, res) => {
         post.comments.push(comment);
         const updatedPost = await post.save();
 
-        res.status(201).json(updatedPost.comments[updatedPost.comments.length - 1]);
+        res.status(201).json(updatedPost);
     } catch (error) {
         res.status(500).json({ message: 'Error adding comment', error: error.message });
     }
@@ -218,7 +250,7 @@ const getPosts = async (req, res) => {
         if (course) query.course = course;
 
         const posts = await Post.find(query)
-            .populate('course', 'title') // Populate course title
+            .populate('course', 'title')
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
@@ -275,6 +307,7 @@ module.exports = {
     approvePost,
     deletePost,
     reactPost,
+    removeReaction,
     updateReaction,
     commentPost,
     getPosts,

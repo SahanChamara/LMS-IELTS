@@ -10,7 +10,7 @@ import Card from '../../components/card';
 import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
-import { createPost, getPostsByCourseId, reactPost, commentPost, updateReaction } from '../../service/postService';
+import { createPost, getPostsByCourseId, reactPost, removeReaction, updateReaction, commentPost } from '../../service/postService';
 import { uploadFileToS3, validateS3Config } from '../../service/s3/s3Service';
 
 // Utility function to format file size
@@ -74,6 +74,11 @@ const StudentFeed = () => {
     const studentId = localStorage.getItem('user');
     if (studentId) {
       dispatch(getStudentDetailsAPI(studentId));
+    } else {
+      toast.error('User ID not found in localStorage. Please log in again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
     fetchPosts();
   }, [dispatch, courseId]);
@@ -135,6 +140,14 @@ const StudentFeed = () => {
       return;
     }
 
+    if (!currentUser.id) {
+      toast.error('User ID not available. Please log in again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      return;
+    }
+
     setIsPosting(true);
     try {
       const postData = {
@@ -182,22 +195,60 @@ const StudentFeed = () => {
   };
 
   // Handle reaction to a post
-  // Handle reaction to a post
   const handleReaction = async (postId, type) => {
     try {
+      if (!currentUser.id) {
+        throw new Error('User ID not available. Please log in again.');
+      }
+      console.log('Handling reaction:', { postId, type, userId: currentUser.id });
+
       const reactionData = { type, userId: currentUser.id, userName: currentUser.name };
       const post = posts.find(p => p._id === postId);
       const existingReaction = post?.reactions?.find(r => r.userId === currentUser.id);
 
-      if (existingReaction && type !== 'unlike') {
-        // Update existing reaction
+      if (existingReaction && existingReaction.type === type) {
+        // Remove reaction if clicking the same type
+        console.log('Removing reaction for user:', currentUser.id);
+        await removeReaction(postId, currentUser.id);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? { ...p, reactions: p.reactions.filter(r => r.userId !== currentUser.id) }
+            : p
+        ));
+      } else if (existingReaction) {
+        // Update existing reaction to new type
         await updateReaction(postId, reactionData);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? {
+                ...p,
+                reactions: p.reactions.map(r =>
+                  r.userId === currentUser.id ? { ...r, type, createdAt: new Date() } : r
+                )
+              }
+            : p
+        ));
       } else {
-        // Add new reaction or remove existing (unlike)
+        // Add new reaction
         await reactPost(postId, reactionData);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? {
+                ...p,
+                reactions: [...p.reactions, {
+                  postId,
+                  type,
+                  userId: currentUser.id,
+                  userName: currentUser.name,
+                  createdAt: new Date()
+                }]
+              }
+            : p
+        ));
       }
-      await fetchPosts(); // Refresh posts to reflect the updated reaction
+      await fetchPosts(); // Refresh posts to ensure consistency with server
     } catch (error) {
+      console.error('Reaction error:', error);
       toast.error('Error handling reaction: ' + error.message, {
         position: 'top-right',
         autoClose: 3000,
@@ -211,6 +262,9 @@ const StudentFeed = () => {
     if (!commentText?.trim()) return;
 
     try {
+      if (!currentUser.id) {
+        throw new Error('User ID not available. Please log in again.');
+      }
       const commentData = {
         content: commentText,
         userId: currentUser.id,
@@ -218,9 +272,9 @@ const StudentFeed = () => {
         userRole: currentUser.role,
       };
       const response = await commentPost(postId, commentData);
-      setPosts(posts.map(post => 
-        post._id === postId 
-          ? { ...post, comments: [response.data, ...post.comments] }
+      setPosts(posts.map(post =>
+        post._id === postId
+          ? { ...post, comments: [{ ...response.comments[response.comments.length - 1], _id: new Date().toISOString() }, ...post.comments] }
           : post
       ));
       setNewComments({ ...newComments, [postId]: '' });
