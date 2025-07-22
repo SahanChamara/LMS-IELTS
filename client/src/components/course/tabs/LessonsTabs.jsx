@@ -5,15 +5,6 @@ const LessonsTab = ({ lessons }) => {
   const [selectedVideo, setSelectedVideo] = useState("");
   const [videoError, setVideoError] = useState("");
   const [selectedLessonTitle, setSelectedLessonTitle] = useState("");
-  const [lessonCompletion, setLessonCompletion] = useState(
-    lessons.reduce(
-      (acc, lesson) => ({
-        ...acc,
-        [lesson.id]: lesson.completed,
-      }),
-      {}
-    )
-  );
 
   // Function to convert YouTube URL to embed format
   const getYouTubeEmbedUrl = (url) => {
@@ -58,65 +49,18 @@ const LessonsTab = ({ lessons }) => {
     setVideoError("");
   };
 
-  // Function to toggle lesson completion
-  const toggleLessonCompletion = (lessonId) => {
-    setLessonCompletion((prev) => ({
-      ...prev,
-      [lessonId]: !prev[lessonId],
-    }));
-  };
-
   return (
     <div className="relative">
       <h2 className="text-xl font-semibold mb-6 text-gray-900">
-        Course Lessons
+        Course Material
       </h2>
       <div className="space-y-4">
         {lessons.map((lesson) => (
           <div
             key={lesson.id}
-            className={`border border-gray-200 rounded-lg p-4 transition-colors ${
-              lessonCompletion[lesson.id] ? "bg-green-100" : "bg-gray-100"
-            }`}
+            className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
           >
             <div className="flex items-start">
-              <div
-                className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center mr-4 ${
-                  lessonCompletion[lesson.id] ? "bg-green-200" : "bg-gray-200"
-                }`}
-              >
-                {lessonCompletion[lesson.id] ? (
-                  <svg
-                    className="h-6 w-6 text-green-600"
-                    fill="none"
-                    viewBox="0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                ) : (
-                  <span className="text-gray-500 font-medium">
-                    <svg
-                      className="h-6 w-6 text-yellow-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </span>
-                )}
-              </div>
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900">{lesson.title}</h3>
                 <p className="text-sm text-gray-500 mt-1">
@@ -124,57 +68,13 @@ const LessonsTab = ({ lessons }) => {
                 </p>
               </div>
               <div className="flex space-x-2 items-center">
-                <button
-                  onClick={() => toggleLessonCompletion(lesson.id)}
-                  className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
-                  title={
-                    lessonCompletion[lesson.id]
-                      ? "Mark as Incomplete"
-                      : "Mark as Complete"
-                  }
-                  aria-checked={lessonCompletion[lesson.id]}
-                >
-                  <svg
-                    className={`h-5 w-5 ${
-                      lessonCompletion[lesson.id]
-                        ? "text-green-600"
-                        : "text-gray-500"
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d={
-                        lessonCompletion[lesson.id]
-                          ? "M6 18L18 6M6 6l12 12"
-                          : "M5 13l4 4L19 7"
-                      }
-                    />
-                  </svg>
-                </button>
                 {lesson.doc && (
                   <button
                     onClick={() => handleDownloadDocument(lesson.doc)}
-                    className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
+                    className="px-3 py-1 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                     title="Download Document"
                   >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
+                    Document
                   </button>
                 )}
                 {lesson.lectureLink && (
@@ -182,9 +82,9 @@ const LessonsTab = ({ lessons }) => {
                     onClick={() =>
                       handleViewLectureVideo(lesson.lectureLink, lesson.title)
                     }
-                    className="px-3 py-1 rounded-md text-sm bg-indigo-600 text-white hover:bg-indigo-700"
+                    className="px-3 py-1 rounded-md text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                   >
-                    View Lecture Video
+                    Lecture Video
                   </button>
                 )}
               </div>
