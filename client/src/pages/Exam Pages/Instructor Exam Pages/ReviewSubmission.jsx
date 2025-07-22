@@ -4,7 +4,7 @@ import QuestionReview from './QuestionReview';
 import SubmissionSummary from './SubmissionSummary';
 import GradingForm from './GradingForm';
 import FinalizeReviewModal from './FinalizeReviewModal';
-import Sidebar from '../../../components/Sidebar';
+import Lecsidebar from "../../lecturepages/Lecsidebar";
 
 const ReviewSubmission = ({ submission, onBack }) => {
   const [submissionDetails, setSubmissionDetails] = useState(null);
@@ -182,7 +182,7 @@ const ReviewSubmission = ({ submission, onBack }) => {
     <div className="flex flex-col h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 z-10 w-64 h-full bg-white shadow-lg lg:block hidden">
-        <Sidebar />
+        <Lecsidebar />
       </aside>
 
       {/* Main Content */}

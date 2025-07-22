@@ -5,7 +5,7 @@ import { Upload, MessageCircle, Clock, CheckCircle, XCircle, BookOpen, FileUp } 
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
-import Lecsidebar from './Lecsidebar';
+import Lecsidebar from './lecsidebar';
 import Card from '../../components/card';
 
 const InstructorFeed = () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { MessageCircle, BookOpen, Image, X } from 'lucide-react';
+import { MessageCircle, BookOpen, File, X } from 'lucide-react';
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
@@ -10,8 +10,8 @@ import Card from '../../components/card';
 import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';
-import { createPost, getPostsByCourseId, reactPost, commentPost } from '../../service/postService';
-import { uploadImageToS3, validateS3Config } from '../../service/s3/s3Service';
+import { createPost, getPostsByCourseId, reactPost, removeReaction, updateReaction, commentPost } from '../../service/postService';
+import { uploadFileToS3, validateS3Config } from '../../service/s3/s3Service';
 
 // Utility function to format file size
 const formatFileSize = (bytes) => {
@@ -44,6 +44,26 @@ const StudentFeed = () => {
   };
   const courseId = student?.enrolledCourse?._id;
 
+  // Function to fetch posts
+  const fetchPosts = async () => {
+    if (courseId) {
+      try {
+        const response = await getPostsByCourseId(courseId, { status: 'approved' });
+        // Ensure each post has a reactions array
+        const normalizedPosts = (response.posts || []).map(post => ({
+          ...post,
+          reactions: post.reactions || [],
+        }));
+        setPosts(normalizedPosts);
+      } catch (err) {
+        toast.error('Failed to fetch posts: ' + err.message, {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      }
+    }
+  };
+
   // Debug environment variables on mount
   useEffect(() => {
     validateS3Config();
@@ -54,20 +74,13 @@ const StudentFeed = () => {
     const studentId = localStorage.getItem('user');
     if (studentId) {
       dispatch(getStudentDetailsAPI(studentId));
+    } else {
+      toast.error('User ID not found in localStorage. Please log in again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
-
-    if (courseId) {
-      getPostsByCourseId(courseId, { status: 'approved' })
-        .then((response) => {
-          setPosts(response.posts || []);
-        })
-        .catch((err) => {
-          toast.error('Failed to fetch posts: ' + err.message, {
-            position: 'top-right',
-            autoClose: 3000,
-          });
-        });
-    }
+    fetchPosts();
   }, [dispatch, courseId]);
 
   // Handle file selection and upload
@@ -82,7 +95,7 @@ const StudentFeed = () => {
       autoClose: 3000,
     });
 
-    await uploadImageToS3(file, setIsUploading, setAttachmentUrl);
+    await uploadFileToS3(file, setIsUploading, setAttachmentUrl);
 
     // Clear file input
     if (fileInputRef.current) {
@@ -107,7 +120,7 @@ const StudentFeed = () => {
   // Handle post creation
   const handleCreatePost = async () => {
     if (!newPost.trim() && !attachmentUrl) {
-      toast.error('Please add some content or upload an image to share', {
+      toast.error('Please add some content or upload a file to share', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -127,6 +140,14 @@ const StudentFeed = () => {
       return;
     }
 
+    if (!currentUser.id) {
+      toast.error('User ID not available. Please log in again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      return;
+    }
+
     setIsPosting(true);
     try {
       const postData = {
@@ -134,7 +155,7 @@ const StudentFeed = () => {
         attachments: attachmentUrl
           ? [{
               name: selectedFile?.name || 'Unknown',
-              type: selectedFile?.type || 'image/jpeg',
+              type: selectedFile?.type || 'application/octet-stream',
               size: selectedFile?.size || 0,
               url: attachmentUrl,
             }]
@@ -145,7 +166,6 @@ const StudentFeed = () => {
         userName: currentUser.name,
         userRole: currentUser.role,
       };
-      console.log('Sending postData to backend:', postData);
       await createPost(postData);
       toast.success('Your post has been submitted for approval and will appear in the feed once approved.', {
         position: 'top-right',
@@ -177,25 +197,59 @@ const StudentFeed = () => {
   // Handle reaction to a post
   const handleReaction = async (postId, type) => {
     try {
-      const existingReaction = posts.find(post => post._id === postId)?.reactions.find(r => r.userId === currentUser.id);
-      if (existingReaction && existingReaction.type === type) {
-        setPosts(posts.map(post => 
-          post._id === postId 
-            ? { ...post, reactions: post.reactions.filter(r => r.userId !== currentUser.id) }
-            : post
-        ));
-        return;
+      if (!currentUser.id) {
+        throw new Error('User ID not available. Please log in again.');
       }
+      console.log('Handling reaction:', { postId, type, userId: currentUser.id });
 
       const reactionData = { type, userId: currentUser.id, userName: currentUser.name };
-      const response = await reactPost(postId, reactionData);
-      setPosts(posts.map(post => 
-        post._id === postId 
-          ? { ...post, reactions: [...post.reactions.filter(r => r.userId !== currentUser.id), response.data] }
-          : post
-      ));
+      const post = posts.find(p => p._id === postId);
+      const existingReaction = post?.reactions?.find(r => r.userId === currentUser.id);
+
+      if (existingReaction && existingReaction.type === type) {
+        // Remove reaction if clicking the same type
+        console.log('Removing reaction for user:', currentUser.id);
+        await removeReaction(postId, currentUser.id);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? { ...p, reactions: p.reactions.filter(r => r.userId !== currentUser.id) }
+            : p
+        ));
+      } else if (existingReaction) {
+        // Update existing reaction to new type
+        await updateReaction(postId, reactionData);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? {
+                ...p,
+                reactions: p.reactions.map(r =>
+                  r.userId === currentUser.id ? { ...r, type, createdAt: new Date() } : r
+                )
+              }
+            : p
+        ));
+      } else {
+        // Add new reaction
+        await reactPost(postId, reactionData);
+        setPosts(posts.map(p =>
+          p._id === postId
+            ? {
+                ...p,
+                reactions: [...p.reactions, {
+                  postId,
+                  type,
+                  userId: currentUser.id,
+                  userName: currentUser.name,
+                  createdAt: new Date()
+                }]
+              }
+            : p
+        ));
+      }
+      await fetchPosts(); // Refresh posts to ensure consistency with server
     } catch (error) {
-      toast.error('Error adding reaction: ' + error.message, {
+      console.error('Reaction error:', error);
+      toast.error('Error handling reaction: ' + error.message, {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -208,6 +262,9 @@ const StudentFeed = () => {
     if (!commentText?.trim()) return;
 
     try {
+      if (!currentUser.id) {
+        throw new Error('User ID not available. Please log in again.');
+      }
       const commentData = {
         content: commentText,
         userId: currentUser.id,
@@ -215,9 +272,9 @@ const StudentFeed = () => {
         userRole: currentUser.role,
       };
       const response = await commentPost(postId, commentData);
-      setPosts(posts.map(post => 
-        post._id === postId 
-          ? { ...post, comments: [response.data, ...post.comments] }
+      setPosts(posts.map(post =>
+        post._id === postId
+          ? { ...post, comments: [{ ...response.comments[response.comments.length - 1], _id: new Date().toISOString() }, ...post.comments] }
           : post
       ));
       setNewComments({ ...newComments, [postId]: '' });
@@ -291,14 +348,14 @@ const StudentFeed = () => {
                       : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white'
                   }`}
                 >
-                  <Image className="h-5 w-5 inline-block mr-1" />
-                  {isUploading ? 'Uploading...' : 'Add Image'}
+                  <File className="h-5 w-5 inline-block mr-1" />
+                  {isUploading ? 'Uploading...' : 'Add File'}
                 </button>
                 <input
                   ref={fileInputRef}
                   id="file-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,application/pdf,.docx"
                   onChange={handleFileSelected}
                   className="hidden"
                 />
@@ -338,7 +395,7 @@ const StudentFeed = () => {
               <Card>
                 <motion.div className="rounded-2xl shadow-sm bg-white/10 backdrop-blur-lg p-6 flex flex-col items-center justify-center py-12">
                   <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="font-medium text-gray-900 mb-2">
                     No Posts Available
                   </h3>
                   <p className="text-gray-600 text-center">
