@@ -4,9 +4,10 @@ import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
 
 //=============================================================================================
-import { useAppDispatch } from "../../redux/store-config/store";
+import store, { useAppDispatch, useAppSelector } from "../../redux/store-config/store";
 import { getUnitByInstructorIdAPI } from "../../redux/features/unitsSlice";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
 //=============================================================================================
 
 // Defining the Leccorces component to manage and display course units for instructors
@@ -14,6 +15,8 @@ const Leccorces = () => {
   const navigate = useNavigate(); // Initialize navigate hook for routing
 
   //==========================================================================================
+  // const { unitss } = useAppSelector((state) => state.units.byInstructor);
+  const unitsByInstructor = useSelector((state) => state.units.units.byInstructor);
   const dispatch = useAppDispatch();
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,15 +35,19 @@ const Leccorces = () => {
           if (Array.isArray(response)) {
             //console.log(response.data._id);
             fetchedUnits = response.map((unit, index) => ({
-              title: unit.title || "Untitled",
               unitId: unit.id || `unit-${index}`,
+              title: unit.title || "Untitled",
+              description: unit.description,
+              unitCode: unit.unitCode,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
             }));
           } else if (response && response.data && Array.isArray(response.data)) {
             fetchedUnits = response.data.map((unit, index) => ({
-              title: unit.title || "Untitled",
               unitId: unit.id || `unit-${index}`,
+              title: unit.title || "Untitled",
+              description: unit.description,
+              unitCode: unit.unitCode,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
             }));
@@ -210,6 +217,11 @@ const Leccorces = () => {
     navigate(`/unit/lecture/${unit.unitId}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
   console.log(":::::--->", units)
+  // console.log("UNITS Redux : ", unitss)
+  // const state = store.getState();
+//   const state = store.getState();
+// console.log(state.units);
+console.log(unitsByInstructor);
 
   // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {
@@ -260,7 +272,7 @@ const Leccorces = () => {
               My Courses
             </h2>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              {/* <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setActiveTab("table")}
                   className={`px-3 py-2 text-sm sm:px-4 sm:text-base ${
@@ -289,7 +301,7 @@ const Leccorces = () => {
                 >
                   Both
                 </button>
-              </div>
+              </div> */}
               {/* <button
                 onClick={openCreateModal}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
@@ -432,7 +444,7 @@ const Leccorces = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {units.map((unit) => (
                   <div
-                    key={`card-${unit.id}`}
+                    key={unit.unitId}
                     className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
                   >
                     {unit.image && (
@@ -450,11 +462,14 @@ const Leccorces = () => {
                           <h3 className="text-lg sm:text-xl font-bold text-neutral-800 mb-1">
                             {unit.title}
                           </h3>
-                          <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                            {unit.code}
+                          <p className="text-lg sm:text-sm text-neutral-800 mb-1">
+                            {unit.description}
+                          </p>
+                          <span className="inline-block bg-blue-100 text-blue-800 text-m px-2 py-1 rounded-full font-medium">
+                            {unit.unitCode}
                           </span>
                         </div>
-                        <div className="flex space-x-2">
+                        {/* <div className="flex space-x-2">
                           <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                             {unit.students} students
                           </span>
@@ -469,12 +484,12 @@ const Leccorces = () => {
                               ? "Enabled"
                               : "Disabled"}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                       <div className="mb-4 flex-1">
-                        <p className="text-neutral-600 text-sm line-clamp-3">
+                        {/* <p className="text-neutral-600 text-sm line-clamp-3">
                           {unit.description}
-                        </p>
+                        </p> */}
                       </div>
                       <div className="flex justify-end mt-auto pt-4 border-t border-neutral-100 space-x-2">
                         <button

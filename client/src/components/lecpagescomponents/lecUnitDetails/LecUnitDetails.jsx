@@ -17,6 +17,11 @@ const LecUnitDetails = () => {
   const [isLoading, setIsLoading] = useState(true); // State to manage loading
   const [activeTab, setActiveTab] = useState("overview"); // State for active tab
 
+  // =====================================================================================
+  // const unitsByInstructor = useSelector((state) => state.units.units.byInstructor);
+  // const dispatch = useAppDispatch();
+  // ======================================================================================
+
   // Simulating content load with a delay
   useEffect(() => {
     if (!unit) {
