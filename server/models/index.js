@@ -19,6 +19,7 @@ const SubmissionAssignment = require('./SubmissionAssignment');
 const SuperAdmin = require('./SuperAdmin');
 const Unit = require('./Unit');
 const Post = require('./Post');
+const Announcement = require('./Announcements');
 
 
 // index.js
@@ -44,6 +45,7 @@ module.exports = {
   OnlineSession: require('./onlineSession'),
   Logs: require('./Logs'),
   Post: require('./Post'),
+  Announcement: require('./Announcements')
 };
 
 module.exports = {
@@ -67,6 +69,7 @@ module.exports = {
   Discussion,
   onlineSession,
   Logs,
-  Post
+  Post,
+  Announcement
 
 };

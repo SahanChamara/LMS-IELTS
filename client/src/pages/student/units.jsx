@@ -97,17 +97,6 @@ const Institution = () => {
     fetchUnits();
   }, [dispatch]);
 
-  const ProgressBar = ({ progress }) => {
-    return (
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-        <div
-          className="bg-blue-600 h-2.5 rounded-full"
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex h-screen bg-neutral-50 text-neutral-800 justify-center items-center">
@@ -130,33 +119,6 @@ const Institution = () => {
         <Sidebar />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
-        {/* Progress Summary Card
-        <Card className="mb-6">
-          <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Your Unit Progress
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h3 className="text-sm font-medium text-green-800">
-                  Credits Completed
-                </h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {completedCredits} / {totalCredits}
-                </p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <h3 className="text-sm font-medium text-purple-800">
-                  Overall Progress
-                </h3>
-                <p className="text-2xl font-bold text-purple-600">
-                  {overallProgress}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card> */}
-
         {/* Units Card */}
         <Card>
           <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
@@ -195,15 +157,6 @@ const Institution = () => {
                         </span>
                       </p>
                     </div>
-
-                    {/* <div className="mb-4">
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>Progress</span>
-                        <span>{progressData[unit.unitId] || 0}%</span>
-                      </div>
-                      <ProgressBar progress={progressData[unit.unitId] || 0} />
-                    </div> */}
-
                     <div className="flex justify-between items-center mt-auto">
                       <Link
                         to={`/unit/${unit.unitId}`}

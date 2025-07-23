@@ -3,13 +3,13 @@ import ApiService from "./api-service-config/api-service";
 // Create a new post
 export async function createPost(postData) {
   try {
-    console.log(postData)
+    console.log(postData);
     const apiObject = {
       method: "POST",
       withCredentials: true,
       prefix: "",
       endpoint: "posts",
-      body: postData, // { textContent, attachments, visibility, course, userId, userName, userRole }
+      body: postData,
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
@@ -25,10 +25,10 @@ export async function approvePost(postId, status) {
       throw new Error("Invalid status");
     }
     const apiObject = {
-      method: "PATCH",
+      method: "PUT",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/approve`,
+      endpoint: `posts/approve/${postId}`,
       body: { status },
     };
     return await ApiService.callApi(apiObject);
@@ -61,12 +61,47 @@ export async function reactPost(postId, reactionData) {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/react`,
+      endpoint: `posts/react/${postId}`,
       body: reactionData, // { type, userId, userName }
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {
     console.error("reactPost error:", error.message);
+    throw error;
+  }
+}
+
+// Remove a reaction from a post
+export async function removeReaction(postId, userId) {
+  try {
+    console.log("Removing reaction for postId:", postId, "userId:", userId);
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/remove/${postId}`,
+      body: { userId }, // { userId }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("removeReaction error:", error.message);
+    throw error;
+  }
+}
+
+// Update a reaction type for a post
+export async function updateReaction(postId, reactionData) {
+  try {
+    const apiObject = {
+      method: "PUT",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `posts/react/edit/${postId}`,
+      body: reactionData, // { type, userId, userName }
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("updateReaction error:", error.message);
     throw error;
   }
 }
@@ -78,7 +113,7 @@ export async function commentPost(postId, commentData) {
       method: "POST",
       withCredentials: true,
       prefix: "",
-      endpoint: `posts/${postId}/comment`,
+      endpoint: `posts/comment/${postId}`,
       body: commentData, // { content, userId, userName, userRole }
     };
     return await ApiService.callApi(apiObject);
@@ -100,7 +135,6 @@ export async function getPosts(filters = {}) {
       page,
       limit,
     }).toString();
-    
     const apiObject = {
       method: "GET",
       withCredentials: true,
@@ -133,9 +167,9 @@ export async function getPostsByCourseId(courseId, filters = {}) {
       endpoint: `posts/course/${courseId}${queryParams ? `?${queryParams}` : ''}`,
     };
     
-    const reponse = await ApiService.callApi(apiObject);
-    console.log(reponse);
-    return reponse;
+    const response = await ApiService.callApi(apiObject);
+    console.log(response);
+    return response;
   } catch (error) {
     console.error("getPostsByCourseId error:", error.message);
     throw error;
