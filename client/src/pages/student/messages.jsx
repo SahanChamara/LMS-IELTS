@@ -1,43 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
-import Card, { CardContent } from "../../components/Card";
 import { BellIcon } from "@heroicons/react/24/outline";
-
-// Mock data simulating backend notifications for admin and lecturer
-const notifications = [
-  {
-    id: 1,
-    role: "admin",
-    title: "Assignment Reminder",
-    content: "Don’t forget to submit your Data Structures project before the deadline.",
-    date: "2025-05-26T23:59:00",
-    footer: "Due Today • 11:59 PM",
-  },
-  {
-    id: 2,
-    role: "lecturer",
-    title: "New Lecture Uploaded",
-    content: 'A new lecture on "Algorithms Basics" has been added. Watch it before Friday.',
-    date: "2025-05-24T10:00:00",
-    footer: "Course: Computer Science 101",
-  },
-  {
-    id: 3,
-    role: "admin",
-    title: "Group Chat Mention",
-    content: 'You were mentioned in the group chat by Jane: “Can you update the slides?”',
-    date: "2025-05-25T14:30:00",
-    footer: "Group: Research Team A",
-  },
-  ...Array(9).fill({
-    id: 0,
-    role: "lecturer",
-    title: "Event Reminder",
-    content: "Guest lecture on AI & Machine Learning in Room 204. Join early for seating!",
-    date: "2025-05-27T10:00:00",
-    footer: "Tomorrow • 10:00 AM",
-  }).map((item, idx) => ({ ...item, id: 4 + idx })),
-];
+import { motion } from "framer-motion";
+import { getAnnouncementsByCourseId } from "../../service/announcementService";
+import { useAppSelector } from "../../redux/store-config/store";
 
 function formatDate(dateString) {
   const options = { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" };
@@ -46,69 +12,105 @@ function formatDate(dateString) {
 }
 
 const Institution = () => {
-  const handleShowAll = () => {
-    alert("Show all notifications clicked!");
-  };
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { student } = useAppSelector((state) => state.students);
+  const courseId = student?.enrolledCourse?._id;
+
+  // Fetch announcements by course ID on mount
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      if (!courseId) {
+        setError("No course ID available");
+        setAnnouncements([]); // Ensure announcements is an array
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await getAnnouncementsByCourseId(courseId);
+        // Ensure response.data.data is an array, default to empty array if undefined
+        setAnnouncements(Array.isArray(response.data) ? response.data : []);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message || "Failed to fetch announcements");
+        setAnnouncements([]); // Ensure announcements is an array
+        setLoading(false);
+      }
+    };
+    fetchAnnouncements();
+  }, [courseId]);
 
   return (
-    <div className="flex min-h-screen bg-neutral-50 text-neutral-800">
-      <aside className="fixed top-0 left-0 z-10 w-64 h-full ">
+    <div className="flex min-h-screen bg-neutral-50 text-gray-900">
+      <aside className="fixed top-0 left-0 z-10 w-64 h-full">
         <Sidebar />
       </aside>
 
-      <main className="flex-1 p-4 sm:p-6 pt-10 ml-0 md:ml-64 max-w-full">
-        <Card>
-          <div className="rounded-2xl border border-gray-300 p-4 sm:p-6 shadow-sm max-w-full">
-            {/* Header: Title left, Bell icon right */}
-            <div className="mb-4 px-2 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 leading-tight">
-                  Notifications
-                </h2>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
-                  Check your updates.
+      <main className="flex-1 p-6 sm:p-8 pt-12 ml-0 md:ml-64 max-w-full">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Announcements
+              </h2>
+              <p className="text-sm sm:text-base text-gray-500 mt-1">
+                Stay updated with the latest course announcements
+              </p>
+            </div>
+
+          </div>
+
+          {/* Announcements List */}
+          <div className="space-y-4">
+            {loading ? (
+              <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg border-2 border-gray-300/60">
+                <p className="text-center text-gray-600 text-lg">
+                  Loading announcements...
                 </p>
               </div>
-              <button
-                aria-label="Notifications"
-                className="p-2 rounded-full hover:bg-gray-200 active:bg-gray-300 transition"
-              >
-                <BellIcon className="h-6 sm:h-7 w-6 sm:w-7 text-gray-700" />
-              </button>
-            </div>
-
-            <div className="mb-2 mx-auto pt-4 sm:pt-6 max-w-full">
-              <div className="flex flex-col space-y-4">
-                {notifications.map(({ id, title, content, footer, date }) => (
-                  <Card
-                    key={id}
-                    variant="institution"
-                    title={title}
-                    footer={footer || formatDate(date)}
-                    className="flex flex-col sm:flex-row sm:items-center h-auto sm:h-16"
-                  >
-                    <CardContent className="overflow-hidden flex flex-col sm:flex-row sm:items-center text-left w-full">
-                      <span className="break-words text-sm sm:text-base leading-snug">
-                        {content}
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
+            ) : error ? (
+              <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg border-2 border-gray-300/60">
+                <p className="text-center text-red-600 text-lg">{error}</p>
               </div>
-
-              {/* Show All Notifications button */}
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={handleShowAll}
-                  className="text-black-600 hover:text-gray-600 font-semibold text-sm sm:text-base"
-                  aria-label="Show all notifications"
+            ) : announcements.length === 0 ? (
+              <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg border-2 border-gray-300/60">
+                <p className="text-center text-gray-600 text-lg">
+                  No announcements available
+                </p>
+              </div>
+            ) : (
+              announcements.map(({ _id, title, description, date, Instructor, course }) => (
+                <motion.div
+                  key={_id}
+                  className="bg-white/10 backdrop-blur-lg border-2 border-gray-300/50 rounded-lg shadow-sm p-4 flex flex-col hover:shadow-md transition-shadow duration-300"
+                  whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ duration: 0.3 }}
                 >
-                  Show All Notifications
-                </button>
-              </div>
-            </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+                      {title}
+                    </h3>
+                    <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-3 line-clamp-2">
+                      {description}
+                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-gray-600">
+                      <div className="mb-2 sm:mb-0">
+                        <span className="font-medium text-gray-700">
+                          Instructor: {Instructor?.name || "Unknown"}
+                        </span>
+                        <span className="mx-2">•</span>
+                        <span>Course: {course?.title || "N/A"}</span>
+                      </div>
+                      <span>{formatDate(date)}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
-        </Card>
+        </div>
       </main>
     </div>
   );
