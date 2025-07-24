@@ -36,7 +36,7 @@ const InstructorDashboard = () => {
   const handleCreateExam = () => {
     setShowCreateForm(true);
   };
-  adasdasdawdsa
+  
 
   const handleEditExam = (exam) => {
     setSelectedExam(exam);
