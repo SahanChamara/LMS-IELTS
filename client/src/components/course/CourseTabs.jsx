@@ -3,10 +3,8 @@
 const CourseTabs = ({ activeTab, setActiveTab }) => {
   const tabs = [
     "overview",
-    "lessons",
+    "Materials",
     "Quizes",
-    //"exams",
-    // "materials",
     "discussions",
     "assignments",
     "online-session",

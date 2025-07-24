@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import Lecsidebar from "../../lecturepages/Lecsidebar";
+import { useAppDispatch } from '../../../redux/store-config/store';
+import { createBasicExamAPI } from '../../../redux/features/examIeltsInstructorSlice';
 
 const CreateExamForm = ({ onBack, onExamCreated, initialData, isEdit = false }) => {
+  const dispatch = useAppDispatch();
+
   const [examData, setExamData] = useState(initialData || {
     title: '',
     duration: 60,
@@ -66,7 +70,7 @@ const CreateExamForm = ({ onBack, onExamCreated, initialData, isEdit = false }) 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const newExam = isEdit ? {
+      /* const newExam = isEdit ? {
         ...initialData,
         ...examData
       } : {
@@ -78,15 +82,27 @@ const CreateExamForm = ({ onBack, onExamCreated, initialData, isEdit = false }) 
         sections: 0,
         sectionsData: [],
         createdAt: new Date().toISOString().split('T')[0]
-      };
+      }; 
 
-      onExamCreated(newExam);
+      console.log("new exam mockk data", newExam); */      
+
+      const newExam = {
+        title: examData.title,
+        description: examData.description,
+        duration: examData.duration,
+        difficulty: examData.difficulty,
+        type: examData.type,
+        createdBy: localStorage.getItem("user"),
+      };    
+
+      const result = await dispatch(createBasicExamAPI(newExam)).unwrap(); 
+      onExamCreated(result);
 
       showToast(
         isEdit ? "Exam Updated" : "Exam Created",
         isEdit ? "Basic exam details updated successfully." : "Basic exam details saved successfully. Now add sections."
       );
-    } catch (error) {
+    } catch (error) {      
       showToast("Error", `Failed to ${isEdit ? 'update' : 'create'} exam. Please try again.`, "destructive");
     } finally {
       setIsLoading(false);
