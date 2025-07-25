@@ -186,22 +186,11 @@ const Institution = () => {
             </CardContent>
           </Card>
 
-          {/* Preferences */}
-          <Card title="Preferences">
-            <CardContent className="space-y-4 mt-4">
-              <CustomSwitch
-                checked={student.profile.preferences.notifications}
-                onChange={handleNotificationChange}
-                label="Enable Notifications"
-              />
-            </CardContent>
-          </Card>
-
           {/* Enrolled Course */}
           <Card title="Enrolled Course">
             <CardContent className="space-y-3 mt-2">
               <p className="text-gray-700">
-                {enrolledCourse ? enrolledCourse.title : "No course enrolled"}
+                {enrolledCourse ? "Course: "+ enrolledCourse.title : "No course enrolled"}
               </p>
               {enrolledCourse && (
                 <p className="text-gray-700">Description: {enrolledCourse.description}</p>
