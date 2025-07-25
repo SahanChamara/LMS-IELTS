@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import QuizPreview from "./QuizPreview";
+import { useSelector } from "react-redux";
 import { User, Edit, Trash2, CircleFadingPlus, Eye } from 'lucide-react';
 import QuestionDetailsModal from "../Models/QuestionDetailsModal";
-import { addAssessments } from '../../../service/assessments';
-import { useSelector } from "react-redux";
+import QuizPreview from "./QuizPreview";
+import { addAssessments, updateAssessment, deleteAssessment } from "../../../service/assessments";
+import { getQuestionsByQuizId } from "../../../service/quizService"; // Renamed for clarity
 
 const QuizzesTab = ({ unit }) => {
   const navigate = useNavigate();
   const unitsByInstructor = useSelector((state) => state.units.units.byInstructor.data);
   const unitIdToFilter = unit.unitId;
   const filteredUnit = unitsByInstructor?.find((unit) => unit.id === unitIdToFilter);
-  const assessments = filteredUnit?.assessments || [];
-  console.log('assessments:', assessments);
-
-  const initialQuizzes = [];
-  const [quizzes, setQuizzes] = useState(unit?.quizzes || initialQuizzes);
-  const [formMode, setFormMode] = useState(null);
+  const initialAssessments = filteredUnit?.assessments || [];
+  const [assessments, setAssessments] = useState(initialAssessments);
+  const [formMode, setFormMode] = useState(null); // 'add', 'update', or null
+  const [questionMode, setQuestionMode] = useState(null); // 'addQuestions', 'editQuestions', or null
   const [formData, setFormData] = useState({
     unit: unit.unitId,
     title: '',
@@ -26,247 +25,272 @@ const QuizzesTab = ({ unit }) => {
     passPercentage: '',
     dueDate: '',
     totalMarks: '',
-    caMarksPercetage: '',
+    caMarksPercentage: '', // Fixed typo
     timePeriod: '',
-    questionsCount: '',
-    questions: [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }]
+    questionsCount: '1',
+    questions: [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
   });
   const [formErrors, setFormErrors] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [questionPage, setQuestionPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
-  const [showErrorTooltip, setShowErrorTooltip] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [marksDistribution, setMarksDistribution] = useState('individual');
-  const [isQuizComplete, setIsQuizComplete] = useState(false);
-  const [showQuizModel, setShowQuizModel] = useState(false);
-  const [allowpassPercentage, setAllowpassPercentage] = useState('yes');
   const [showQuestionDetailsModal, setShowQuestionDetailsModal] = useState(false);
   const [showQuestionPreviewModal, setShowQuestionPreviewModal] = useState(false);
+  const [marksDistribution, setMarksDistribution] = useState('individual');
+  const [allowPassPercentage, setAllowPassPercentage] = useState('yes');
   const quizzesPerPage = 5;
 
-  const checkQuizCompletion = () => {
-    const questionsCount = parseInt(formData.questionsCount) || 1;
-    if (questionsCount <= 0) {
-      setIsQuizComplete(false);
-      return false;
-    }
-    const allQuestionsComplete = formData.questions
-      .slice(0, questionsCount)
-      .every((q, index) => {
-        const isComplete = q.text.trim() !== "" && q.options.every((o) => o.trim() !== "");
-        console.log(`Question ${index + 1} complete:`, isComplete, q);
-        return isComplete;
-      });
-    console.log("All questions complete:", allQuestionsComplete, "Question count:", questionsCount);
-    setIsQuizComplete(allQuestionsComplete);
-    return allQuestionsComplete;
-  };
-
+  // Validate form fields
   const validateForm = () => {
     const errors = {};
     if (!formData.title) errors.title = "Quiz Title is required";
     if (!formData.instructions) errors.instructions = "Instructions is required";
-    if (allowpassPercentage === "yes" && !formData.passPercentage) errors.passPercentage = "Passing Score is required";
+    if (allowPassPercentage === "yes" && !formData.passPercentage) errors.passPercentage = "Passing Score is required";
     if (!formData.dueDate) errors.dueDate = "Due Date is required";
     if (!formData.totalMarks) errors.totalMarks = "Total Marks is required";
-    if (!formData.caMarksPercetage) errors.caMarksPercetage = "CA Marks Percentage is required";
+    if (!formData.caMarksPercentage) errors.caMarksPercentage = "CA Marks Percentage is required";
     if (!formData.timePeriod) errors.timePeriod = "Time Period is required";
-    if (!formData.questionsCount) errors.questionsCount = "Question Count is required";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (!formData.questionsCount || formData.questionsCount <= 0) errors.questionsCount = "Question Count is required and must be greater than 0";
+    return errors;
   };
 
+  // Calculate total marks from questions
   const calculateTotalQuestionMarks = () => {
-    const validquestionsCount = Math.min(Number(formData.questionsCount) || 0, formData.questions.length);
+    const validQuestionsCount = Math.min(Number(formData.questionsCount) || 0, formData.questions.length);
     return formData.questions
-      .slice(0, validquestionsCount)
+      .slice(0, validQuestionsCount)
       .reduce((sum, q) => sum + (Number(q.marks) || 0), 0);
   };
 
+  // Check if all questions are complete
+  const checkQuizCompletion = () => {
+    const questionsCount = parseInt(formData.questionsCount) || 1;
+    if (questionsCount <= 0) return false;
+    return formData.questions
+      .slice(0, questionsCount)
+      .every((q) => q.text.trim() && q.options.every((o) => o.trim()) && q.marks);
+  };
+
+  // Handle input changes for form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updatedFormData = { ...prev, [name]: value };
       if (name === "questionsCount" && value !== "") {
-        const count = parseInt(value);
-        if (!isNaN(count) && count > 0) {
-          updatedFormData.questions = Array.from({ length: count }, (_, i) => ({
-            text: prev.questions[i]?.text || '',
-            options: prev.questions[i]?.options || ['', '', '', ''],
-            correctOption: prev.questions[i]?.correctOption || 0,
-            marks: prev.questions[i]?.marks || ''
-          }));
-          setQuestionPage(prevPage => Math.min(prevPage, count));
-        } else {
-          updatedFormData.questions = [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }];
-          setQuestionPage(1);
-        }
+        const count = parseInt(value) || 1;
+        updatedFormData.questions = Array.from({ length: count }, (_, i) => (
+          prev.questions[i] || { text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }
+        ));
+        setQuestionPage((prevPage) => Math.min(prevPage, count));
       }
       return updatedFormData;
     });
-    setFormErrors(prev => ({ ...prev, [name]: '' }));
-    setShowErrorTooltip(false);
+    setFormErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      setShowErrorTooltip(true);
-      setToast({ message: 'Please fill all required fields', type: 'error', visible: true });
-      return;
-    }
-    try {
-      console.log('Submitting:', formData);
-      const response = await addAssessments(formData);
-      console.log('API Response:', response);
-      setQuizzes(prev => [...prev, { ...formData, id: response.id || Date.now().toString(), answeredStudents: 0 }]);
-      setToast({ message: 'Quiz added successfully', type: 'success', visible: true });
-      handleCancel();
-    } catch (error) {
-      console.error('API Error:', error);
-      setToast({ message: 'Failed to add quiz', type: 'error', visible: true });
-    }
-  };
-
+  // Handle question changes in QuestionDetailsModal
   const handleQuestionChange = (field, value, index = null) => {
     const newQuestions = [...formData.questions];
-    const validquestionsCount = Math.min(Number(formData.questionsCount) || 1, newQuestions.length); // Default to 1 if questionsCount is invalid
     const currentIndex = questionPage - 1;
-
-    console.log('handleQuestionChange:', { field, value, index, validquestionsCount, currentIndex, questionsCount: formData.questionsCount });
-
-    if (currentIndex >= validquestionsCount) {
-      setToast({ message: 'Invalid question page selected', type: 'error', visible: true });
-      return;
-    }
-
     const currentQ = newQuestions[currentIndex] || {
       text: '', options: ['', '', '', ''], correctOption: 0, marks: ''
     };
 
     if (field === 'options') {
-      const newOptions = [...currentQ.options];
-      newOptions[index] = value;
-      currentQ.options = newOptions;
-      setFormErrors(prev => ({ ...prev, [`question${currentIndex}Option${index}`]: '' }));
+      currentQ.options[index] = value;
+      setFormErrors((prev) => ({ ...prev, [`question${currentIndex}Option${index}`]: '' }));
     } else if (field === 'correctOption') {
       currentQ.correctOption = parseInt(value);
     } else {
       currentQ[field] = value;
-      setFormErrors(prev => ({ ...prev, [`${field}${currentIndex}`]: '' }));
+      setFormErrors((prev) => ({ ...prev, [`${field}${currentIndex}`]: '' }));
     }
     newQuestions[currentIndex] = currentQ;
-    setFormData(prev => ({ ...prev, questions: newQuestions }));
-    setShowErrorTooltip(false);
+    setFormData((prev) => ({ ...prev, questions: newQuestions }));
   };
 
-  const handleSaveQuiz = () => {
-    if (!validateForm()) {
-      setShowErrorTooltip(true);
+  // Add new assessment
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       setToast({ message: 'Please fill all required fields', type: 'error', visible: true });
       return;
     }
 
-    if (allowpassPercentage === 'yes' && (isNaN(formData.passPercentage) || formData.passPercentage < 0 || formData.passPercentage > 100)) {
-      setShowErrorTooltip(true);
+    if (allowPassPercentage === 'yes' && (isNaN(formData.passPercentage) || formData.passPercentage < 0 || formData.passPercentage > 100)) {
       setToast({ message: 'Invalid Passing Score', type: 'error', visible: true });
       return;
     }
-    if (isNaN(formData.totalMarks) || formData.totalMarks <= 0 || isNaN(formData.caMarksPercetage) || formData.caMarksPercetage < 0 || formData.caMarksPercetage > 100) {
-      setShowErrorTooltip(true);
-      setToast({ message: 'Invalid numerical values', type: 'error', visible: true });
+
+    if (marksDistribution === 'individual' && !checkQuizCompletion()) {
+      setToast({ message: 'Please complete all questions', type: 'error', visible: true });
       return;
     }
 
-    if (marksDistribution === 'individual') {
-      const totalQuestionMarks = calculateTotalQuestionMarks();
-      if (totalQuestionMarks > Number(formData.totalMarks)) {
-        setShowErrorTooltip(true);
-        setToast({ message: `Total question marks (${totalQuestionMarks}) exceed quiz total marks (${formData.totalMarks})`, type: 'error', visible: true });
-        return;
-      }
+    setIsLoading(true);
+    try {
+      const quizData = {
+        ...formData,
+        passPercentage: allowPassPercentage === 'yes' ? Number(formData.passPercentage) : null,
+        totalMarks: Number(formData.totalMarks),
+        caMarksPercentage: Number(formData.caMarksPercentage),
+        questionsCount: Number(formData.questionsCount),
+        questions: formData.questions
+          .slice(0, Number(formData.questionsCount))
+          .map((q) => ({
+            ...q,
+            correctOption: Number(q.correctOption),
+            marks: marksDistribution === 'total' ? Number(formData.totalMarks) / Number(formData.questionsCount) : Number(q.marks),
+          })),
+      };
+      const response = await addAssessments(quizData);
+      setAssessments((prev) => [...prev, { ...quizData, id: response.id || response._id, answeredStudents: 0 }]); // Fallback to _id
+      setToast({ message: 'Quiz added successfully', type: 'success', visible: true });
+      handleCancel();
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to add quiz', type: 'error', visible: true });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update existing assessment
+  const handleSaveQuiz = async () => {
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setToast({ message: 'Please fill all required fields', type: 'error', visible: true });
+      return;
+    }
+
+    if (allowPassPercentage === 'yes' && (isNaN(formData.passPercentage) || formData.passPercentage < 0 || formData.passPercentage > 100)) {
+      setToast({ message: 'Invalid Passing Score', type: 'error', visible: true });
+      return;
+    }
+
+    if (marksDistribution === 'individual' && calculateTotalQuestionMarks() > Number(formData.totalMarks)) {
+      setToast({ message: `Total question marks exceed quiz total marks`, type: 'error', visible: true });
+      return;
     }
 
     setIsLoading(true);
-    const updatedQuiz = {
-      id: formMode,
-      ...formData,
-      passPercentage: allowpassPercentage === 'yes' ? Number(formData.passPercentage) : null,
-      totalMarks: Number(formData.totalMarks),
-      caMarksPercetage: Number(formData.caMarksPercetage),
-      questionsCount: Number(formData.questionsCount),
-      questions: formData.questions
-        .slice(0, Number(formData.questionsCount))
-        .map(q => ({
-          ...q,
-          correctOption: Number(q.correctOption),
-          marks: marksDistribution === 'total' ? Number(formData.totalMarks) / Number(formData.questionsCount) : Number(q.marks)
-        })),
-      answeredStudents: formData.answeredStudents || 0
-    };
-    setQuizzes(prev => prev.map(q => (q.id === formMode ? updatedQuiz : q)));
-    handleCancel();
-    setToast({ message: 'Quiz updated successfully', type: 'success', visible: true });
-    setIsLoading(false);
+    try {
+      const quizData = {
+        ...formData,
+        passPercentage: allowPassPercentage === 'yes' ? Number(formData.passPercentage) : null,
+        totalMarks: Number(formData.totalMarks),
+        caMarksPercentage: Number(formData.caMarksPercentage),
+        questionsCount: Number(formData.questionsCount),
+        questions: formData.questions
+          .slice(0, Number(formData.questionsCount))
+          .map((q) => ({
+            ...q,
+            correctOption: Number(q.correctOption),
+            marks: marksDistribution === 'total' ? Number(formData.totalMarks) / Number(formData.questionsCount) : Number(q.marks),
+          })),
+      };
+      await updateAssessment(formData.id, quizData);
+      setAssessments((prev) => prev.map((q) => (q.id === formData.id ? { ...quizData, id: formData.id, answeredStudents: q.answeredStudents || 0 } : q)));
+      setToast({ message: 'Quiz updated successfully', type: 'success', visible: true });
+      handleCancel();
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to update quiz', type: 'error', visible: true });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditQuiz = quiz => {
-    console.log('handleEditQuiz called with quiz:', quiz);
-    setFormMode(quiz.id);
-    setFormData({
-      ...quiz,
-      questionsCount: quiz.questionsCount || quiz.questions?.length || '1', // Ensure questionsCount is set
-      questions: quiz.questions || [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }]
-    });
-    setAllowpassPercentage(quiz.passPercentage !== null ? 'yes' : 'no');
+  // Handle adding questions
+  const handleAddQuestions = (quizId = null) => {
+    setFormMode(quizId ? quizId : 'add');
+    setQuestionMode('addQuestions');
+    if (quizId) {
+      const quiz = assessments.find((q) => q.id === quizId || q._id === quizId); // Fallback to _id
+      setFormData({
+        ...formData,
+        id: quizId,
+        questionsCount: quiz.questionsCount || quiz.questions?.length || '1',
+        questions: quiz.questions || [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
+      });
+    }
     setQuestionPage(1);
     setShowQuestionDetailsModal(true);
-    checkQuizCompletion();
   };
 
-  const handleAddQuestions = quiz => {
-    console.log('handleAddQuestions called with quiz:', quiz);
-    setFormMode(quiz.id);
-    setFormData({
-      ...formData, // Preserve existing form data for 'Add Your Question' button
-      ...quiz,
-      questionsCount: quiz.questionsCount || quiz.questions?.length || '1', // Default to 1 if not set
-      questions: quiz.questions || [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }]
-    });
-    setAllowpassPercentage(quiz.passPercentage !== null ? 'yes' : 'no');
-    setQuestionPage(1);
-    setShowQuestionDetailsModal(true);
-    checkQuizCompletion();
+  // Handle editing quiz
+  const handleEditQuiz = async (quiz) => {
+    const quizId = quiz.id || quiz._id; // Fallback to _id if id is missing
+    console.log("Editing quiz:", quiz); // Debug log
+    if (!quizId) {
+      setToast({ message: 'Invalid quiz ID', type: 'error', visible: true });
+      return;
+    }
+
+    setFormMode('update');
+    try {
+      console.log("Fetching questions for quiz ID:", quizId); // Debug log
+      const response = await getQuestionsByQuizId(quizId); // Use quizId
+      console.log("Fetched questions response:", response); // Debug log
+      const questions = response.success ? response.data : [];
+      setFormData({
+        ...quiz,
+        questionsCount: quiz.questionsCount || questions.length || '1',
+        questions: questions.length ? questions : [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
+      });
+      setAllowPassPercentage(quiz.passPercentage !== null ? 'yes' : 'no');
+      setMarksDistribution(quiz.questions?.some((q) => q.marks) ? 'individual' : 'total');
+      setQuestionPage(1);
+    } catch (error) {
+      console.error("Error fetching questions:", error); // Debug log
+      setToast({ message: 'Failed to load quiz questions', type: 'error', visible: true });
+      setFormData((prev) => ({
+        ...prev,
+        questionsCount: '1',
+        questions: [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
+      }));
+    }
   };
 
-  const handlePreviewQuestions = quiz => {
-    console.log('handlePreviewQuestions called with quiz:', quiz);
+  // Handle deleting quiz
+  const handleDeleteQuiz = async (quizId) => {
+    const idToDelete = assessments.find((q) => q.id === quizId || q._id === quizId)?.id || quizId; // Fallback to _id
+    setIsLoading(true);
+    try {
+      await deleteAssessment(idToDelete);
+      setAssessments((prev) => prev.filter((q) => q.id !== idToDelete && q._id !== idToDelete));
+      setToast({ message: 'Quiz deleted successfully', type: 'success', visible: true });
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to delete quiz', type: 'error', visible: true });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle previewing questions
+  const handlePreviewQuestions = (quiz) => {
     setFormData({
       ...quiz,
-      questionsCount: quiz.questionsCount || quiz.questions?.length || '1', // Ensure questionsCount is set
-      questions: quiz.questions || [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }]
+      questionsCount: quiz.questionsCount || quiz.questions?.length || '1',
+      questions: quiz.questions || [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
     });
     setQuestionPage(1);
     setShowQuestionPreviewModal(true);
   };
 
-  const handleDeleteQuiz = quizId => {
-    setIsLoading(true);
-    setQuizzes(prev => prev.filter(q => q.id !== quizId));
-    setToast({ message: 'Quiz deleted successfully', type: 'success', visible: true });
-    setIsLoading(false);
+  // Handle view history
+  const handleViewHistory = (quizId) => {
+    const idToUse = assessments.find((q) => q.id === quizId || q._id === quizId)?.id || quizId; // Fallback to _id
+    navigate(`/student-history/${idToUse}`);
   };
 
-  const handleViewHistory = quizId => {
-    navigate(`/student-history/${quizId}`);
-  };
-
+  // Reset form and modals
   const handleCancel = () => {
     setFormMode(null);
+    setQuestionMode(null);
     setFormData({
       unit: unit.unitId,
       title: '',
@@ -276,46 +300,46 @@ const QuizzesTab = ({ unit }) => {
       passPercentage: '',
       dueDate: '',
       totalMarks: '',
-      caMarksPercetage: '',
+      caMarksPercentage: '', 
       timePeriod: '',
-      questionsCount: '',
-      questions: [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }]
+      questionsCount: '1',
+      questions: [{ text: '', options: ['', '', '', ''], correctOption: 0, marks: '' }],
     });
     setFormErrors({});
-    setShowErrorTooltip(false);
-    setIsQuizComplete(false);
-    setShowQuizModel(false);
+    setQuestionPage(1);
     setShowQuestionDetailsModal(false);
     setShowQuestionPreviewModal(false);
     setMarksDistribution('individual');
-    setAllowpassPercentage('yes');
+    setAllowPassPercentage('yes');
   };
 
+  // Update form data
+  const updateFormData = (updatedData) => {
+    setFormData((prev) => ({ ...prev, ...updatedData }));
+  };
+
+  // Handle question page navigation
   const totalQuestionPages = parseInt(formData.questionsCount) || 1;
   const currentQuestion = formData.questions[questionPage - 1] || {
     text: '', options: ['', '', '', ''], correctOption: 0, marks: ''
   };
+  const handleQuestionPageChange = (page) => setQuestionPage(page);
+  const handleNextQuestionPage = () => questionPage < totalQuestionPages && setQuestionPage(questionPage + 1);
+  const handlePreviousQuestionPage = () => questionPage > 1 && setQuestionPage(questionPage - 1);
 
-  const handleQuestionPageChange = page => setQuestionPage(page);
-  const handleNextQuestionPage = () => questionPage < totalQuestionPages ? setQuestionPage(questionPage + 1) : null;
-  const handlePreviousQuestionPage = () => questionPage > 1 ? setQuestionPage(questionPage - 1) : null;
-
-  const updateFormData = updatedData => {
-    setFormData(prev => ({ ...prev, ...updatedData }));
-  };
-
+  // Toast auto-dismiss
   useEffect(() => {
     if (toast.visible) {
-      const timer = setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+      const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
       return () => clearTimeout(timer);
     }
   }, [toast.visible]);
 
+  // Sync assessments with Redux store
   useEffect(() => {
-    console.log('showQuestionDetailsModal:', showQuestionDetailsModal);
-    console.log('formMode:', formMode);
-    console.log('formData:', formData);
-  }, [showQuestionDetailsModal, formMode, formData]);
+    console.log("Assessments:", filteredUnit?.assessments || []); // Debug log
+    setAssessments(filteredUnit?.assessments || []);
+  }, [filteredUnit]);
 
   return (
     <div className='bg-gray-50 p-6 rounded-lg w-full'>
@@ -397,12 +421,12 @@ const QuizzesTab = ({ unit }) => {
               <div>
                 <label className='block text-sm font-medium text-neutral-700 mb-1'>Allow Passing Score</label>
                 <select
-                  value={allowpassPercentage}
-                  onChange={e => {
-                    setAllowpassPercentage(e.target.value);
+                  value={allowPassPercentage}
+                  onChange={(e) => {
+                    setAllowPassPercentage(e.target.value);
                     if (e.target.value === 'no') {
-                      setFormData(prev => ({ ...prev, passPercentage: '' }));
-                      setFormErrors(prev => ({ ...prev, passPercentage: '' }));
+                      setFormData((prev) => ({ ...prev, passPercentage: '' }));
+                      setFormErrors((prev) => ({ ...prev, passPercentage: '' }));
                     }
                   }}
                   className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2'
@@ -412,7 +436,7 @@ const QuizzesTab = ({ unit }) => {
                   <option value='no'>Not Allow</option>
                 </select>
               </div>
-              {allowpassPercentage === 'yes' && (
+              {allowPassPercentage === 'yes' && (
                 <div>
                   <label htmlFor='passPercentage' className='block text-sm font-medium text-neutral-700 mb-1'>Passing Score (%)</label>
                   <input
@@ -459,20 +483,20 @@ const QuizzesTab = ({ unit }) => {
                 {formErrors.totalMarks && <p className='mt-1 text-sm text-red-600'>{formErrors.totalMarks}</p>}
               </div>
               <div>
-                <label htmlFor='caMarksPercetage' className='block text-sm font-medium text-neutral-700 mb-1'>CA Marks Percentage (%)</label>
+                <label htmlFor='caMarksPercentage' className='block text-sm font-medium text-neutral-700 mb-1'>CA Marks Percentage (%)</label>
                 <input
-                  id='caMarksPercetage'
-                  name='caMarksPercetage'
+                  id='caMarksPercentage'
+                  name='caMarksPercentage'
                   type='number'
                   min='0'
                   max='100'
-                  value={formData.caMarksPercetage}
+                  value={formData.caMarksPercentage}
                   onChange={handleInputChange}
                   className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2'
                   placeholder='e.g., 20'
                   aria-label='CA Marks Percentage'
                 />
-                {formErrors.caMarksPercetage && <p className='mt-1 text-sm text-red-600'>{formErrors.caMarksPercetage}</p>}
+                {formErrors.caMarksPercentage && <p className='mt-1 text-sm text-red-600'>{formErrors.caMarksPercentage}</p>}
               </div>
               <div>
                 <label htmlFor='timePeriod' className='block text-sm font-medium text-neutral-700 mb-1'>Time Period</label>
@@ -507,7 +531,7 @@ const QuizzesTab = ({ unit }) => {
                 <label className='block text-sm font-medium text-neutral-700 mb-1'>Marks Distribution</label>
                 <select
                   value={marksDistribution}
-                  onChange={e => setMarksDistribution(e.target.value)}
+                  onChange={(e) => setMarksDistribution(e.target.value)}
                   className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 p-2'
                   aria-label='Marks distribution type'
                 >
@@ -517,50 +541,15 @@ const QuizzesTab = ({ unit }) => {
               </div>
             </div>
 
-            <QuestionDetailsModal
-              isOpen={showQuestionDetailsModal}
-              onClose={() => setShowQuestionDetailsModal(false)}
-              questionPage={questionPage}
-              totalQuestionPages={totalQuestionPages}
-              currentQuestion={currentQuestion}
-              handleQuestionChange={handleQuestionChange}
-              formErrors={formErrors}
-              marksDistribution={marksDistribution}
-              handlePreviousQuestionPage={handlePreviousQuestionPage}
-              handleNextQuestionPage={handleNextQuestionPage}
-              handleQuestionPageChange={handleQuestionPageChange}
-              formData={formData}
-              updateFormData={updateFormData}
-            />
-
-            {isQuizComplete && (
-              <QuizPreview
-                quizData={formData}
-                marksDistribution={marksDistribution}
-                isOpen={showQuizModel}
-                onClose={() => setShowQuizModel(false)}
-              />
-            )}
-
             <div className='flex justify-end space-x-4 mt-6'>
               <button
-                onClick={() => handleAddQuestions(formData)} // Use current formData
+                onClick={() => handleAddQuestions(formData.id)}
                 className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={isLoading}
-                aria-label='Edit Questions'
+                aria-label='Add Questions'
               >
                 Add Your Question
               </button>
-              {isQuizComplete && (
-                <button
-                  onClick={() => setShowQuizModel(true)}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={isLoading}
-                  aria-label='Live Preview Quiz'
-                >
-                  Live Preview
-                </button>
-              )}
               <button
                 onClick={formMode === 'add' ? handleSubmit : handleSaveQuiz}
                 className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -578,7 +567,7 @@ const QuizzesTab = ({ unit }) => {
                 Cancel
               </button>
             </div>
-            {showErrorTooltip && (
+            {Object.keys(formErrors).length > 0 && (
               <div className='mt-2 text-red-600 text-xs italic'>
                 Please fill all fields correctly
               </div>
@@ -587,13 +576,30 @@ const QuizzesTab = ({ unit }) => {
         </div>
       )}
 
+      <QuestionDetailsModal
+        isOpen={showQuestionDetailsModal}
+        onClose={() => setShowQuestionDetailsModal(false)}
+        questionPage={questionPage}
+        totalQuestionPages={totalQuestionPages}
+        currentQuestion={currentQuestion}
+        handleQuestionChange={handleQuestionChange}
+        formErrors={formErrors}
+        marksDistribution={marksDistribution}
+        handlePreviousQuestionPage={handlePreviousQuestionPage}
+        handleNextQuestionPage={handleNextQuestionPage}
+        handleQuestionPageChange={handleQuestionPageChange}
+        formData={formData}
+        updateFormData={updateFormData}
+        questionMode={questionMode}
+      />
+
       {!formMode && (
         <>
           <div className='mb-6'>
             <input
               type='text'
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder='Search by title...'
               className='p-2 border rounded-md w-full md:w-1/3 mb-4 focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400'
               aria-label='Search quizzes'
@@ -614,9 +620,10 @@ const QuizzesTab = ({ unit }) => {
                 </thead>
                 <tbody>
                   {assessments
+                    .filter((quiz) => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
                     .slice((currentPage - 1) * quizzesPerPage, currentPage * quizzesPerPage)
                     .map((quiz) => (
-                      <tr key={quiz.id} className="border-t hover:bg-gray-50 transition-all duration-200">
+                      <tr key={quiz.id || quiz._id} className="border-t hover:bg-gray-50 transition-all duration-200">
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-900'>{quiz.title}</td>
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-600'>
                           {quiz.dueDate && !isNaN(new Date(quiz.dueDate).getTime())
@@ -629,9 +636,9 @@ const QuizzesTab = ({ unit }) => {
                         <td className='py-4 px-4 text-center align-middle text-sm text-neutral-600'>{quiz.totalMarks}</td>
                         <td className='py-4 px-4 text-sm text-neutral-600'>
                           <div className='flex items-center justify-center space-x-2'>
-                            <span>{quiz.answeredStudents}</span>
+                            <span>{quiz.answeredStudents || 0}</span>
                             <button
-                              onClick={() => handleViewHistory(quiz.id)}
+                              onClick={() => handleViewHistory(quiz.id || quiz._id)}
                               className='h-8 w-8 flex items-center justify-center hover:bg-green-200 text-green-600 bg-green-100 rounded-full focus:outline-none transition-all duration-200'
                               aria-label={`View history for quiz ${quiz.title}`}
                             >
@@ -642,7 +649,7 @@ const QuizzesTab = ({ unit }) => {
                         <td className='py-4 px-4 text-sm'>
                           <div className='flex justify-center items-center space-x-2'>
                             <button
-                              onClick={() => handleAddQuestions(quiz)}
+                              onClick={() => handleAddQuestions(quiz.id || quiz._id)}
                               disabled={isLoading}
                               className={`p-2 rounded-full hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                               aria-label={`Add questions to quiz ${quiz?.title || 'unknown'}`}
@@ -669,7 +676,7 @@ const QuizzesTab = ({ unit }) => {
                               <Eye className='w-5 h-5' />
                             </button>
                             <button
-                              onClick={() => handleDeleteQuiz(quiz.id)}
+                              onClick={() => handleDeleteQuiz(quiz.id || quiz._id)}
                               disabled={isLoading}
                               className={`p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-800 transition duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                               aria-label={`Delete quiz ${quiz?.title || 'unknown'}`}
@@ -688,7 +695,7 @@ const QuizzesTab = ({ unit }) => {
             <p className="text-neutral-600 text-sm text-center">No quizzes available. Add a quiz to get started.</p>
           )}
 
-          {quizzes.length > quizzesPerPage && (
+          {assessments.length > quizzesPerPage && (
             <div className='mt-6 flex justify-center items-center space-x-2'>
               <button
                 onClick={() => setCurrentPage(currentPage - 1)}
@@ -698,7 +705,7 @@ const QuizzesTab = ({ unit }) => {
               >
                 Back
               </button>
-              {Array.from({ length: Math.ceil(quizzes.length / quizzesPerPage) }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: Math.ceil(assessments.length / quizzesPerPage) }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
@@ -711,7 +718,7 @@ const QuizzesTab = ({ unit }) => {
               ))}
               <button
                 onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === Math.ceil(quizzes.length / quizzesPerPage)}
+                disabled={currentPage === Math.ceil(assessments.length / quizzesPerPage)}
                 className='px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed'
                 aria-label='Next page'
               >
@@ -726,13 +733,10 @@ const QuizzesTab = ({ unit }) => {
         isOpen={showQuestionPreviewModal}
         onClose={() => {
           setShowQuestionPreviewModal(false);
-          setSelectedOption(null);
         }}
         questionPage={questionPage}
         currentQuestion={currentQuestion}
         marksDistribution={marksDistribution}
-        selectedOption={selectedOption}
-        setSelectedOption={setSelectedOption}
         formData={formData}
       />
     </div>

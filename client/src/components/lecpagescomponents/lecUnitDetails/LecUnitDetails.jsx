@@ -8,6 +8,8 @@ import QuizzesTab from "./QuizzesTab";
 import DiscussionsTab from "./DiscussionsTab";
 import AssignmentsTab from "./AssignmentsTab";
 import OnlineSessionTab from "./OnlineSessionTab";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "../../../redux/store-config/store";
 
 // Defining the LecUnitDetails component to display unit details as a full page
 const LecUnitDetails = () => {
@@ -17,10 +19,15 @@ const LecUnitDetails = () => {
   const [isLoading, setIsLoading] = useState(true); // State to manage loading
   const [activeTab, setActiveTab] = useState("overview"); // State for active tab
 
+
+
   // =====================================================================================
-  // const unitsByInstructor = useSelector((state) => state.units.units.byInstructor);
+  // const unit = useSelector((state) => state.units.units.byInstructor.data);
+  // const unit = useSelector((state) => state.units.units.byInstructor.data) || [];
   // const dispatch = useAppDispatch();
   // ======================================================================================
+
+    console.log('Unit Details : ', unit)
 
   // Simulating content load with a delay
   useEffect(() => {

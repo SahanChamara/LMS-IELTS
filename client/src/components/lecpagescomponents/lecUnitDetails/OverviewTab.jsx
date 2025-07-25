@@ -6,11 +6,11 @@ const OverviewTab = ({ unit }) => {
   const [isEditing, setIsEditing] = useState(false);
   // State for unit details, with defaults if undefined
   const [formData, setFormData] = useState({
-    code: unit.code || "CS101",
+    code: unit.unitCode || "CS101",
     credits: unit.credits || 4.25,
     duration: unit.duration || "8 Weeks",
     description: unit.description || "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
-    instructorName: unit.instructor?.name || "Sahan",
+    instructorName: unit.instructor?.name || "Test",
     profileImage: unit.instructor?.profileImage || null,
   });
   // State for selected image file (for upload)
@@ -59,7 +59,7 @@ const OverviewTab = ({ unit }) => {
     setSelectedFile(null);
     // Revert to original unit data
     setFormData({
-      code: unit.code || "CS101",
+      code: unit.unitCode || "CS101",
       credits: unit.credits || 4.25,
       duration: unit.duration || "8 Weeks",
       description: unit.description || "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",

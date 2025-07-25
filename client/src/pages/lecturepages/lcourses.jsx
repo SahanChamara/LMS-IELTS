@@ -27,13 +27,8 @@ const Leccorces = () => {
         try {
           setLoading(true);
            const response = await dispatch(getUnitByInstructorIdAPI(localStorage.getItem("user"))).unwrap();
-          //  console.log(localStorage.getItem("user")).unwrap()
-          //  console.log("::: -> Unit Response ",response);
-           
-  
           let fetchedUnits = [];
           if (Array.isArray(response)) {
-            //console.log(response.data._id);
             fetchedUnits = response.map((unit, index) => ({
               unitId: unit.id || `unit-${index}`,
               title: unit.title || "Untitled",
@@ -41,6 +36,9 @@ const Leccorces = () => {
               unitCode: unit.unitCode,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
+              instructor: unit.instructor || "Unknown",
+              assessments: unit.assessments || [],
+              quizzes: unit.quizzes || [],
             }));
           } else if (response && response.data && Array.isArray(response.data)) {
             fetchedUnits = response.data.map((unit, index) => ({
@@ -50,6 +48,9 @@ const Leccorces = () => {
               unitCode: unit.unitCode,
               credits: unit.credits || 0,
               image: unit.image || "default-image.jpg",
+              instructor: unit.instructor || "Unknown",
+              assessments: unit.assessments || [],
+              quizzes: unit.quizzes || [],
             }));
           }else {
             throw new Error("Unexpected response format");
@@ -216,12 +217,8 @@ const Leccorces = () => {
   const handleAccessUnit = (unit) => {
     navigate(`/unit/lecture/${unit.unitId}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
-  console.log(":::::--->", units)
-  // console.log("UNITS Redux : ", unitss)
-  // const state = store.getState();
-//   const state = store.getState();
-// console.log(state.units);
-console.log(unitsByInstructor);
+  console.log("Units By Instructor ID : ", units)
+
 
   // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {

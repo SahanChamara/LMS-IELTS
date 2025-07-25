@@ -32,3 +32,24 @@ export const getAssessmentsByUnitId = async (unitId) => {
   };
   return ApiService.callApi(apiObject);
 };
+
+export const deleteAssessment = async (unitId) => {
+  const apiObject = {
+    method: "DELETE",
+    withCredentials: true,
+    prefix: `assessments/${unitId}`,
+    endpoint: `${unitId}`,
+  };
+  return ApiService.callApi(apiObject);
+};
+
+export const updateAssessment = async (id, updatedData) => {
+  const apiObject = {
+    method: "PUT",
+    withCredentials: true,
+    prefix: "assessments",
+    endpoint: `${id}`,
+    body: updatedData,
+  };
+  return ApiService.callApi(apiObject);
+};

@@ -31,3 +31,20 @@ export async function postAssessmentMarks(data) {
     throw error;
   }
 }
+
+//=========================================================================
+export async function getQuestionsByQuizId(id) {
+  try {
+    const apiObject = {
+      method: "GET",
+      withCredentials: true,
+      prefix: "",
+      endpoint: `quiz/assessment/${id}`,
+    };
+    return await ApiService.callApi(apiObject);
+  } catch (error) {
+    console.error("getQuestionsByUnitId error:", error.message);
+    throw error;
+  }
+}
+//=========================================================================
