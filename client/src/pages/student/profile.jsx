@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import Card, { CardContent } from "../../components/Card";
 import { Settings } from "lucide-react";
+import { getStudentById, getStudentEnrolledCourse, updateStudent } from "../../service/profileService";
 
 // Reusable Toggle Switch
-const CustomSwitch = ({ defaultChecked = false, label }) => (
+const CustomSwitch = ({ checked, onChange, label }) => (
   <div className="flex items-center justify-between">
     <p className="text-base text-gray-700">{label}</p>
     <input
       type="checkbox"
-      defaultChecked={defaultChecked}
+      checked={checked}
+      onChange={onChange}
       className="w-10 h-5 rounded-full bg-gray-300 checked:bg-blue-600 relative appearance-none cursor-pointer transition-all duration-300
         before:content-[''] before:absolute before:top-0.5 before:left-0.5
         before:w-4 before:h-4 before:rounded-full before:bg-white
@@ -20,35 +23,85 @@ const CustomSwitch = ({ defaultChecked = false, label }) => (
 );
 
 const Institution = () => {
-  // Static data matching the Student schema
-  const student = {
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
+  const [student, setStudent] = useState(null);
+  const [enrolledCourse, setEnrolledCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  // Fetch student data and enrolled course
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const studentId = localStorage.getItem("user");
+
+        if (!studentId) {
+          throw new Error("Not student id found in local storage");
+        }
+        console.log("Fetching data for student ID:", studentId);
+        // Fetch student data
+        const studentResponse = await getStudentById(studentId);
+        console.log("Student Data:", studentResponse);
+        if (!studentResponse.success) {
+          throw new Error(studentResponse.message);
+        }
+        setStudent(studentResponse.data);
+
+        // Fetch enrolled course
+        const courseResponse = await getStudentEnrolledCourse(studentId);
+        if (courseResponse.success) {
+          setEnrolledCourse(courseResponse.data);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching student data:", err);
+        setError(err.message);
+        navigate("/login");
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+  // Handle notification preference update
+  const handleNotificationChange = async (e) => {
+    if (!student) return;
+
+    const newPreferences = {
+      ...student.profile.preferences,
+      notifications: e.target.checked,
+    };
+
+    try {
+      const response = await updateStudent(student._id, {
         profile: {
-      photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTt-JmDfLz7ErRiTZ9vIme55A9JGQqdx8qJ_xQ_lB2UIqGAFELpsKQQ8xuTSrlqrly-tSQ&usqp=CAU",
-      phone: "+94-987-654-3210",
-      country: "Sri Lanka",
-      city: "Colombo",
-      DOB: "1998-03-22",
-      preferences: {
-        notifications: true,
-        language: "en",
-      },
-    },
-    enrolledCourse: { title: "Web Development", description: "Learn full-stack development" },
-    completedCourses: [
-      { title: "Intro to Programming", description: "Basics of coding" },
-      { title: "Data Structures", description: "Advanced algorithms" },
-    ],
-    certificates: [
-      { title: "Web Dev Certificate", issuedAt: "2025-01-01T00:00:00.000Z" },
-    ],
-    notifications: [
-      { message: "New course available", createdAt: "2025-07-20T00:00:00.000Z" },
-    ],
-    createdAt: "2025-07-25T10:00:00.000Z",
-    updatedAt: "2025-07-25T10:00:00.000Z",
+          ...student.profile,
+          preferences: newPreferences,
+        },
+      });
+
+      if (response.success) {
+        setStudent(response.data);
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (err) {
+      setError(err.message);
+    }
   };
+
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="flex h-screen items-center justify-center text-red-600">{error}</div>;
+  }
+
+  if (!student) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-white text-gray-800 overflow-hidden">
@@ -60,7 +113,7 @@ const Institution = () => {
         {/* Profile Card */}
         <Card className="flex flex-col justify-between p-6 bg-white border border-gray-200 shadow-sm min-h-[300px] relative">
           <button
-            onClick={() => window.location.href = "/settings"}
+            onClick={() => navigate("/settings")}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-blue-100 transition"
             aria-label="Edit Profile"
             title="Edit Profile"
@@ -71,7 +124,7 @@ const Institution = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Profile Overview</h3>
           </div>
           <div className="mt-auto pt-6 flex flex-col items-center gap-2">
-                       <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-white flex items-center justify-center border-4 border-white shadow-lg">
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-white flex items-center justify-center border-4 border-white shadow-lg">
               {student.profile.photo ? (
                 <img
                   src={student.profile.photo}
@@ -133,11 +186,12 @@ const Institution = () => {
             </CardContent>
           </Card>
 
-          {/* Privacy Settings */}
+          {/* Preferences */}
           <Card title="Preferences">
             <CardContent className="space-y-4 mt-4">
               <CustomSwitch
-                defaultChecked={student.profile.preferences.notifications}
+                checked={student.profile.preferences.notifications}
+                onChange={handleNotificationChange}
                 label="Enable Notifications"
               />
             </CardContent>
@@ -147,14 +201,13 @@ const Institution = () => {
           <Card title="Enrolled Course">
             <CardContent className="space-y-3 mt-2">
               <p className="text-gray-700">
-                {student.enrolledCourse ? student.enrolledCourse.title : "No course enrolled"}
+                {enrolledCourse ? enrolledCourse.title : "No course enrolled"}
               </p>
-              {student.enrolledCourse && (
-                <p className="text-gray-700">Description: {student.enrolledCourse.description}</p>
+              {enrolledCourse && (
+                <p className="text-gray-700">Description: {enrolledCourse.description}</p>
               )}
             </CardContent>
           </Card>
-
         </div>
       </main>
     </div>
