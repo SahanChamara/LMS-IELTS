@@ -6,8 +6,11 @@ const StudentSchema = new Schema({
   password: { type: String, required: true },
   refreshToken: {type: String, index:true},
   profile: {
+    photo:{ type: String,},
     phone: { type: String },
-    address: { type: String },
+    country:{type:String, default:'Sri Lanka'},
+    city:{type:String, default:'Colombo'},
+    DOB:{type:String, default:'0000-00-00'},
     preferences: {
       notifications: { type: Boolean, default: true },
       language: { type: String, default: 'en' }
@@ -15,28 +18,8 @@ const StudentSchema = new Schema({
   },
   enrolledCourse: { type: Schema.Types.ObjectId, ref: 'Course' },
   completedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
-  assessments: [{
-    assessment: { type: Schema.Types.ObjectId, ref: 'Assessment' },
-    submission: { type: Schema.Types.ObjectId, ref: 'Submission' },
-    status: { type: String, enum: ['on-time', 'late', 'pending'], default: 'pending' }
-  }],
-  exams: [{
-    exam: { type: Schema.Types.ObjectId, ref: 'Exam' },
-    score: { type: Number },
-    feedback: { type: String }
-  }],
   certificates: [{ type: Schema.Types.ObjectId, ref: 'Certificate' }],
   notifications: [{ type: Schema.Types.ObjectId, ref: 'Notification' }],
-  calendarEvents: [{ type: Schema.Types.ObjectId, ref: 'CalendarEvent' }],
-  performance: {
-    overallAverage: { type: Number, default: 0 },
-    assessmentAverage: { type: Number, default: 0 },
-    examAverage: { type: Number, default: 0 },
-    progress: {
-      course: { type: Schema.Types.ObjectId, ref: 'Course' },
-      percentage: { type: Number }
-    }
-  },
   resetPasswordOTP: { type: String },
   resetPasswordExpires: { type: Number },
   createdAt: { type: Date, default: Date.now },
