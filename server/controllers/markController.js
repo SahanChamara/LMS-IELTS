@@ -1,28 +1,30 @@
 const Marks = require('../models/Marks');
 const Student = require('../models/Student');
+const Unit = require('../models/Unit');
+const Course = require('../models/Course');
 const mongoose = require('mongoose');
 
 // Create a new mark
 exports.createMark = async (req, res) => {
     try {
-        const { caMarks, examMarks, maxMarks, student } = req.body;
+        const { studentId, courseId, unit, caMarks, examMarks, grade } = req.body;
 
         // Validate required fields
-        if (maxMarks === undefined || !student) {
+        if (!studentId || !unit) {
             return res.status(400).json({
                 success: false,
-                message: 'maxMarks and student are required',
+                message: 'studentId and unit are required',
             });
         }
 
         // Validate student ID
-        if (!mongoose.Types.ObjectId.isValid(student)) {
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid student ID',
             });
         }
-        const studentExists = await Student.findById(student);
+        const studentExists = await Student.findById(studentId);
         if (!studentExists) {
             return res.status(404).json({
                 success: false,
@@ -30,51 +32,90 @@ exports.createMark = async (req, res) => {
             });
         }
 
+        // Validate unit ID
+        if (!mongoose.Types.ObjectId.isValid(unit)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid unit ID',
+            });
+        }
+        const unitExists = await Unit.findById(unit);
+        if (!unitExists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Unit not found',
+            });
+        }
+
+        // Validate course ID if provided
+        if (courseId && !mongoose.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid course ID',
+            });
+        }
+        if (courseId) {
+            const courseExists = await Course.findById(courseId);
+            if (!courseExists) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Course not found',
+                });
+            }
+        }
+
         // Validate marks if provided
-        if ((caMarks !== undefined && caMarks < 0) || (examMarks !== undefined && examMarks < 0)) {
+        if ((caMarks !== undefined && (caMarks < 0 || caMarks > 100)) || 
+            (examMarks !== undefined && (examMarks < 0 || examMarks > 100))) {
             return res.status(400).json({
                 success: false,
-                message: 'caMarks and examMarks cannot be negative',
-            });
-        }
-        if (maxMarks <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'maxMarks must be greater than 0',
+                message: 'caMarks and examMarks must be between 0 and 100',
             });
         }
 
-        // Check if a marks document exists for the student
-        let existingMarks = await Marks.findOne({ student });
+        // Calculate totalMarks
+        let totalMarks = null;
+        if (caMarks !== undefined && examMarks !== undefined) {
+            totalMarks = caMarks + examMarks;
+            if (totalMarks > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Total marks cannot exceed 100',
+                });
+            }
+        }
 
-        let newTotalMarks = existingMarks ? existingMarks.totalMarks || 0 : 0;
-        if (caMarks !== undefined) newTotalMarks += caMarks;
-        if (examMarks !== undefined) newTotalMarks += examMarks;
+        // Validate grade if provided
+        if (grade && grade.length > 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'Grade cannot exceed 5 characters',
+            });
+        }
 
+        // Check if a marks document exists for the student and unit
+        let existingMarks = await Marks.findOne({ studentId, unit });
 
-        let marks;
         if (existingMarks) {
-            // Update existing document
-            existingMarks.caMarks = caMarks !== undefined ? (existingMarks.caMarks || 0) + caMarks : existingMarks.caMarks;
-            existingMarks.examMarks = examMarks !== undefined ? (existingMarks.examMarks || 0) + examMarks : existingMarks.examMarks;
-            existingMarks.totalMarks = newTotalMarks;
-            existingMarks.maxMarks = existingMarks.maxMarks + maxMarks;
-            existingMarks.updatedAt = Date.now();
-            await existingMarks.save();
-            marks = existingMarks;
-        } else {
-            // Create new document
-            marks = new Marks({
-                caMarks,
-                examMarks,
-                totalMarks: newTotalMarks,
-                maxMarks,
-                student,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
+            return res.status(400).json({
+                success: false,
+                message: 'Marks already exist for this student and unit',
             });
-            await marks.save();
         }
+
+        // Create new document
+        const marks = new Marks({
+            studentId,
+            courseId: courseId || null,
+            unit,
+            caMarks: caMarks !== undefined ? caMarks : null,
+            examMarks: examMarks !== undefined ? examMarks : null,
+            totalMarks,
+            grade: grade || null,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+        await marks.save();
 
         res.status(201).json({ success: true, data: marks });
     } catch (error) {
@@ -90,7 +131,9 @@ exports.createMark = async (req, res) => {
 exports.getMark = async (req, res) => {
     try {
         const marks = await Marks.find()
-            .populate('student', 'name email studentId')
+            .populate('studentId', 'name email studentId')
+            .populate('courseId', 'name')
+            .populate('unit', 'name')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, data: marks });
@@ -126,8 +169,10 @@ exports.getMarkByStudentId = async (req, res) => {
         }
 
         // Fetch marks for the specified student
-        const marks = await Marks.find({ student: studentId })
-            .populate('student', 'name email studentId')
+        const marks = await Marks.find({ studentId })
+            .populate('studentId', 'name email studentId')
+            .populate('courseId', 'name')
+            .populate('unit', 'title')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, data: marks });
@@ -143,10 +188,10 @@ exports.getMarkByStudentId = async (req, res) => {
 // Get a single mark by ID
 exports.getMarkById = async (req, res) => {
     try {
-        const marks = await Marks.findById(req.params.id).populate(
-            'student',
-            'name email studentId'
-        );
+        const marks = await Marks.findById(req.params.id)
+            .populate('studentId', 'name email studentId')
+            .populate('courseId', 'name')
+            .populate('unit', 'name');
 
         if (!marks) {
             return res.status(404).json({
@@ -168,17 +213,17 @@ exports.getMarkById = async (req, res) => {
 // Update a mark
 exports.updateMark = async (req, res) => {
     try {
-        const { caMarks, examMarks, maxMarks, student } = req.body;
+        const { studentId, courseId, unit, caMarks, examMarks, grade } = req.body;
 
         // Validate student if provided
-        if (student) {
-            if (!mongoose.Types.ObjectId.isValid(student)) {
+        if (studentId) {
+            if (!mongoose.Types.ObjectId.isValid(studentId)) {
                 return res.status(400).json({
                     success: false,
                     message: 'Invalid student ID',
                 });
             }
-            const studentExists = await Student.findById(student);
+            const studentExists = await Student.findById(studentId);
             if (!studentExists) {
                 return res.status(404).json({
                     success: false,
@@ -187,54 +232,91 @@ exports.updateMark = async (req, res) => {
             }
         }
 
+        // Validate unit if provided
+        if (unit) {
+            if (!mongoose.Types.ObjectId.isValid(unit)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid unit ID',
+                });
+            }
+            const unitExists = await Unit.findById(unit);
+            if (!unitExists) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Unit not found',
+                });
+            }
+        }
+
+        // Validate course if provided
+        if (courseId) {
+            if (!mongoose.Types.ObjectId.isValid(courseId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid course ID',
+                });
+            }
+            const courseExists = await Course.findById(courseId);
+            if (!courseExists) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Course not found',
+                });
+            }
+        }
+
         // Fetch existing marks document
         const existingMarks = await Marks.findById(req.params.id);
         if (!existingMarks) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: 'Marks not found',
             });
         }
 
         // Validate marks if provided
-        if ((caMarks !== undefined && caMarks < 0) || (examMarks !== undefined && examMarks < 0)) {
+        if ((caMarks !== undefined && (caMarks < 0 || caMarks > 100)) || 
+            (examMarks !== undefined && (examMarks < 0 || examMarks > 100))) {
             return res.status(400).json({
                 success: false,
-                message: 'caMarks and examMarks cannot be negative',
-            });
-        }
-        if (maxMarks !== undefined && maxMarks <= 0) {
-            return res.status(400).json({
-                success: 'maxMarks must be greater than 0',
-                error: error
+                message: 'caMarks and examMarks must be between 0 and 100',
             });
         }
 
         // Calculate new totalMarks
-        let newTotalMarks = existingMarks.totalMarks || 0;
-        let newCaMarks = existingMarks.caMarks || 0;
-        let newExamMarks = existingMarks.examMarks || 0;
-
-        if (caMarks !== undefined) {
-            // Add new caMarks to existing caMarks
-            newCaMarks += caMarks;
-            // Update totalMarks by adding the new caMarks
-            newTotalMarks += caMarksMarks;
+        let totalMarks = existingMarks.totalMarks || null;
+        if (caMarks !== undefined && examMarks !== undefined) {
+            totalMarks = caMarks + examMarks;
+            if (totalMarks > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Total marks cannot exceed 100',
+                });
+            }
+        } else if (caMarks !== undefined && existingMarks.examMarks !== null) {
+            totalMarks = caMarks + existingMarks.examMarks;
+            if (totalMarks > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Total marks cannot exceed 100',
+                });
+            }
+        } else if (examMarks !== undefined && existingMarks.caMarks !== null) {
+            totalMarks = existingMarks.caMarks + examMarks;
+            if (totalMarks > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Total marks cannot exceed 100',
+                });
+            }
         }
 
-        if (examMarks !== undefined) {
-            // Add new examMarks to existing examMarks
-            newExamMarks += examMarks;
-            // Update totalMarks by adding the new examMarks
-            newTotalMarks += examMarks;
-        }
-
-        // Validate totalMarks does not exceed maxMarks
-        const finalMaxMarks = maxMarks !== undefined ? maxMarks : existingMarks.maxMarks;
-        if (newTotalMarks > finalMaxMarks) {
+        // Validate grade if provided
+        if (grade && grade.length > 5) {
             return res.status(400).json({
                 success: false,
-                message: 'Total marks cannot exceed maxMarks',
+                message: 'Grade cannot exceed 5 characters',
             });
         }
 
@@ -248,11 +330,13 @@ exports.updateMark = async (req, res) => {
 
         // Prepare update data
         const updateData = {
-            ...(caMarks !== undefined && { caMarks: newCaMarks }),
-            ...(examMarks !== undefined && { examMarks: newExamMarks }),
-            ...(newTotalMarks !== existingMarks.totalMarks && { totalMarks: newTotalMarks }),
-            ...(maxMarks !== undefined && { maxMarks }),
-            ...(student && { student }),
+            ...(studentId && { studentId }),
+            ...(courseId !== undefined && { courseId: courseId || null }),
+            ...(unit && { unit }),
+            ...(caMarks !== undefined && { caMarks }),
+            ...(examMarks !== undefined && { examMarks }),
+            ...(totalMarks !== null && { totalMarks }),
+            ...(grade !== undefined && { grade: grade || null }),
             updatedAt: Date.now(),
         };
 
@@ -261,7 +345,9 @@ exports.updateMark = async (req, res) => {
             req.params.id,
             { $set: updateData },
             { new: true, runValidators: true }
-        );
+        ).populate('studentId', 'name email studentId')
+         .populate('courseId', 'name')
+         .populate('unit', 'name');
 
         res.status(200).json({ success: true, data: marks });
     } catch (error) {
