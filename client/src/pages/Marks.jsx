@@ -21,7 +21,7 @@ const Institution = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="p-3 text-sm font-semibold text-gray-700">Course</th>
+                  <th className="p-3 text-sm font-semibold text-gray-700">Unit</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">CA Marks</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">Exam Marks</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">Total Marks</th>
@@ -31,7 +31,7 @@ const Institution = () => {
               <tbody>
                 {courses.map((course, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="p-3 text-sm">{course.name}</td>
+                    <td className="p-3 text-sm">{course.unit}</td>
                     <td className="p-3 text-sm">{course.caMarks || 'N/A'}</td>
                     <td className="p-3 text-sm">{course.examMarks || 'N/A'}</td>
                     <td className="p-3 text-sm">{course.totalMarks || 'N/A'}</td>

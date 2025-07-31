@@ -2,7 +2,7 @@ export const courses = [
 
   {
     id: "BUS100",
-    name: "Business Fundamentals",
+    unit: "Business Fundamentals",
     credits: 3,
     grade: "A+",
     isRepeated: false,
@@ -17,7 +17,7 @@ export const courses = [
   },
   {
     id: "ECO101",
-    name: "Economics",
+    unit: "Economics",
     credits: 3,
     grade: "B+",
     isRepeated: false,
