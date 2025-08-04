@@ -1,10 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
-import { courses, academicSummary } from "../data/marks";
 import { useNavigate } from "react-router-dom";
+import { getMarksByStudentId } from "../service/marksService";
 
 const Institution = () => {
   const navigate = useNavigate();
+  const [marks, setMarks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Replace with actual studentId from auth context or props
+        const studentId = localStorage.getItem('user'); // Example studentId from sample response
+        const marksResponse = await getMarksByStudentId(studentId);
+        setMarks(marksResponse.data || []);
+      } catch (err) {
+        setError("Failed to load academic data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-100 text-gray-800">
@@ -21,32 +44,25 @@ const Institution = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="p-3 text-sm font-semibold text-gray-700">Course</th>
+                  <th className="p-3 text-sm font-semibold text-gray-700">Unit</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">CA Marks</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">Exam Marks</th>
                   <th className="p-3 text-sm font-semibold text-gray-700">Total Marks</th>
-                  <th className="p-3 text-sm font-semibold text-gray-700">GPA</th>
+                  <th className="p-3 text-sm font-semibold text-gray-700">Grade</th>
                 </tr>
               </thead>
               <tbody>
-                {courses.map((course, idx) => (
+                {marks.map((course, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="p-3 text-sm">{course.name}</td>
-                    <td className="p-3 text-sm">{course.caMarks || 'N/A'}</td>
-                    <td className="p-3 text-sm">{course.examMarks || 'N/A'}</td>
-                    <td className="p-3 text-sm">{course.totalMarks || 'N/A'}</td>
+                    <td className="p-3 text-sm">{course.unit?.title || 'N/A'}</td>
+                    <td className="p-3 text-sm">{course.caMarks ?? 'N/A'}</td>
+                    <td className="p-3 text-sm">{course.examMarks ?? 'N/A'}</td>
+                    <td className="p-3 text-sm">{course.totalMarks ?? 'N/A'}</td>
                     <td className="p-3 text-sm font-semibold">{course.grade || 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="mt-6 flex justify-end items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 text-right">Current GPA</h3>
-              <p className="text-2xl font-bold text-blue-600 text-right">{academicSummary.finalGPA}</p>
-            </div>
           </div>
         </div>
       </main>
