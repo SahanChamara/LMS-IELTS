@@ -224,7 +224,9 @@ const QuizzesTab = ({ unit }) => {
   // Handle editing quiz
   const handleEditQuiz = async (quiz) => {
     const quizId = quiz.id || quiz._id; // Fallback to _id if id is missing
-    console.log("Editing quiz:", quiz); // Debug log
+    //=============================================================================
+    console.log("Editing assesstment & quiz:", quiz); // Debug log
+    //=============================================================================
     if (!quizId) {
       setToast({ message: 'Invalid quiz ID', type: 'error', visible: true });
       return;
@@ -232,10 +234,13 @@ const QuizzesTab = ({ unit }) => {
 
     setFormMode('update');
     try {
-      console.log("Fetching questions for quiz ID:", quizId); // Debug log
+      // console.log("Fetching questions for Assesment ID:", quizId); // Debug log
       const response = await getQuestionsByQuizId(quizId); // Use quizId
-      console.log("Fetched questions response:", response); // Debug log
       const questions = response.success ? response.data : [];
+      //=============================================================================
+      console.log("Fetched questions response:", questions); // Debug log
+      //=============================================================================
+
       setFormData({
         ...quiz,
         questionsCount: quiz.questionsCount || questions.length || '1',
@@ -323,6 +328,8 @@ const QuizzesTab = ({ unit }) => {
   const currentQuestion = formData.questions[questionPage - 1] || {
     text: '', options: ['', '', '', ''], correctOption: 0, marks: ''
   };
+  // console.log(`Current Question on Page ${questionPage}:`, currentQuestion); // Debug log
+
   const handleQuestionPageChange = (page) => setQuestionPage(page);
   const handleNextQuestionPage = () => questionPage < totalQuestionPages && setQuestionPage(questionPage + 1);
   const handlePreviousQuestionPage = () => questionPage > 1 && setQuestionPage(questionPage - 1);
@@ -345,7 +352,7 @@ const QuizzesTab = ({ unit }) => {
     <div className='bg-gray-50 p-6 rounded-lg w-full'>
       <div className='flex justify-between items-center mb-6'>
         <h3 className='text-xl font-semibold text-neutral-900'>
-          Quizzes for {unit?.title || 'Unit'}
+          Assessment for {unit?.title || 'Unit'}
         </h3>
         {!formMode && (
           <button
@@ -372,12 +379,12 @@ const QuizzesTab = ({ unit }) => {
       {formMode && (
         <div className='bg-white p-6 rounded-lg shadow-md mb-6 max-w-7xl mx-auto w-full'>
           <h4 className='text-lg font-medium text-neutral-900 mb-4'>
-            {formMode === 'add' ? 'Add New Quiz' : 'Edit Quiz'}
+            {formMode === 'add' ? 'Add New Assessment' : 'Edit Assessment'}
           </h4>
           <div className='space-y-6'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
               <div>
-                <label htmlFor='title' className='block text-sm font-medium text-neutral-700 mb-1'>Quiz Title</label>
+                <label htmlFor='title' className='block text-sm font-medium text-neutral-700 mb-1'>Assessment Title</label>
                 <input
                   id='title'
                   name='title'
@@ -648,7 +655,7 @@ const QuizzesTab = ({ unit }) => {
                         </td>
                         <td className='py-4 px-4 text-sm'>
                           <div className='flex justify-center items-center space-x-2'>
-                            <button
+                            {/* <button
                               onClick={() => handleAddQuestions(quiz.id || quiz._id)}
                               disabled={isLoading}
                               className={`p-2 rounded-full hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -656,7 +663,7 @@ const QuizzesTab = ({ unit }) => {
                               title='Add Questions'
                             >
                               <CircleFadingPlus className='w-5 h-5' />
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleEditQuiz(quiz)}
                               disabled={isLoading}
