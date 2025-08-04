@@ -6,6 +6,7 @@ import assignmentsSlice from "../features/assignmentsSlice";
 import examIeltsSlice from "../features/examIeltsSlice";
 import studentsSlice from "../features/studentSlice"
 import examIeltsSubmissionSlice from "../features/examIeltsSubmissionSlice";
+import examIeltsInstructorSlice from "../features/examIeltsInstructorSlice"
 
 const rootReducer = combineReducers({
     auth: authSlice,
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
     examIelts: examIeltsSlice,
     examIeltsSubmission: examIeltsSubmissionSlice,
     students: studentsSlice,
+    examIeltsInstructor: examIeltsInstructorSlice,
 });
 
 
