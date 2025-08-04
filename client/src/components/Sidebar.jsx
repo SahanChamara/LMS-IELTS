@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   Globe,
   Package,
@@ -62,11 +62,6 @@ const Sidebar = () => {
               label: "Dashboard",
               to: "/dashboard",
             },
-            // {
-            //   icon: <Globe size={20} />,
-            //   label: "Activity",
-            //   to: "/activity",
-            // },
             {
               icon: <Folders size={20} />,
               label: "Units",
@@ -92,14 +87,9 @@ const Sidebar = () => {
               label: "Announcements",
               to: "/messages",
             },
-            // {
-            //   icon: <Settings size={20} />,
-            //   label: "Settings",
-            //   to: "/settings",
-            // },
             {
               icon: <User size={20} />,
-              label: "profile",
+              label: "Profile",
               to: "/profile",
             },
             {
@@ -107,38 +97,24 @@ const Sidebar = () => {
               label: "Logout",
               to: "/logout",
             },
-            
           ].map((item, idx) => (
             <li key={idx}>
-              <Link
+              <NavLink
                 to={item.to}
-                className="flex items-center gap-3 hover:text-blue-500 dark:hover:text-blue-200 transition-all duration-200"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 p-2 rounded-md transition-all duration-200 ${
+                    isActive
+                      ? "bg-blue-500 text-white dark:bg-blue-600 dark:text-white"
+                      : "text-gray-800 dark:text-white hover:text-blue-500 dark:hover:text-blue-200"
+                  }`
+                }
               >
                 {item.icon}
                 {item.label}
-              </Link>
+              </NavLink>
             </li>
           ))}
         </ul>
-
-        {/* Footer Links */}
-        <div className="mt-10 text-sm space-y-3 text-gray-600 dark:text-white/70">
-          <Link
-            to="/privacy"
-            className="flex items-center gap-2 hover:text-blue-400 dark:hover:text-blue-200 transition"
-          >
-            <ShieldCheck size={16} />
-            Privacy
-          </Link>
-          <Link
-            to="/terms"
-            className="flex items-center gap-2 hover:text-blue-400 dark:hover:text-blue-200 transition"
-          >
-            <ScrollText size={16} />
-            Terms
-          </Link>
-        </div>
-      
       </aside>
     </>
   );
