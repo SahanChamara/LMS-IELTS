@@ -33,7 +33,7 @@ export async function postAssessmentMarks(data) {
 }
 
 //=========================================================================
-export async function getQuestionsByQuizId(id) {
+export async function getQuestionsByAssessmentId(id) {
   try {
     const apiObject = {
       method: "GET",
@@ -47,4 +47,47 @@ export async function getQuestionsByQuizId(id) {
     throw error;
   }
 }
+
+export const addQuestion = async (questionData) => {
+  const apiObject = {
+    method: "POST",
+    withCredentials: true,
+    prefix: "quiz",
+    endpoint: "",
+    body: questionData,
+  };
+  return ApiService.callApi(apiObject);
+};
+
+// export const updateQuestion = async (questionData) => {
+//   const apiObject = {
+//     method: "PUT",
+//     withCredentials: true,
+//     prefix: "quiz",
+//     endpoint: "",
+//     body: questionData,
+//   };
+//   return ApiService.callApi(apiObject);
+// };
+
+export const updateQuestion = async (id, questionData) => {
+  const apiObject = {
+    method: "PUT",
+    withCredentials: true,
+    prefix: "quiz",
+    endpoint: `${id}`,
+    body: questionData,
+  };
+  return ApiService.callApi(apiObject);
+};
+
+export const deleteQuestionById = async (questionId) => {
+  const apiObject = {
+    method: "DELETE",
+    withCredentials: true,
+    prefix: "quiz",
+    endpoint: `${questionId}`,
+  };
+  return ApiService.callApi(apiObject);
+};
 //=========================================================================
