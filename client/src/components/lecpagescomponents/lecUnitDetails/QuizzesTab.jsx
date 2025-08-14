@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, X, Trash  } from 'lucide-react';
-import { 
-  addAssessments, 
-  updateAssessment, 
-  getAssessmentsByUnitId,
-  deleteAssessment 
-} from "../../../service/assessments";
-import { 
-  getQuestionsByAssessmentId, 
-  addQuestion, 
-  updateQuestion,
-  deleteQuestionById 
-} from "../../../service/quizService";
+import { addAssessments, updateAssessment, getAssessmentsByUnitId, deleteAssessment } from "../../../service/assessments";
+import { getQuestionsByAssessmentId, addQuestion, updateQuestion, deleteQuestionById } from "../../../service/quizService";
 
 const QuizzesTab = ({ unit }) => {
   // State management
@@ -48,46 +38,27 @@ const QuizzesTab = ({ unit }) => {
   });
 
   // Fetch assessments on mount and when unit changes
-  // useEffect(() => {
-  //   const fetchAssessments = async () => {
-  //     setLoading(true);
-  //     setError(null);
-  //     try {
-  //       const data = await getAssessmentsByUnitId(unit.unitId);
-  //       // Ensure data is always an array
-  //       setAssessments(data || []);
-  //     } catch (error) {
-  //       console.error('Failed to load assessments:', error);
-  //       setError(error.message || 'Failed to load assessments');
-  //       showToast(error.message || 'Failed to load assessments', 'error');
-  //       setAssessments([]);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   fetchAssessments();
-  // }, [unit.unitId]);
   useEffect(() => {
-  const fetchAssessments = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getAssessmentsByUnitId(unit.unitId);
-      // Extract the data array from the response, default to empty array if undefined
-      const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-      // console.log("AAA ::: ", data)
-      setAssessments(data);
-    } catch (error) {
-      console.error('Failed to load assessments:', error);
-      setError(error.message || 'Failed to load assessments');
-      showToast(error.message || 'Failed to load assessments', 'error');
-      setAssessments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchAssessments();
-}, [unit.unitId]);
+    const fetchAssessments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getAssessmentsByUnitId(unit.unitId);
+        // Extract the data array from the response, default to empty array if undefined
+        const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+        // console.log("AAA ::: ", data)
+        setAssessments(data);
+      } catch (error) {
+        console.error('Failed to load assessments:', error);
+        setError(error.message || 'Failed to load assessments');
+        showToast(error.message || 'Failed to load assessments', 'error');
+        setAssessments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssessments();
+  }, [unit.unitId]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -118,7 +89,11 @@ const QuizzesTab = ({ unit }) => {
         : await updateAssessment(selectedAssessment._id, formData);
       
       // Refresh assessments after save
-      const updatedAssessments = await getAssessmentsByUnitId(unit.unitId);
+      const updatedAssessmentsResponse = await getAssessmentsByUnitId(unit.unitId);
+      // Extract the data array from the response, default to empty array if undefined
+      const updatedAssessments = Array.isArray(updatedAssessmentsResponse.data) 
+        ? updatedAssessmentsResponse.data 
+        : updatedAssessmentsResponse.data?.data || [];
       setAssessments(updatedAssessments);
       
       showToast(`Assessment ${formMode === 'add' ? 'added' : 'updated'} successfully`, 'success');
@@ -218,9 +193,11 @@ const QuizzesTab = ({ unit }) => {
         const response = await deleteAssessment(assessmentId);
         console.log('Delete API response:', response);
 
-        // Assuming ApiService.callApi returns the response data directly
         if (response?.success) {
-          const updatedAssessments = await getAssessmentsByUnitId(unit.unitId);
+          const updatedAssessmentsResponse = await getAssessmentsByUnitId(unit.unitId);
+          const updatedAssessments = Array.isArray(updatedAssessmentsResponse.data) 
+            ? updatedAssessmentsResponse.data 
+            : updatedAssessmentsResponse.data?.data || [];
           setAssessments(updatedAssessments);
           showToast(response.message || 'Deleted successfully', 'success');
         } else {
@@ -238,13 +215,17 @@ const QuizzesTab = ({ unit }) => {
     }
   };
 
-
   // Preview questions for an assessment
   const handlePreviewQuestions = async (assessment) => {
     setLoading(true);
     try {
       const questions = await getQuestionsByAssessmentId(assessment._id);
-      setQuestions(questions);
+      const currentQuestions = Array.isArray(questions) 
+        ? questions 
+        : questions.data && Array.isArray(questions.data) 
+          ? questions.data 
+          : [];
+      setQuestions(currentQuestions);
       setSelectedAssessment(assessment);
       setShowPreviewModal(true);
     } catch (error) {
@@ -257,45 +238,45 @@ const QuizzesTab = ({ unit }) => {
 
   // Open add question modal with validation
   const handleOpenAddQuestion = async (assessment) => {
-  setLoading(true);
-  try {
-    // Fetch current questions to check count
-    const questionsResponse = await getQuestionsByAssessmentId(assessment._id);
-    // console.log('API response for questions in handleOpenAddQuestion:', questionsResponse); // Debug log
-    
-    // Ensure questions is an array
-    const questions = Array.isArray(questionsResponse) 
-      ? questionsResponse 
-      : questionsResponse.data && Array.isArray(questionsResponse.data) 
-        ? questionsResponse.data 
-        : [];
-    
-    // Log for debugging
-    // console.log('Current questions count:', questions.length, 'Questions count limit:', assessment.questionsCount, 'Assessment ID:', assessment._id);
-    
-    // Validate questionsCount
-    if (!assessment.questionsCount || assessment.questionsCount <= 0) {
-      showToast('Cannot add questions: Question count is set to 0 or invalid.', 'warning');
-      return;
+    setLoading(true);
+    try {
+      // Fetch current questions to check count
+      const questionsResponse = await getQuestionsByAssessmentId(assessment._id);
+      // console.log('API response for questions in handleOpenAddQuestion:', questionsResponse); // Debug log
+      
+      // Ensure questions is an array
+      const questions = Array.isArray(questionsResponse) 
+        ? questionsResponse 
+        : questionsResponse.data && Array.isArray(questionsResponse.data) 
+          ? questionsResponse.data 
+          : [];
+      
+      // Log for debugging
+      // console.log('Current questions count:', questions.length, 'Questions count limit:', assessment.questionsCount, 'Assessment ID:', assessment._id);
+      
+      // Validate questionsCount
+      if (!assessment.questionsCount || assessment.questionsCount <= 0) {
+        showToast('Cannot add questions: Question count is set to 0 or invalid.', 'warning');
+        return;
+      }
+      
+      if (questions.length >= assessment.questionsCount) {
+        showToast(`Cannot add more questions: Maximum ${assessment.questionsCount} questions reached.`, 'warning');
+        return;
+      }
+      
+      // Only open modal if validation passes
+      setSelectedAssessment(assessment);
+      resetQuestionForm();
+      setEditingQuestion(null);
+      setShowQuestionModal(true);
+    } catch (error) {
+      console.error('Failed to check question limit:', error);
+      showToast(error.message || 'Failed to check question limit', 'error');
+    } finally {
+      setLoading(false);
     }
-    
-    if (questions.length >= assessment.questionsCount) {
-      showToast(`Cannot add more questions: Maximum ${assessment.questionsCount} questions reached.`, 'warning');
-      return;
-    }
-    
-    // Only open modal if validation passes
-    setSelectedAssessment(assessment);
-    resetQuestionForm();
-    setEditingQuestion(null);
-    setShowQuestionModal(true);
-  } catch (error) {
-    console.error('Failed to check question limit:', error);
-    showToast(error.message || 'Failed to check question limit', 'error');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Edit existing question
   const handleEditQuestion = (question) => {
@@ -415,7 +396,8 @@ const QuizzesTab = ({ unit }) => {
               </div>
               <div>
                 <label className="block mb-1">Description</label>
-                <input
+                <textarea 
+                  rows="3"
                   type="text"
                   name="description"
                   value={formData.description}
@@ -551,6 +533,8 @@ const QuizzesTab = ({ unit }) => {
                     <th className="px-4 py-2 text-left">Due Date</th>
                     <th className="px-4 py-2 text-left">Total Marks</th>
                     <th className="px-4 py-2 text-left">Questions</th>
+                    <th className="px-4 py-2 text-left">Percentage</th>
+                    <th className="px-4 py-2 text-left">Duration</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
@@ -564,6 +548,12 @@ const QuizzesTab = ({ unit }) => {
                       <td className="px-4 py-2">{assessment.totalMarks}</td>
                       <td className="px-4 py-2">
                         {assessment.questionsCount} (max)
+                      </td>
+                      <td className="px-4 py-2">
+                        {assessment.passPercentage ? `${assessment.passPercentage}%` : 'N/A'}
+                      </td>
+                      <td className="px-4 py-2">
+                        {assessment.duration ? `${assessment.duration} minutes` : 'N/A'}
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex space-x-2">
@@ -614,98 +604,6 @@ const QuizzesTab = ({ unit }) => {
       )}
 
       {/* Question Modal */}
-      {/* {showQuestionModal && selectedAssessment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b p-4">
-              <h3 className="text-lg font-semibold">
-                {editingQuestion ? 'Edit Question' : 'Add New Question'}
-              </h3>
-              <button 
-                onClick={() => {
-                  setShowQuestionModal(false);
-                  resetQuestionForm();
-                  setEditingQuestion(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSaveQuestion} className="p-4">
-              <div className="mb-4">
-                <label className="block mb-1">Question*</label>
-                <textarea
-                  name="question"
-                  value={questionForm.question}
-                  onChange={handleQuestionInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                  required
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block mb-1">Options*</label>
-                {questionForm.options.map((option, index) => (
-                  <div key={index} className="flex items-center mb-2">
-                    <input
-                      type="text"
-                      value={option}
-                      onChange={(e) => handleOptionChange(index, e.target.value)}
-                      className="w-full p-2 border rounded mr-2"
-                      required
-                    />
-                    <input
-                      type="radio"
-                      name="answer"
-                      checked={questionForm.answer === index}
-                      onChange={() => setQuestionForm(prev => ({ ...prev, answer: index }))}
-                    />
-                    <span className="ml-1">Correct</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mb-4">
-                <label className="block mb-1">Mark*</label>
-                <input
-                  type="number"
-                  name="mark"
-                  min="1"
-                  value={questionForm.mark}
-                  onChange={handleQuestionInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowQuestionModal(false);
-                    resetQuestionForm();
-                    setEditingQuestion(null);
-                  }}
-                  className="px-4 py-2 bg-gray-300 rounded"
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Save Question'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )} */}
       {showQuestionModal && selectedAssessment && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           {/* Overlay */}
@@ -866,78 +764,6 @@ const QuizzesTab = ({ unit }) => {
 
 
       {/* Questions Preview Modal */}
-      {/* {showPreviewModal && selectedAssessment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b p-4">
-              <h3 className="text-lg font-semibold">
-                Questions for {selectedAssessment.title} ({selectedAssessment.questionsCount})
-              </h3>
-              <button 
-                onClick={() => setShowPreviewModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="p-4 space-y-4">
-              {questions.length === 0 || selectedAssessment.questionsCount <= 0 ? (
-                <p className="text-gray-600 text-center py-8">
-                  {selectedAssessment.questionsCount <= 0 
-                    ? 'Question count is set to 0' 
-                    : 'No questions added yet'}
-                </p>
-              ) : (
-                questions.data.map((question, qIndex) => (
-                  <div key={qIndex} className="border p-4 rounded-lg relative">
-                    <div className="absolute top-2 right-2 flex space-x-2">
-                      <button
-                        onClick={() => handleEditQuestion(question)}
-                        className="p-1 text-blue-600 hover:text-blue-800"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteQuestion(question._id)}
-                        className="p-1 text-red-600 hover:text-red-800"
-                        title="Delete"
-                        disabled={loading}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    
-                    <p className="font-medium">Q{qIndex + 1}: {question.question}</p>
-                    <p className="text-sm text-gray-600 mb-2">Marks: {question.mark}</p>
-                    
-                    <ul className="list-disc pl-5">
-                      {question.options.map((option, oIndex) => (
-                        <li 
-                          key={oIndex} 
-                          className={oIndex === question.answer ? 'text-green-600 font-medium' : ''}
-                        >
-                          {option}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))
-              )}
-            </div>
-            
-            <div className="flex justify-end p-4 border-t">
-              <button
-                onClick={() => setShowPreviewModal(false)}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
       {showPreviewModal && selectedAssessment && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           {/* Overlay */}
@@ -973,7 +799,7 @@ const QuizzesTab = ({ unit }) => {
                   </p>
                 </div>
               ) : (
-                questions.data.map((question, qIndex) => (
+                questions.map((question, qIndex) => (
                   <div
                     key={qIndex}
                     className="relative border border-gray-200 rounded-xl p-5 bg-white/70 hover:shadow-md transition"
