@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, X, Trash  } from 'lucide-react';
 import { 
   addAssessments, 
   updateAssessment, 
@@ -41,32 +41,53 @@ const QuizzesTab = ({ unit }) => {
   // Question form
   const [questionForm, setQuestionForm] = useState({
     question: '',
-    options: ['', '', '', ''],
+    options: ['', ''],
     answer: 0,
     mark: '',
     assessment: ''
   });
 
   // Fetch assessments on mount and when unit changes
+  // useEffect(() => {
+  //   const fetchAssessments = async () => {
+  //     setLoading(true);
+  //     setError(null);
+  //     try {
+  //       const data = await getAssessmentsByUnitId(unit.unitId);
+  //       // Ensure data is always an array
+  //       setAssessments(data || []);
+  //     } catch (error) {
+  //       console.error('Failed to load assessments:', error);
+  //       setError(error.message || 'Failed to load assessments');
+  //       showToast(error.message || 'Failed to load assessments', 'error');
+  //       setAssessments([]);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchAssessments();
+  // }, [unit.unitId]);
   useEffect(() => {
-    const fetchAssessments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getAssessmentsByUnitId(unit.unitId);
-        // Ensure data is always an array
-        setAssessments(data || []);
-      } catch (error) {
-        console.error('Failed to load assessments:', error);
-        setError(error.message || 'Failed to load assessments');
-        showToast(error.message || 'Failed to load assessments', 'error');
-        setAssessments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAssessments();
-  }, [unit.unitId]);
+  const fetchAssessments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getAssessmentsByUnitId(unit.unitId);
+      // Extract the data array from the response, default to empty array if undefined
+      const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      // console.log("AAA ::: ", data)
+      setAssessments(data);
+    } catch (error) {
+      console.error('Failed to load assessments:', error);
+      setError(error.message || 'Failed to load assessments');
+      showToast(error.message || 'Failed to load assessments', 'error');
+      setAssessments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchAssessments();
+}, [unit.unitId]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -342,7 +363,7 @@ const QuizzesTab = ({ unit }) => {
   const resetQuestionForm = () => {
     setQuestionForm({
       question: '',
-      options: ['', '', '', ''],
+      options: ['', ''],
       answer: 0,
       mark: '',
       assessment: ''
@@ -534,7 +555,7 @@ const QuizzesTab = ({ unit }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {assessments.data.map((assessment) => (
+                  {assessments.map((assessment) => (
                     <tr key={assessment._id} className="border-t hover:bg-gray-50">
                       <td className="px-4 py-2">{assessment.title}</td>
                       <td className="px-4 py-2">
@@ -593,7 +614,7 @@ const QuizzesTab = ({ unit }) => {
       )}
 
       {/* Question Modal */}
-      {showQuestionModal && selectedAssessment && (
+      {/* {showQuestionModal && selectedAssessment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b p-4">
@@ -684,10 +705,168 @@ const QuizzesTab = ({ unit }) => {
             </form>
           </div>
         </div>
+      )} */}
+      {showQuestionModal && selectedAssessment && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+            onClick={() => {
+              setShowQuestionModal(false);
+              resetQuestionForm();
+              setEditingQuestion(null);
+            }}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-scaleIn">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                {editingQuestion ? 'Edit Question' : 'Create New Question'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowQuestionModal(false);
+                  resetQuestionForm();
+                  setEditingQuestion(null);
+                }}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <X size={22} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form id="questionForm" onSubmit={handleSaveQuestion} className="px-6 py-5 space-y-6">
+
+              {/* Question */}
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Question <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="question"
+                  value={questionForm.question}
+                  onChange={handleQuestionInputChange}
+                  placeholder="Type your question here..."
+                  className="w-full p-4 rounded-xl border border-gray-300 bg-white/70 focus:ring-2 focus:ring-blue-500 focus:outline-none transition resize-none"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Options */}
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Options <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-3">
+                  {questionForm.options.map((option, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        className="flex-1 p-3 rounded-xl border border-gray-300 bg-white/70 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                        required
+                      />
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="answer"
+                          checked={questionForm.answer === index}
+                          onChange={() =>
+                            setQuestionForm(prev => ({ ...prev, answer: index }))
+                          }
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-600 text-sm">Correct</span>
+                      </label>
+                      {questionForm.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setQuestionForm(prev => ({
+                              ...prev,
+                              options: prev.options.filter((_, i) => i !== index)
+                            }))
+                          }
+                          className="p-2 text-red-500 hover:bg-red-100 rounded-full transition"
+                        >
+                          <Trash size={18} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Option Button */}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuestionForm(prev => ({
+                        ...prev,
+                        options: [...prev.options, ""]
+                      }))
+                    }
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                  >
+                    <Plus size={16} /> Add Option
+                  </button>
+                </div>
+              </div>
+
+              {/* Mark */}
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Mark <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="mark"
+                  min="1"
+                  value={questionForm.mark}
+                  onChange={handleQuestionInputChange}
+                  placeholder="Enter marks"
+                  className="w-full p-3 rounded-xl border border-gray-300 bg-white/70 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                  required
+                />
+              </div>
+            </form>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50/50">
+              <button
+                onClick={() => {
+                  setShowQuestionModal(false);
+                  resetQuestionForm();
+                  setEditingQuestion(null);
+                }}
+                className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="questionForm"
+                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Question'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
+
       {/* Questions Preview Modal */}
-      {showPreviewModal && selectedAssessment && (
+      {/* {showPreviewModal && selectedAssessment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b p-4">
@@ -758,7 +937,107 @@ const QuizzesTab = ({ unit }) => {
             </div>
           </div>
         </div>
+      )} */}
+      {showPreviewModal && selectedAssessment && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setShowPreviewModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-scaleIn">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-800">
+                Questions for <span className="text-blue-600">{selectedAssessment.title}</span> ({selectedAssessment.questionsCount})
+              </h3>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <X size={22} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {questions.length === 0 || selectedAssessment.questionsCount <= 0 ? (
+                <div className="flex justify-center items-center h-40">
+                  <p className="text-gray-500 text-lg">
+                    {selectedAssessment.questionsCount <= 0
+                      ? "Question count is set to 0"
+                      : "No questions added yet"}
+                  </p>
+                </div>
+              ) : (
+                questions.data.map((question, qIndex) => (
+                  <div
+                    key={qIndex}
+                    className="relative border border-gray-200 rounded-xl p-5 bg-white/70 hover:shadow-md transition"
+                  >
+                    {/* Action Buttons */}
+                    <div className="absolute top-3 right-3 flex space-x-2">
+                      <button
+                        onClick={() => handleEditQuestion(question)}
+                        className="p-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteQuestion(question._id)}
+                        className="p-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition"
+                        title="Delete"
+                        disabled={loading}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    {/* Question Text */}
+                    <p className="font-medium text-gray-800 mb-1">
+                      Q{qIndex + 1}: {question.question}
+                    </p>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Marks: <span className="font-semibold">{question.mark}</span>
+                    </p>
+
+                    {/* Options */}
+                    <ul className="space-y-1">
+                      {question.options.map((option, oIndex) => (
+                        <li
+                          key={oIndex}
+                          className={`p-2 rounded-lg ${
+                            oIndex === question.answer
+                              ? "bg-green-100 text-green-700 font-medium"
+                              : "bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          {option}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end px-6 py-4 border-t border-gray-200 bg-gray-50/50">
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
     </div>
   );
 };

@@ -14,7 +14,7 @@ import CreateExamForm from "./CreateExamForm";
 import EditExamForm from "./EditExamForm";
 import PreviewExam from "./PreviewExam";
 import SubmissionList from "./SubmissionList";
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../../pages/lecturepages/lecsidebar"; // Import Lecsidebar component
 import { useAppDispatch, useAppSelector } from "../../../redux/store-config/store";
 import { getAllExamsAPI } from "../../../redux/features/examIeltsInstructorSlice";
 
