@@ -1,14 +1,76 @@
 const Assessment = require('../models/Assessment');
 const Unit = require('../models/Unit');
 const mongoose = require('mongoose');
+const {Question} = require("../models/ExamIelts");
+
+// exports.createAssessment = async (req, res) => {
+//   try {
+//     const { title, unit, description, dueDate, totalMarks, questionsCount, duration, passPercentage, caMarksPercetage, status } = req.body;
+//
+//     // Validate required fields
+//     if (!title || !unit || totalMarks === undefined || questionsCount === undefined || duration === undefined || passPercentage === undefined) {
+//       return res.status(400).json({ success: false, message: 'Title, unit, totalMarks, questionsCount, duration, passPercentage, and caMarksPercetage are required' });
+//     }
+//
+//     // Validate unit exists
+//     if (!mongoose.Types.ObjectId.isValid(unit)) {
+//       return res.status(400).json({ success: false, message: 'Invalid unit ID' });
+//     }
+//     const unitExists = await Unit.findById(unit);
+//     if (!unitExists) {
+//       return res.status(404).json({ success: false, message: 'Unit not found' });
+//     }
+//
+//     // Validate status if provided
+//     // if (status && !['active', 'inactive'].includes(status)) {
+//     //   return res.status(400).json({ success: false, message: 'Status must be either "active" or "inactive"' });
+//     // }
+//
+//     const assessmentData = {
+//       title,
+//       unit,
+//       ...(description && { description }),
+//       ...(dueDate && { dueDate }),
+//       totalMarks,
+//       questionsCount,
+//       duration,
+//       passPercentage,
+//       caMarksPercetage,
+//       ...(status && { status }),
+//       createdAt: Date.now(),
+//       updatedAt: Date.now(),
+//     };
+//
+//     const assessment = new Assessment(assessmentData);
+//     await assessment.save();
+//
+//     await Unit.findByIdAndUpdate(unit, { $push: { assessments: assessment._id } });
+//
+//     res.status(201).json({ success: true, data: assessment });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: 'Error creating assessment', error: error.message });
+//   }
+// };
 
 exports.createAssessment = async (req, res) => {
   try {
-    const { title, unit, description, dueDate, totalMarks, questionsCount, duration, passPercentage, caMarksPercetage, status } = req.body;
+    const {
+      title,
+      unit,
+      description,
+      dueDate,
+      totalMarks,
+      questionsCount,
+      duration,
+      passPercentage
+    } = req.body;
 
-    // Validate required fields
-    if (!title || !unit || totalMarks === undefined || questionsCount === undefined || duration === undefined || passPercentage === undefined || caMarksPercetage === undefined) {
-      return res.status(400).json({ success: false, message: 'Title, unit, totalMarks, questionsCount, duration, passPercentage, and caMarksPercetage are required' });
+    // Validate required fields from your JSON
+    if (!title || !unit || totalMarks === undefined || questionsCount === undefined || duration === undefined || passPercentage === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, unit, totalMarks, questionsCount, duration, and passPercentage are required'
+      });
     }
 
     // Validate unit exists
@@ -20,11 +82,6 @@ exports.createAssessment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Unit not found' });
     }
 
-    // Validate status if provided
-    if (status && !['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Status must be either "active" or "inactive"' });
-    }
-
     const assessmentData = {
       title,
       unit,
@@ -34,8 +91,6 @@ exports.createAssessment = async (req, res) => {
       questionsCount,
       duration,
       passPercentage,
-      caMarksPercetage,
-      ...(status && { status }),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -47,9 +102,15 @@ exports.createAssessment = async (req, res) => {
 
     res.status(201).json({ success: true, data: assessment });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating assessment', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error creating assessment',
+      error: error.message
+    });
   }
 };
+
+
 
 exports.getAssessments = async (req, res) => {
   try {
@@ -164,6 +225,24 @@ exports.updateAssessment = async (req, res) => {
   }
 };
 
+// exports.deleteAssessment = async (req, res) => {
+//   try {
+//     const assessment = await Assessment.findById(req.params.id);
+//
+//     if (!assessment) {
+//       return res.status(404).json({ success: false, message: 'Assessment not found' });
+//     }
+//
+//     await Unit.findByIdAndUpdate(assessment.unit, { $pull: { assessments: assessment._id } });
+//
+//     await assessment.deleteOne();
+//
+//     res.status(200).json({ success: true, message: 'Assessment deleted successfully' });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: 'Error deleting assessment', error: error.message });
+//   }
+// };
+
 exports.deleteAssessment = async (req, res) => {
   try {
     const assessment = await Assessment.findById(req.params.id);
@@ -172,12 +251,29 @@ exports.deleteAssessment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Assessment not found' });
     }
 
-    await Unit.findByIdAndUpdate(assessment.unit, { $pull: { assessments: assessment._id } });
+    // Remove from unit's assessments array
+    await Unit.findByIdAndUpdate(
+        assessment.unit,
+        { $pull: { assessments: assessment._id } },
+        { new: true }
+    );
 
-    await assessment.deleteOne();
+    // Delete all related questions first (if needed)
+    await Question.deleteMany({ assessment: assessment._id });
 
-    res.status(200).json({ success: true, message: 'Assessment deleted successfully' });
+    // Then delete the assessment
+    await Assessment.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Assessment and related questions deleted successfully'
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error deleting assessment', error: error.message });
+    console.error('Delete assessment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting assessment',
+      error: error.message
+    });
   }
 };

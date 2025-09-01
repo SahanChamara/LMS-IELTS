@@ -24,34 +24,65 @@ const QuestionDetailsModal = ({
     onClose();
   };
 
+  // Normalize options (handle nested arrays)
+  const flatOptions = Array.isArray(currentQuestion.options?.[0])
+    ? currentQuestion.options[0]
+    : currentQuestion.options || [];
+
+  const correctAnswerText = flatOptions?.[currentQuestion.answer] || "";
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={onClose}>
-      <div className="bg-gray-100 p-6 rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <h5 className="text-md font-medium text-neutral-900 mb-4">Question {questionPage} Details</h5>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-100 p-6 rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h5 className="text-md font-medium text-neutral-900 mb-4">
+          Question {questionPage} Details
+        </h5>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Question Text */}
           <div>
-            <label htmlFor={`questionText-${questionPage}`} className="block text-sm font-medium text-neutral-700 mb-1">Question Text</label>
+            <label
+              htmlFor={`questionText-${questionPage}`}
+              className="block text-sm font-medium text-neutral-700 mb-1"
+            >
+              Question Text
+            </label>
             <textarea
               id={`questionText-${questionPage}`}
               name="text"
-              value={currentQuestion.text}
-              onChange={(e) => handleQuestionChange("text", e.target.value)}
+              value={currentQuestion.question || ""}
+              onChange={(e) => handleQuestionChange("question", e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
               placeholder="e.g., What is GitHub used for?"
               aria-label={`Question ${questionPage} text`}
               aria-required="true"
             />
-            {formErrors[`questionText${questionPage - 1}`] && <p className="mt-1 text-sm text-red-600">{formErrors[`questionText${questionPage - 1}`]}</p>}
+            {formErrors[`questionText${questionPage - 1}`] && (
+              <p className="mt-1 text-sm text-red-600">
+                {formErrors[`questionText${questionPage - 1}`]}
+              </p>
+            )}
           </div>
+
+          {/* Options */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Options</label>
-            {currentQuestion.options.map((option, index) => (
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Options
+            </label>
+
+            {flatOptions.map((option, index) => (
               <div key={index} className="flex items-center space-x-2 mb-2">
                 <input
                   type="radio"
                   name={`correctOption-${questionPage}`}
-                  checked={currentQuestion.correctOption === index}
-                  onChange={() => handleQuestionChange("correctOption", index)}
+                  checked={currentQuestion.answer === index}
+                  onChange={() => handleQuestionChange("answer", index)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   aria-label={`Select option ${index + 1} as correct for question ${questionPage}`}
                 />
@@ -64,51 +95,112 @@ const QuestionDetailsModal = ({
                   aria-label={`Option ${index + 1} for question ${questionPage}`}
                   aria-required="true"
                 />
-                {formErrors[`question${questionPage - 1}Option${index}`] && <p className="mt-1 text-sm text-red-600">{formErrors[`question${questionPage - 1}Option${index}`]}</p>}
+                {formErrors[`question${questionPage - 1}Option${index}`] && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {formErrors[`question${questionPage - 1}Option${index}`]}
+                  </p>
+                )}
               </div>
             ))}
           </div>
+
+          {/* Correct Answer Display */}
           <div>
-            <label htmlFor={`correctAnswer-${questionPage}`} className="block text-sm font-medium text-neutral-700 mb-1">Correct Answer</label>
+            <label
+              htmlFor={`correctAnswer-${questionPage}`}
+              className="block text-sm font-medium text-neutral-700 mb-1"
+            >
+              Correct Answer
+            </label>
             <input
               id={`correctAnswer-${questionPage}`}
               type="text"
-              value={currentQuestion.options[currentQuestion.correctOption] || ""}
+              value={correctAnswerText}
               readOnly
               className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-neutral-900 p-2"
               aria-label={`Correct answer for question ${questionPage}`}
             />
           </div>
+
+          {/* Marks */}
           {marksDistribution === "individual" && (
             <div>
-              <label htmlFor={`questionMarks-${questionPage}`} className="block text-sm font-medium text-neutral-700 mb-1">Marks</label>
+              <label
+                htmlFor={`questionMarks-${questionPage}`}
+                className="block text-sm font-medium text-neutral-700 mb-1"
+              >
+                Marks
+              </label>
               <input
                 id={`questionMarks-${questionPage}`}
                 type="number"
                 min="0"
-                value={currentQuestion.marks}
-                onChange={(e) => handleQuestionChange("marks", e.target.value)}
+                value={currentQuestion.mark || 0}
+                onChange={(e) => handleQuestionChange("mark", e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400 p-2"
                 placeholder="e.g., 20"
                 aria-label={`Marks for question ${questionPage}`}
                 aria-required="true"
               />
-              {formErrors[`questionMarks${questionPage - 1}`] && <p className="mt-1 text-sm text-red-600">{formErrors[`questionMarks${questionPage - 1}`]}</p>}
+              {formErrors[`questionMarks${questionPage - 1}`] && (
+                <p className="mt-1 text-sm text-red-600">
+                  {formErrors[`questionMarks${questionPage - 1}`]}
+                </p>
+              )}
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
         {totalQuestionPages > 1 && (
           <div className="flex justify-center items-center space-x-2 mt-6">
-            <button onClick={handlePreviousQuestionPage} disabled={questionPage === 1} className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label={`Previous question, currently on page ${questionPage}`}>Back</button>
-            {Array.from({ length: totalQuestionPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => handleQuestionPageChange(page)} className={`px-3 py-1 rounded-lg transition-all duration-200 text-sm ${questionPage === page ? "bg-blue-600 text-white" : "bg-gray-200 text-neutral-700 hover:bg-gray-300"}`} aria-label={`Go to question page ${page}`} aria-current={questionPage === page ? "page" : undefined}>{page}</button>
-            ))}
-            <button onClick={handleNextQuestionPage} disabled={questionPage === totalQuestionPages} className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label={`Next question, currently on page ${questionPage}`}>Next</button>
+            <button
+              onClick={handlePreviousQuestionPage}
+              disabled={questionPage === 1}
+              className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Back
+            </button>
+            {Array.from({ length: totalQuestionPages }, (_, i) => i + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  onClick={() => handleQuestionPageChange(page)}
+                  className={`px-3 py-1 rounded-lg transition-all duration-200 text-sm ${
+                    questionPage === page
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-neutral-700 hover:bg-gray-300"
+                  }`}
+                  aria-current={questionPage === page ? "page" : undefined}
+                >
+                  {page}
+                </button>
+              )
+            )}
+            <button
+              onClick={handleNextQuestionPage}
+              disabled={questionPage === totalQuestionPages}
+              className="px-3 py-1 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
+
+        {/* Action Buttons */}
         <div className="flex justify-end mt-6 space-x-4">
-          <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium" aria-label="Save question details">Save</button>
-          <button onClick={onClose} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium" aria-label="Close question details modal">Cancel</button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium"
+          >
+            Save
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>

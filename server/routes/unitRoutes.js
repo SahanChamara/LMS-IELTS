@@ -16,7 +16,7 @@ router.post('/:id/studyMaterial', authMiddleware(['SuperAdmin', 'Instructor']), 
 // router.post('/:id/discussion', authMiddleware(['SuperAdmin', 'Instructor', 'Student']), unitController.addDiscussion);
 
 //=========================================================================================
-router.get('/:id/units', authMiddleware(['SuperAdmin', 'Instructor']), unitController.getAllUnitsByInstructor);
+router.get('/instructor/:id', authMiddleware(['SuperAdmin', 'Instructor']), unitController.getAllUnitsByInstructor);
 //=========================================================================================
 
 module.exports = router;
