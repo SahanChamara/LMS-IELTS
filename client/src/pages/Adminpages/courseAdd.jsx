@@ -4,6 +4,8 @@ import { FiAlertCircle, FiBook, FiFilter, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
+import { get } from "lodash";
+import { getAllCourses } from "../../service/courseService";
 // import { getAllCoursesAPI, addCourseAPI, getAllLectursAPI } from "../../redux/features/adminSlice";
 
 const SuperAdminCourseControl = () => {
@@ -35,8 +37,8 @@ const SuperAdminCourseControl = () => {
         setLoading(true);
 
         // Fetch courses
-        // const courseRes = await dispatch(getAllCoursesAPI()).unwrap();
-        // setCourses(courseRes.data || []);
+        const courseRes = await getAllCourses();
+        setCourses(courseRes.data || []);
 
         // Fetch instructors
         const instructorRes = await dispatch(getAllLectursAPI()).unwrap();

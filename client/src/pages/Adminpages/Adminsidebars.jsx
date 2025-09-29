@@ -25,7 +25,7 @@ const Adminsidebar = ({ onLogout }) => {
     { name: "Lectures", path: "/lectures/admin", icon: <FaUserTie className="text-lg" /> },
     { name: "Courses", path: "/course/admin", icon: <FiBook className="text-lg" /> },
     { name: "Units", path: "/unit/admin", icon: <FiBookOpen className="text-lg" /> },
-    { name: "Notifications", path: "/notifications/admin", icon: <FiBell className="text-lg" /> },
+    // { name: "Notifications", path: "/notifications/admin", icon: <FiBell className="text-lg" /> },
     { name: "Feed Management", path: "/feed/admin", icon: <FiGlobe className="text-lg" /> },
   ];
 
