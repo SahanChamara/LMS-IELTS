@@ -196,7 +196,7 @@ const SuperAdminlecturercontrol = () => {
           ) : !showRegisterForm && (
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <FiUsers className="text-2xl text-teal-600" />
+                <FiUsers className="text-2xl text-indigo-600" />
                 Registered Lecturers ({selectedDepartment === "All" ? lecturers.length : filteredLecturers.length})
               </h3>
               <div className="overflow-x-auto">
