@@ -4,6 +4,7 @@ import { FiAlertCircle, FiLayers, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
+import { getAllCourses } from "../../service/courseService";
 // import { getAllUnitsAPI, addUnitAPI } from "../../redux/features/adminSlice";
 
 const SuperAdminUnitControl = () => {
@@ -47,8 +48,8 @@ const SuperAdminUnitControl = () => {
         setInstructors(instructorRes.data || []);
 
         // Fetch Courses (to link with unit)
-        // const courseRes = await dispatch(getAllCoursesAPI()).unwrap();
-        // setCourses(courseRes.data || []);
+        const courseRes = await getAllCourses();
+        setCourses(courseRes.data || []);
 
         setLoading(false);
       } catch (err) {
