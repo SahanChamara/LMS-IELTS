@@ -5,6 +5,8 @@ import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
 import { getAllCourses } from "../../service/courseService";
+import { getAllUnitsAPI } from "../../redux/features/unitsSlice";
+import { getAllunitsForAdmin } from "../../service/unitsService";
 // import { getAllUnitsAPI, addUnitAPI } from "../../redux/features/adminSlice";
 
 const SuperAdminUnitControl = () => {
@@ -40,8 +42,8 @@ const SuperAdminUnitControl = () => {
         setLoading(true);
 
         // Fetch Units
-        // const unitRes = await dispatch(getAllUnitsAPI()).unwrap();
-        // setUnits(unitRes.data || []);
+        const unitRes = await getAllunitsForAdmin();
+        setUnits(unitRes.data || []);
 
         // Fetch Instructors
         const instructorRes = await dispatch(getAllLectursAPI()).unwrap();

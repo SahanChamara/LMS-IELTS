@@ -27,6 +27,16 @@ export async function getAllunits() {
     }
 }
 
+export async function getAllunitsForAdmin() {
+    const apiObject = {
+      method: "GET",
+      withCredentials: true,
+      prefix: "units",
+      endpoint: '',
+    };
+  return await ApiService.callApi(apiObject);
+}
+
 export async function getUnitById(id) {
   try {
     const apiObject = {
