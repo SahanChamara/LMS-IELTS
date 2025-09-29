@@ -107,6 +107,7 @@ const AppRoutes = () => {
         <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
         <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
         <Route path='/course/admin' element={<AdminFeed/>} />
+        <Route path='/unit/admin' element={<AdminFeed/>} />
       </Route>
     </Routes>
   )
