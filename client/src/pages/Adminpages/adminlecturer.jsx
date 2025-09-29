@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiUsers, FiFilter, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import RegisterForm from "../../components/Admin/RegisterForm";
+import { useAppDispatch } from "../../redux/store-config/store";
+import { getAllLectursAPI } from "../../redux/features/adminSlice";
 
 const SuperAdminlecturercontrol = () => {
   const navigate = useNavigate();
@@ -20,34 +22,25 @@ const SuperAdminlecturercontrol = () => {
   const departments = ["All", "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology", "Engineering"];
   const courses = ["CS101", "CS201", "MATH201", "PHYS101", "CHEM201", "BIO101", "ENG101"];
 
+  const dispatch = useAppDispatch();
+
   useEffect(() => {
     const fetchLecturers = async () => {
       try {
         setLoading(true);
-        const mockData = [
-          { id: 1, name: "Dr. John Smith", email: "john.smith@university.com", department: "Computer Science", courses: ["CS101", "CS201"] },
-          { id: 2, name: "Prof. Jane Doe", email: "jane.doe@university.com", department: "Mathematics", courses: ["MATH201"] },
-          { id: 3, name: "Dr. Alex Brown", email: "alex.brown@university.com", department: "Computer Science", courses: ["CS201"] },
-          { id: 4, name: "Prof. Sarah Wilson", email: "sarah.wilson@university.com", department: "Physics", courses: ["PHYS101"] },
-          { id: 5, name: "Dr. Michael Johnson", email: "michael.johnson@university.com", department: "Chemistry", courses: ["CHEM201"] },
-          { id: 6, name: "Prof. Emily Davis", email: "emily.davis@university.com", department: "Biology", courses: ["BIO101"] },
-          { id: 7, name: "Dr. Robert Taylor", email: "robert.taylor@university.com", department: "Engineering", courses: ["ENG101"] },
-          { id: 8, name: "Prof. Olivia Martinez", email: "olivia.martinez@university.com", department: "Computer Science", courses: ["CS101"] },
-          { id: 9, name: "Dr. William Anderson", email: "william.anderson@university.com", department: "Mathematics", courses: ["MATH201"] },
-          { id: 10, name: "Prof. Sophia Thomas", email: "sophia.thomas@university.com", department: "Physics", courses: ["PHYS101"] },
-          { id: 11, name: "Dr. James White", email: "james.white@university.com", department: "Computer Science", courses: ["CS201"] },
-        ];
-        setTimeout(() => {
-          setLecturers(mockData);
-          setLoading(false);
-        }, 1000);
-      } catch {
+        const result = await dispatch(getAllLectursAPI()).unwrap();
+        console.log("All Lecturers Fetching... :::", result.data); 
+
+
+        setLecturers(result.data || []); // Adjust based on actual API response structure
+        setLoading(false);
+      } catch (err) {
         setError("Failed to load lecturer data. Please try again.");
         setLoading(false);
       }
     };
     fetchLecturers();
-  }, []);
+  }, [dispatch]);
 
   const handleAddLecturer = (newLecturer) => {
     setLecturers((prevLecturers) => [
@@ -67,7 +60,7 @@ const SuperAdminlecturercontrol = () => {
 
   const filteredLecturers = lecturers
     .filter((lecturer) =>
-      lecturer[filterBy].toString().toLowerCase().includes(searchTerm.toLowerCase())
+      lecturer[filterBy]?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
     .filter((lecturer) => 
       selectedDepartment === "All" ? true : lecturer.department === selectedDepartment

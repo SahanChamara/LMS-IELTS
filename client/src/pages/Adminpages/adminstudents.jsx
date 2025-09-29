@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiUsers, FiFilter, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import RegisterForm from "../../components/Admin/RegisterForm";
+import { getAllStudentsAPI } from "../../redux/features/studentSlice";
+import { useAppDispatch } from "../../redux/store-config/store";
 
 const SuperAdminstudentcontrol = () => {
   const navigate = useNavigate();
@@ -19,34 +21,23 @@ const SuperAdminstudentcontrol = () => {
 
   const units = ["All", "CS101", "CS201", "Math201", "Phys101", "Chem201", "Bio101", "Eng101"];
 
+  const dispatch = useAppDispatch();
+
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const mockData = [
-          { id: 1, name: "Alice Johnson", email: "alice.johnson@university.com", unit: "CS101", registeredDate: "2025-06-01" },
-          { id: 2, name: "Bob Williams", email: "bob.williams@university.com", unit: "Math201", registeredDate: "2025-06-05" },
-          { id: 3, name: "Clara Davis", email: "clara.davis@university.com", unit: "CS201", registeredDate: "2025-06-10" },
-          { id: 4, name: "David Lee", email: "david.lee@university.com", unit: "Phys101", registeredDate: "2025-06-12" },
-          { id: 5, name: "Emma Brown", email: "emma.brown@university.com", unit: "Chem201", registeredDate: "2025-06-15" },
-          { id: 6, name: "Frank Miller", email: "frank.miller@university.com", unit: "CS101", registeredDate: "2025-06-18" },
-          { id: 7, name: "Grace Wilson", email: "grace.wilson@university.com", unit: "Math201", registeredDate: "2025-06-20" },
-          { id: 8, name: "Henry Taylor", email: "henry.taylor@university.com", unit: "CS201", registeredDate: "2025-06-22" },
-          { id: 9, name: "Isabella Moore", email: "isabella.moore@university.com", unit: "Bio101", registeredDate: "2025-06-25" },
-          { id: 10, name: "James Anderson", email: "james.anderson@university.com", unit: "CS201", registeredDate: "2025-06-28" },
-          { id: 11, name: "Kelly White", email: "kelly.white@university.com", unit: "Eng101", registeredDate: "2025-06-30" },
-        ];
-        setTimeout(() => {
-          setStudents(mockData);
-          setLoading(false);
-        }, 1000);
-      } catch {
+        const result = await dispatch(getAllStudentsAPI()).unwrap();
+        console.log("All Students Fetching... :::", result.data);
+        setStudents(result.data || []); // Fallback to empty array if data is undefined
+        setLoading(false);
+      } catch (err) {
         setError("Failed to load student data. Please try again.");
         setLoading(false);
       }
     };
     fetchStudents();
-  }, []);
+  }, [dispatch]);
 
   const handleAddStudent = (newStudent) => {
     setStudents((prevStudents) => [
@@ -66,7 +57,7 @@ const SuperAdminstudentcontrol = () => {
 
   const filteredStudents = students
     .filter((student) =>
-      student[filterBy].toLowerCase().includes(searchTerm.toLowerCase())
+      student[filterBy]?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .filter((student) => 
       selectedUnit === "All" ? true : student.unit === selectedUnit
@@ -218,7 +209,7 @@ const SuperAdminstudentcontrol = () => {
                           <td className="px-4 py-3">{student.name}</td>
                           <td className="px-4 py-3">{student.email}</td>
                           <td className="px-4 py-3">{student.unit}</td>
-                          <td className="px-4 py-3">{student.registeredDate}</td>
+                          <td className="px-4 py-3">{student.createdAt}</td>
                           <td className="px-4 py-3">
                             <button
                               onClick={() => navigate(`/admin/students/${student.id}`)}

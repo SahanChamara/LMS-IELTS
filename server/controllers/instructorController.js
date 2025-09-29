@@ -2,6 +2,8 @@ const Instructor = require('../models/Instructor');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { Unit } = require('../models');
+const {createLog} = require("./logsController");
+const Student = require("../models/Student");
 
 exports.createInstructor = async (req, res) => {
   try {
@@ -27,16 +29,30 @@ exports.createInstructor = async (req, res) => {
   }
 };
 
+// exports.getAllInstructors = async (req, res) => {
+//   try {
+//     const instructors = await Instructor.find()
+//       .populate('courses', 'title description')
+//       .populate('notifications', 'message createdAt')
+//       .populate('calendarEvents', 'title date')
+//       .select('-password');
+//     res.status(200).json(instructors);
+//     console.log(instructors);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching instructors', error: error.message });
+//   }
+// };
+
 exports.getAllInstructors = async (req, res) => {
   try {
     const instructors = await Instructor.find()
-      .populate('courses', 'title description')
-      .populate('notifications', 'message createdAt')
-      .populate('calendarEvents', 'title date')
-      .select('-password');
-    res.status(200).json(instructors);
+        .populate('courses', 'title description')
+        .populate('notifications', 'message createdAt')
+        .populate('calendarEvents', 'title date')
+        .select('-password');
+    res.status(200).json({ success: true, data: instructors });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching instructors', error: error.message });
+    sendError(res, 500, 'Error fetching instructors', error);
   }
 };
 
