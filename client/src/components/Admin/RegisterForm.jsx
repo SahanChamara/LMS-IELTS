@@ -11,7 +11,6 @@ const RegisterForm = ({ onSubmit }) => {
 
   const [error, setError] = useState(null);
 
-  // ✅ Auto generate password
   function generatePassword() {
     return Math.random().toString(36).slice(-8); // simple 8-char random password
   }
@@ -33,7 +32,12 @@ const RegisterForm = ({ onSubmit }) => {
     }
 
     try {
-      const registerRes = await axios.post("/api/students/register", formData);
+      const registerRes = await axios.post("/api/students/register", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: "Student",
+      });
 
       await axios.post("/api/admin/sendRegisterDetail", {
         name: formData.name,
