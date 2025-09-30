@@ -11,23 +11,25 @@ export const getAllLectures = async () => {
   return response;
 }
 
-export const registerUser = async () => {
+export const registerUser = async (registerDetails) => {
   const apiObject = {
     method: 'POST',
     withCredentials: true,
     prefix: 'auth',
     endpoint: 'register',
+    body: registerDetails,
   }
   const response = await ApiService.callApi(apiObject);
   return response;
 }
 
-export const sendRegisterDetail = async () => {
+export const sendRegisterDetail = async (registerDetails) => {
   const apiObject = {
     method: 'POST',
     withCredentials: true,
     prefix: 'admin',
     endpoint: 'sendRegisterDetail',
+    body: registerDetails,
   }
   const response = await ApiService.callApi(apiObject);
   return response;

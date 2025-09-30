@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { registerUser, sendRegisterDetail } from "../../service/adminService";
 
 const RegisterForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -32,18 +33,22 @@ const RegisterForm = ({ onSubmit }) => {
     }
 
     try {
-      const registerRes = await axios.post("/api/students/register", {
+      const registerRes = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: "Student",
       });
 
-      await axios.post("/api/admin/sendRegisterDetail", {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
+      if (registerRes) {
+        const registerEmail = await sendRegisterDetail({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+
+        console.log("Register User Email Send", registerEmail);        
+      }
 
       onSubmit(registerRes.data); // update UI state
       setError(null);
@@ -71,7 +76,9 @@ const RegisterForm = ({ onSubmit }) => {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Name</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Name
+          </label>
           <input
             type="text"
             name="name"
@@ -83,7 +90,9 @@ const RegisterForm = ({ onSubmit }) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
           <input
             type="email"
             name="email"
@@ -96,7 +105,9 @@ const RegisterForm = ({ onSubmit }) => {
         </div>
         {/* Password is auto-generated and hidden */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
           <input
             type="text"
             name="password"
@@ -104,10 +115,14 @@ const RegisterForm = ({ onSubmit }) => {
             readOnly
             className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
           />
-          <p className="text-xs text-gray-500">Password will be emailed to the student</p>
+          <p className="text-xs text-gray-500">
+            Password will be emailed to the student
+          </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Register Date</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Register Date
+          </label>
           <input
             type="date"
             name="registeredDate"
