@@ -10,3 +10,14 @@ export const getAllLectures = async () => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const registerUser = async () => {
+  const apiObject = {
+    method: 'POST',
+    withCredentials: true,
+    prefix: 'auth',
+    endpoint: 'register',
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
