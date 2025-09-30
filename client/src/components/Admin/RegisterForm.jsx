@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { registerUser } from "../../service/adminService";
 
 const RegisterForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -32,7 +33,7 @@ const RegisterForm = ({ onSubmit }) => {
     }
 
     try {
-      const registerRes = await axios.post("/api/students/register", {
+      const registerRes = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
