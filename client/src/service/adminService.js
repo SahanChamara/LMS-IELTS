@@ -21,3 +21,14 @@ export const registerUser = async () => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const sendRegisterDetail = async () => {
+  const apiObject = {
+    method: 'POST',
+    withCredentials: true,
+    prefix: 'admin',
+    endpoint: 'sendRegisterDetail',
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
