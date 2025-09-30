@@ -35,12 +35,13 @@ export const sendRegisterDetail = async (registerDetails) => {
   return response;
 }
 
-export const updateUser = async (userId) => {
+export const updateUser = async (userId,updatedDetails) => {
   const apiObject = {
     method: 'PUT',
     withCredentials: true,
-    prefix: '',
-    endpoint: 'students/' + userId,
+    prefix: 'students',
+    endpoint: userId,
+    body: updatedDetails,
   }
   const response = await ApiService.callApi(apiObject);
   return response;

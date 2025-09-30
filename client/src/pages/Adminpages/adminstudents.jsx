@@ -12,6 +12,7 @@ const SuperAdminstudentcontrol = () => {
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null); // <-- NEW
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState("name");
@@ -20,7 +21,6 @@ const SuperAdminstudentcontrol = () => {
   const rowsPerPage = 10;
 
   const units = ["All", "CS101", "CS201", "Math201", "Phys101", "Chem201", "Bio101", "Eng101"];
-
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -28,8 +28,7 @@ const SuperAdminstudentcontrol = () => {
       try {
         setLoading(true);
         const result = await dispatch(getAllStudentsAPI()).unwrap();
-        console.log("All Students Fetching... :::", result.data);
-        setStudents(result.data || []); // Fallback to empty array if data is undefined
+        setStudents(result.data || []);
         setLoading(false);
       } catch (err) {
         setError("Failed to load student data. Please try again.");
@@ -45,10 +44,19 @@ const SuperAdminstudentcontrol = () => {
       { ...newStudent, id: prevStudents.length + 1 },
     ]);
     setShowRegisterForm(false);
+    setEditingStudent(null);
     setCurrentPage(1);
     setSearchTerm("");
     setFilterBy("name");
     setSelectedUnit("All");
+  };
+
+  const handleUpdateStudent = (updatedStudent) => {
+    setStudents((prev) =>
+      prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
+    );
+    setShowRegisterForm(false);
+    setEditingStudent(null);
   };
 
   const handleLogout = () => {
@@ -59,7 +67,7 @@ const SuperAdminstudentcontrol = () => {
     .filter((student) =>
       student[filterBy]?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter((student) => 
+    .filter((student) =>
       selectedUnit === "All" ? true : student.unit === selectedUnit
     );
 
@@ -81,10 +89,8 @@ const SuperAdminstudentcontrol = () => {
 
   return (
     <div className="font-sans min-h-screen bg-neutral-100 flex flex-col lg:flex-row">
-      {/* Sidebar */}
       <Adminsidebar onLogout={handleLogout} />
 
-      {/* Main Content */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-h-screen">
         <div className="max-w-8xl mx-auto">
           {/* Header */}
@@ -104,69 +110,27 @@ const SuperAdminstudentcontrol = () => {
           {/* Register Student and Filter Buttons */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
-              onClick={() => setShowRegisterForm(!showRegisterForm)}
+              onClick={() => {
+                setShowRegisterForm(!showRegisterForm);
+                setEditingStudent(null); // reset editing
+              }}
               className="inline-block bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
             >
-              {showRegisterForm ? "Cancel" : "Register Student"}
+              {showRegisterForm
+                ? "Cancel"
+                : editingStudent
+                ? "Cancel Edit"
+                : "Register Student"}
             </button>
-
-            {!showRegisterForm && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                <div className="relative w-full sm:w-auto">
-                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={`Search by ${filterBy}`}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 w-full sm:w-64"
-                  />
-                </div>
-                
-                <select
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 w-full sm:w-auto"
-                >
-                  {units.map((unit) => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
-                </select>
-
-                <div className="relative inline-flex w-full sm:w-auto">
-                  <button
-                    onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                    className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors w-full sm:w-auto justify-center"
-                  >
-                    <FiFilter className="text-lg" />
-                    Filter By
-                  </button>
-                  {showFilterDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg p-4 z-10 border border-gray-200">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Filter by</label>
-                        <select
-                          value={filterBy}
-                          onChange={(e) => handleFilterChange(e.target.value)}
-                          className="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
-                        >
-                          <option value="name">Name</option>
-                          <option value="email">Email</option>
-                          <option value="unit">Unit</option>
-                          <option value="registeredDate">Registered Date</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Register Form */}
           {showRegisterForm && (
             <div className="mb-6">
-              <RegisterForm onSubmit={handleAddStudent} units={units.filter(u => u !== "All")} />
+              <RegisterForm
+                onSubmit={editingStudent ? handleUpdateStudent : handleAddStudent}
+                student={editingStudent} // <-- pass student for edit
+              />
             </div>
           )}
 
@@ -210,12 +174,21 @@ const SuperAdminstudentcontrol = () => {
                           <td className="px-4 py-3">{student.email}</td>
                           <td className="px-4 py-3">{student.unit}</td>
                           <td className="px-4 py-3">{student.createdAt}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 flex gap-3">
                             <button
-                              onClick={() => navigate(`/admin/students/${student.id}`)}
+                              onClick={() => {
+                                setEditingStudent(student);
+                                setShowRegisterForm(true);
+                              }}
                               className="text-teal-600 hover:text-teal-800 text-sm"
                             >
-                              View/Edit
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => navigate(`/admin/students/${student.id}`)}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              View
                             </button>
                           </td>
                         </tr>
@@ -230,47 +203,6 @@ const SuperAdminstudentcontrol = () => {
                   </tbody>
                 </table>
               </div>
-              
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="mt-4 flex justify-center items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg ${
-                      currentPage === 1
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-teal-600 text-white hover:bg-teal-700"
-                    } transition-colors`}
-                  >
-                    Back
-                  </button>
-                  {Array.from({ length: totalPages }, (_, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => handlePageChange(index + 1)}
-                      className={`px-3 py-1 rounded-lg ${
-                        currentPage === index + 1
-                          ? "bg-teal-600 text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg ${
-                      currentPage === totalPages
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-teal-600 text-white hover:bg-teal-700"
-                    } transition-colors`}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
