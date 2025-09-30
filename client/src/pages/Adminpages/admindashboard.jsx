@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiAlertCircle, FiFileText, FiUsers, FiBell, FiArrowRight } from "react-icons/fi";
+import {
+  FiAlertCircle,
+  FiFileText,
+  FiUsers,
+  FiBell,
+  FiArrowRight,
+} from "react-icons/fi";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -12,6 +18,8 @@ import {
   Legend,
 } from "chart.js";
 import Adminsidebar from "../Adminpages/Adminsidebars";
+import { useAppDispatch } from "../../redux/store-config/store";
+import { getAllStudentsAPI } from "../../redux/features/studentSlice";
 
 ChartJS.register(
   CategoryScale,
@@ -23,6 +31,7 @@ ChartJS.register(
 );
 
 const Admindashboard = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +49,9 @@ const Admindashboard = () => {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      dates.push(date.toLocaleDateString("en-US", { month: 'short', day: 'numeric' }));
+      dates.push(
+        date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      );
     }
     return dates;
   };
@@ -50,7 +61,10 @@ const Admindashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
+        const studentCount = await dispatch(getAllStudentsAPI()).unwrap();
+        console.log("All Students Fetching... :::", studentCount.data.length);
+
         // Generate random login data for the last 7 days
         const generateRandomLogins = () => {
           return Array.from({ length: 7 }, () => ({
@@ -58,22 +72,52 @@ const Admindashboard = () => {
             lecturers: Math.floor(Math.random() * 30) + 5,
           }));
         };
-        
+
         const mockData = {
-          studentCount: 1245,
+          studentCount: studentCount.data.length,
           lecturerCount: 48,
           notificationCount: 12,
           recentNotifications: [
-            { id: 1, title: "Course Access Request", type: "course", date: "2025-06-10" },
-            { id: 2, title: "Grade Review Request", type: "grade", date: "2025-06-11" },
-            { id: 3, title: "System Maintenance", type: "system", date: "2025-06-12" },
-             { id: 1, title: "Student Access Request", type: "course", date: "2025-06-10" },
-            { id: 2, title: "password reset", type: "grade", date: "2025-06-11" },
-            { id: 3, title: " Maintenance", type: "system", date: "2025-06-12" },
+            {
+              id: 1,
+              title: "Course Access Request",
+              type: "course",
+              date: "2025-06-10",
+            },
+            {
+              id: 2,
+              title: "Grade Review Request",
+              type: "grade",
+              date: "2025-06-11",
+            },
+            {
+              id: 3,
+              title: "System Maintenance",
+              type: "system",
+              date: "2025-06-12",
+            },
+            {
+              id: 1,
+              title: "Student Access Request",
+              type: "course",
+              date: "2025-06-10",
+            },
+            {
+              id: 2,
+              title: "password reset",
+              type: "grade",
+              date: "2025-06-11",
+            },
+            {
+              id: 3,
+              title: " Maintenance",
+              type: "system",
+              date: "2025-06-12",
+            },
           ],
           loginStats: generateRandomLogins(),
         };
-        
+
         setTimeout(() => {
           setDashboardData(mockData);
           setLoading(false);
@@ -91,11 +135,15 @@ const Admindashboard = () => {
   };
 
   const getBadgeColor = (type) => {
-    switch(type) {
-      case 'course': return 'bg-blue-100 text-blue-800';
-      case 'grade': return 'bg-purple-100 text-purple-800';
-      case 'system': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+    switch (type) {
+      case "course":
+        return "bg-blue-100 text-blue-800";
+      case "grade":
+        return "bg-purple-100 text-purple-800";
+      case "system":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -110,7 +158,9 @@ const Admindashboard = () => {
         <div className="mb-8 bg-gradient-to-r from-teal-600 to-teal-800 text-white p-6 rounded-lg shadow-lg">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome, Super Admin!</h2>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                Welcome, Super Admin!
+              </h2>
               <p className="text-xs sm:text-sm mt-2">
                 Manage students, lecturers, and facilities with ease. Today is{" "}
                 {new Date().toLocaleDateString("en-US", {
@@ -163,10 +213,13 @@ const Admindashboard = () => {
                       Registered Students
                     </h3>
                     <p className="mt-2 text-3xl font-bold text-gray-900">
-                      {dashboardData.studentCount.toLocaleString()}
+                      {dashboardData.studentCount}
                     </p>
                     <p className="mt-1 text-sm text-gray-500">
-                      <span className="text-green-600 font-semibold">+12.5%</span> from last month
+                      <span className="text-green-600 font-semibold">
+                        +12.5%
+                      </span>{" "}
+                      from last month
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-teal-100 text-teal-600">
@@ -194,7 +247,8 @@ const Admindashboard = () => {
                       {dashboardData.lecturerCount}
                     </p>
                     <p className="mt-1 text-sm text-gray-500">
-                      <span className="text-green-600 font-semibold">+2</span> new this month
+                      <span className="text-green-600 font-semibold">+2</span>{" "}
+                      new this month
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -222,7 +276,8 @@ const Admindashboard = () => {
                       {dashboardData.notificationCount}
                     </p>
                     <p className="mt-1 text-sm text-gray-500">
-                      <span className="text-red-600 font-semibold">3</span> require attention
+                      <span className="text-red-600 font-semibold">3</span>{" "}
+                      require attention
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-purple-100 text-purple-600">
@@ -247,20 +302,26 @@ const Admindashboard = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-12">
                   System Login Activity (Last 7 Days)
                 </h3>
-                <div className="h-80"> {/* Increased height */}
+                <div className="h-80">
+                  {" "}
+                  {/* Increased height */}
                   <Bar
                     data={{
                       labels: getLast7Days(),
                       datasets: [
                         {
                           label: "Student Logins",
-                          data: dashboardData.loginStats.map(stat => stat.students),
+                          data: dashboardData.loginStats.map(
+                            (stat) => stat.students
+                          ),
                           backgroundColor: "#14B8A6",
                           borderRadius: 4,
                         },
                         {
                           label: "Lecturer Logins",
-                          data: dashboardData.loginStats.map(stat => stat.lecturers),
+                          data: dashboardData.loginStats.map(
+                            (stat) => stat.lecturers
+                          ),
                           backgroundColor: "#3B82F6",
                           borderRadius: 4,
                         },
@@ -273,18 +334,18 @@ const Admindashboard = () => {
                         legend: { position: "top" },
                         tooltip: {
                           callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                               return `${context.dataset.label}: ${context.raw}`;
-                            }
-                          }
+                            },
+                          },
                         },
                       },
                       scales: {
                         y: {
                           beginAtZero: true,
                           ticks: {
-                            precision: 0
-                          }
+                            precision: 0,
+                          },
                         },
                       },
                     }}
@@ -302,10 +363,18 @@ const Admindashboard = () => {
                     <li key={notification.id} className="text-sm">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-gray-900">{notification.title}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notification.date}</p>
+                          <p className="font-medium text-gray-900">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {notification.date}
+                          </p>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getBadgeColor(notification.type)}`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${getBadgeColor(
+                            notification.type
+                          )}`}
+                        >
                           {notification.type}
                         </span>
                       </div>
