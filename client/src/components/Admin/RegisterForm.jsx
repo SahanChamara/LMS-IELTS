@@ -1,24 +1,29 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const RegisterForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    course: "",
-    registeredDate: new Date().toISOString().split("T")[0], // Auto-set to today's date
+    password: generatePassword(),
+    registeredDate: new Date().toISOString().split("T")[0],
   });
 
   const [error, setError] = useState(null);
+
+  // ✅ Auto generate password
+  function generatePassword() {
+    return Math.random().toString(36).slice(-8); // simple 8-char random password
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.course) {
+    if (!formData.name || !formData.email) {
       setError("Please fill out all required fields.");
       return;
     }
@@ -27,16 +32,27 @@ const RegisterForm = ({ onSubmit }) => {
       return;
     }
 
-    // Submit the form data
-    onSubmit(formData);
-    setError(null);
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      course: "",
-      registeredDate: new Date().toISOString().split("T")[0],
-    });
+    try {
+      const registerRes = await axios.post("/api/students/register", formData);
+
+      await axios.post("/api/admin/sendRegisterDetail", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      onSubmit(registerRes.data); // update UI state
+      setError(null);
+      setFormData({
+        name: "",
+        email: "",
+        password: generatePassword(),
+        registeredDate: new Date().toISOString().split("T")[0],
+      });
+    } catch (err) {
+      console.error("Error registering student:", err);
+      setError("Failed to register student. Please try again.");
+    }
   };
 
   return (
@@ -74,17 +90,17 @@ const RegisterForm = ({ onSubmit }) => {
             required
           />
         </div>
+        {/* Password is auto-generated and hidden */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Course</label>
+          <label className="block text-sm font-medium text-gray-700">Password</label>
           <input
             type="text"
-            name="course"
-            value={formData.course}
-            onChange={handleChange}
-            className="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
-            placeholder="Enter course code (e.g., CS101)"
-            required
+            name="password"
+            value={formData.password}
+            readOnly
+            className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
           />
+          <p className="text-xs text-gray-500">Password will be emailed to the student</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Register Date</label>

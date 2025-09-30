@@ -35,6 +35,7 @@ const examIeltsRoutes = require("./routes/examIeltsRoutes");
 const examIeltsSubmissionRoutes = require("./routes/examIeltsSubmissionRoutes");
 const postRoutes = require("./routes/postRoutes");
 const AnnouncementRoutes = require("./routes/announcementRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const responseFormatter = require("./middleware/responseFormatter");
 const { default: mongoose } = require("mongoose");
 
@@ -86,6 +87,7 @@ app.use("/api/examIelts", examIeltsRoutes);
 app.use("/api/posts", postRoutes );
 app.use("/api/examIeltsSubmission", examIeltsSubmissionRoutes);
 app.use("/api/announcement", AnnouncementRoutes)
+app.use("/api/admin", adminRoutes);
 
 app.use(require("./middleware/errorHandler"));
 
