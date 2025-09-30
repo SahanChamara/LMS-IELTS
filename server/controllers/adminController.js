@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const HttpsStatus = require("http-status-codes");
+const HttpsStatus = require("../config/statusCode");
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
