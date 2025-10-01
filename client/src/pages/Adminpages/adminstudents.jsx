@@ -254,12 +254,6 @@ const SuperAdminstudentcontrol = () => {
                               >
                                 Edit
                               </button>
-                              <button
-                                onClick={() => navigate(`/admin/students/${student.id}`)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
-                              >
-                                View
-                              </button>
                             </td>
                           </tr>
                         ))
