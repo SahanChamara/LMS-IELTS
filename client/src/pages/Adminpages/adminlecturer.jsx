@@ -2,16 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiUsers, FiFilter, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
-import RegisterForm from "../../components/Admin/RegisterForm";
+import RegisterFormLecture from "../../components/Admin/RegisterFormLecture";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
 
 const SuperAdminlecturercontrol = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lecturers, setLecturers] = useState([]);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [editingLecturer, setEditingLecturer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState("name");
@@ -19,22 +22,41 @@ const SuperAdminlecturercontrol = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const rowsPerPage = 10;
 
-  const departments = ["All", "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology", "Engineering"];
-  const courses = ["CS101", "CS201", "MATH201", "PHYS101", "CHEM201", "BIO101", "ENG101"];
+  const departments = [
+    "All",
+    "Computer Science",
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Engineering",
+  ];
+  const coursesList = ["CS101", "CS201", "MATH201", "PHYS101", "CHEM201", "BIO101", "ENG101"];
 
-  const dispatch = useAppDispatch();
+  // Normalize lecturer object to always have .id and .courses array
+  const normalizeLecturer = (l) => {
+    if (!l) return l;
+    return {
+      ...l,
+      id: l.id || l._id || (l._id && String(l._id)),
+      courses:
+        Array.isArray(l.courses) ? l.courses : typeof l.courses === "string" && l.courses.length
+          ? l.courses.split(",").map((c) => c.trim()).filter(Boolean)
+          : l.courses || [],
+    };
+  };
 
   useEffect(() => {
     const fetchLecturers = async () => {
       try {
         setLoading(true);
         const result = await dispatch(getAllLectursAPI()).unwrap();
-        console.log("All Lecturers Fetching... :::", result.data); 
-
-
-        setLecturers(result.data || []); // Adjust based on actual API response structure
+        const raw = result.data || [];
+        const normalized = raw.map(normalizeLecturer);
+        setLecturers(normalized);
         setLoading(false);
       } catch (err) {
+        console.error("Error fetching lecturers:", err);
         setError("Failed to load lecturer data. Please try again.");
         setLoading(false);
       }
@@ -43,15 +65,21 @@ const SuperAdminlecturercontrol = () => {
   }, [dispatch]);
 
   const handleAddLecturer = (newLecturer) => {
-    setLecturers((prevLecturers) => [
-      ...prevLecturers,
-      { ...newLecturer, id: prevLecturers.length + 1, courses: newLecturer.courses.split(",").map(c => c.trim()) }
-    ]);
+    const norm = normalizeLecturer(newLecturer);
+    setLecturers((prev) => [...prev, norm]);
     setShowRegisterForm(false);
+    setEditingLecturer(null);
     setCurrentPage(1);
     setSearchTerm("");
     setFilterBy("name");
     setSelectedDepartment("All");
+  };
+
+  const handleUpdateLecturer = (updatedLecturer) => {
+    const norm = normalizeLecturer(updatedLecturer);
+    setLecturers((prev) => prev.map((l) => (l.id === norm.id ? norm : l)));
+    setShowRegisterForm(false);
+    setEditingLecturer(null);
   };
 
   const handleLogout = () => {
@@ -59,10 +87,11 @@ const SuperAdminlecturercontrol = () => {
   };
 
   const filteredLecturers = lecturers
+    .filter((lecturer) => {
+      const value = (lecturer[filterBy] || "").toString().toLowerCase();
+      return value.includes(searchTerm.toLowerCase());
+    })
     .filter((lecturer) =>
-      lecturer[filterBy]?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((lecturer) => 
       selectedDepartment === "All" ? true : lecturer.department === selectedDepartment
     );
 
@@ -84,10 +113,8 @@ const SuperAdminlecturercontrol = () => {
 
   return (
     <div className="font-sans min-h-screen bg-neutral-100 flex flex-col lg:flex-row">
-      {/* Sidebar */}
       <Adminsidebar onLogout={handleLogout} />
 
-      {/* Main Content */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-h-screen">
         <div className="max-w-8xl mx-auto">
           {/* Header */}
@@ -100,14 +127,20 @@ const SuperAdminlecturercontrol = () => {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-              })}.
+              })}
+              .
             </p>
           </div>
 
-          {/* Register Lecturer and Filter Buttons */}
+          {/* Actions */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
-              onClick={() => setShowRegisterForm(!showRegisterForm)}
+              onClick={() => {
+                // toggling form should reset edit state when starting a new registration
+                const willShow = !showRegisterForm;
+                setShowRegisterForm(willShow);
+                if (willShow) setEditingLecturer(null);
+              }}
               className="inline-block bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
             >
               {showRegisterForm ? "Cancel" : "Register Lecturer"}
@@ -125,14 +158,16 @@ const SuperAdminlecturercontrol = () => {
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 w-full sm:w-64"
                   />
                 </div>
-                
+
                 <select
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="p-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 w-full sm:w-auto"
                 >
                   {departments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
 
@@ -169,11 +204,11 @@ const SuperAdminlecturercontrol = () => {
           {/* Register Form */}
           {showRegisterForm && (
             <div className="mb-6">
-              <RegisterForm 
-                onSubmit={handleAddLecturer} 
-                departments={departments.filter(d => d !== "All")}
-                courses={courses}
-                isLecturer={true}
+              <RegisterFormLecture
+                onSubmit={editingLecturer ? handleUpdateLecturer : handleAddLecturer}
+                lecturer={editingLecturer}
+                departments={departments.filter((d) => d !== "All")}
+                courses={coursesList}
               />
             </div>
           )}
@@ -193,93 +228,105 @@ const SuperAdminlecturercontrol = () => {
               <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
             </div>
-          ) : !showRegisterForm && (
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <FiUsers className="text-2xl text-indigo-600" />
-                Registered Lecturers ({selectedDepartment === "All" ? lecturers.length : filteredLecturers.length})
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-700">
-                  <thead className="text-xs uppercase bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-3">Name</th>
-                      <th className="px-4 py-3">Email</th>
-                      <th className="px-4 py-3">Department</th>
-                      <th className="px-4 py-3">Courses</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedLecturers.length > 0 ? (
-                      paginatedLecturers.map((lecturer) => (
-                        <tr key={lecturer.id} className="border-b hover:bg-gray-50">
-                          <td className="px-4 py-3">{lecturer.name}</td>
-                          <td className="px-4 py-3">{lecturer.email}</td>
-                          <td className="px-4 py-3">{lecturer.department}</td>
-                          <td className="px-4 py-3">{lecturer.courses.join(", ")}</td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => navigate(`/admin/lecturers/${lecturer.id}`)}
-                              className="text-teal-600 hover:text-teal-800 text-sm"
-                            >
-                              View/Edit
-                            </button>
+          ) : (
+            !showRegisterForm && (
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <FiUsers className="text-2xl text-indigo-600" />
+                  Registered Lecturers (
+                  {selectedDepartment === "All" ? lecturers.length : filteredLecturers.length})
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-700">
+                    <thead className="text-xs uppercase bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3">Name</th>
+                        <th className="px-4 py-3">Email</th>
+                        <th className="px-4 py-3">Department</th>
+                        <th className="px-4 py-3">Courses</th>
+                        <th className="px-4 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedLecturers.length > 0 ? (
+                        paginatedLecturers.map((lecturer) => (
+                          <tr key={lecturer.id} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3">{lecturer.name}</td>
+                            <td className="px-4 py-3">{lecturer.email}</td>
+                            <td className="px-4 py-3">{lecturer.department}</td>
+                            <td className="px-4 py-3">{(lecturer.courses || []).join(", ")}</td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => {
+                                  setEditingLecturer(lecturer);
+                                  setShowRegisterForm(true);
+                                }}
+                                className="text-teal-600 hover:text-teal-800 text-sm mr-4"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => navigate(`/admin/lecturers/${lecturer.id}`)}
+                                className="text-indigo-600 hover:text-indigo-800 text-sm"
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-6 text-center text-gray-500">
+                            No lecturers found matching your criteria
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="px-4 py-6 text-center text-gray-500">
-                          No lecturers found matching your criteria
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="mt-4 flex justify-center items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg ${
-                      currentPage === 1
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-teal-600 text-white hover:bg-teal-700"
-                    } transition-colors`}
-                  >
-                    Back
-                  </button>
-                  {Array.from({ length: totalPages }, (_, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => handlePageChange(index + 1)}
-                      className={`px-3 py-1 rounded-lg ${
-                        currentPage === index + 1
-                          ? "bg-teal-600 text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg ${
-                      currentPage === totalPages
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-teal-600 text-white hover:bg-teal-700"
-                    } transition-colors`}
-                  >
-                    Next
-                  </button>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex justify-center items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 rounded-lg ${
+                        currentPage === 1
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-teal-600 text-white hover:bg-teal-700"
+                      } transition-colors`}
+                    >
+                      Back
+                    </button>
+                    {Array.from({ length: totalPages }, (_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => handlePageChange(index + 1)}
+                        className={`px-3 py-1 rounded-lg ${
+                          currentPage === index + 1
+                            ? "bg-teal-600 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1 rounded-lg ${
+                        currentPage === totalPages
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-teal-600 text-white hover:bg-teal-700"
+                      } transition-colors`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </main>
