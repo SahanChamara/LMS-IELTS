@@ -46,3 +46,15 @@ export const updateUser = async (userId,updatedDetails) => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const updateLecture = async (instructorId, updatedDetails) => {
+  const apiObject = {
+    method: 'PUT',
+    withCredentials: true,
+    prefix: 'instructors',
+    endpoint: instructorId,
+    body: updatedDetails,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
