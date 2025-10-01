@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { registerUser, sendRegisterDetail, updateUser } from "../../service/adminService";
+import { registerUser, sendRegisterDetail, updateLecture, updateUser } from "../../service/adminService";
 
 /**
  * RegisterFormLecture
@@ -97,7 +97,7 @@ const RegisterFormLecture = ({ onSubmit, lecturer, departments = [], courses = [
     try {
       if (isEditMode) {
         // Update lecturer (use updateUser as your existing update API)
-        const res = await updateUser(formData.id, payload);
+        const res = await updateLecture(formData.id, payload);
         const updated = normalizeLecturer(res.data);
         onSubmit(updated);
       } else {
