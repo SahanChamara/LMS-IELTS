@@ -58,3 +58,27 @@ export const updateLecture = async (instructorId, updatedDetails) => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const addCourse = async (courseData) => {
+  const apiObject = {
+    method: 'POST',
+    withCredentials: true,
+    prefix: 'courses',
+    endpoint: '',
+    body: courseData,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
+
+export const addUnit = async (unitData) => {
+  const apiObject = {
+    method: 'POST',
+    withCredentials: true,
+    prefix: 'units',
+    endpoint: '',
+    body: unitData,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
