@@ -4,7 +4,8 @@ import { FiAlertCircle, FiBook, FiSearch } from "react-icons/fi";
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
-import { getAllCourses } from "../../service/courseService"; // ✅ include addCourse
+import { getAllCourses } from "../../service/courseService";
+import { addCourse } from "../../service/adminService";
 
 const SuperAdminCourseControl = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const SuperAdminCourseControl = () => {
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
-    instructor: "",
+    instructor: "", // should be instructor ID
     status: "active",
   });
 
@@ -63,6 +64,7 @@ const SuperAdminCourseControl = () => {
   const handleAddCourse = async (e) => {
     e.preventDefault();
     try {
+      // Send selected instructor ID
       const response = await addCourse(newCourse);
       const createdCourse = response.data;
 
@@ -179,7 +181,7 @@ const SuperAdminCourseControl = () => {
                 >
                   <option value="">Select Instructor</option>
                   {instructors.map((inst) => (
-                    <option key={inst.id} value={inst.id}>
+                    <option key={inst._id} value={inst._id}>
                       {inst.name}
                     </option>
                   ))}
@@ -245,7 +247,7 @@ const SuperAdminCourseControl = () => {
                     <tbody>
                       {paginatedCourses.length > 0 ? (
                         paginatedCourses.map((course) => (
-                          <tr key={course.id} className="border-b hover:bg-gray-50">
+                          <tr key={course._id || course.id} className="border-b hover:bg-gray-50">
                             <td className="px-4 py-3">{course.title}</td>
                             <td className="px-4 py-3">
                               {course.instructor?.name || "N/A"}
@@ -258,7 +260,7 @@ const SuperAdminCourseControl = () => {
                             </td>
                             <td className="px-4 py-3">
                               <button
-                                onClick={() => navigate(`/admin/courses/${course.id}`)}
+                                onClick={() => navigate(`/admin/courses/${course._id || course.id}`)}
                                 className="text-indigo-600 hover:text-indigo-800 text-sm"
                               >
                                 View/Edit
