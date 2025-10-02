@@ -364,7 +364,7 @@ const SuperAdminUnitControl = () => {
                             <td className="px-4 py-3 flex gap-3">
                               <button
                                 onClick={() => handleEditUnit(unit)}
-                                className="text-purple-600 hover:text-purple-800 text-sm"
+                                className="text-teal-600 hover:text-teal-800 text-sm mr-4"
                               >
                                 Edit
                               </button>
