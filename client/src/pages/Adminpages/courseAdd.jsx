@@ -5,7 +5,7 @@ import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllLectursAPI } from "../../redux/features/adminSlice";
 import { getAllCourses } from "../../service/courseService";
-import { addCourse } from "../../service/adminService";
+import { addCourse, updateCourse} from "../../service/adminService";
 
 const SuperAdminCourseControl = () => {
   const navigate = useNavigate();
@@ -17,16 +17,19 @@ const SuperAdminCourseControl = () => {
   const [instructors, setInstructors] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
+  // Edit state
+  const [editingCourseId, setEditingCourseId] = useState(null);
+
   // Pagination + Filters
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
   const [searchTerm, setSearchTerm] = useState("");
 
-  // New Course State
+  // New/Edit Course State
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
-    instructor: "", // should be instructor ID
+    instructor: "",
     status: "active",
   });
 
@@ -61,23 +64,53 @@ const SuperAdminCourseControl = () => {
     setNewCourse({ ...newCourse, [e.target.name]: e.target.value });
   };
 
-  const handleAddCourse = async (e) => {
+  // Add or Update Course
+  const handleSaveCourse = async (e) => {
     e.preventDefault();
     try {
-      // Send selected instructor ID
-      const response = await addCourse(newCourse);
-      const createdCourse = response.data;
+      if (editingCourseId) {
+        // Update existing course
+        const response = await updateCourse(editingCourseId, newCourse);
+        const updatedCourse = response.data;
 
-      // Update UI
-      setCourses((prev) => [...prev, createdCourse]);
+        setCourses((prev) =>
+          prev.map((c) => (c._id === editingCourseId ? updatedCourse : c))
+        );
+
+        setEditingCourseId(null);
+      } else {
+        // Add new course
+        const response = await addCourse(newCourse);
+        const createdCourse = response.data;
+        setCourses((prev) => [...prev, createdCourse]);
+      }
 
       // Reset form
       setShowForm(false);
       setNewCourse({ title: "", description: "", instructor: "", status: "active" });
     } catch (err) {
-      console.error("Error adding course:", err);
-      setError("Failed to add new course.");
+      console.error("Error saving course:", err);
+      setError("Failed to save course.");
     }
+  };
+
+  // Start editing
+  const handleEditCourse = (course) => {
+    setEditingCourseId(course._id);
+    setNewCourse({
+      title: course.title,
+      description: course.description,
+      instructor: course.instructor?._id || "",
+      status: course.status,
+    });
+    setShowForm(true);
+  };
+
+  // Cancel editing
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingCourseId(null);
+    setNewCourse({ title: "", description: "", instructor: "", status: "active" });
   };
 
   // Search Filter
@@ -121,7 +154,7 @@ const SuperAdminCourseControl = () => {
           {/* Actions */}
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => (showForm ? handleCancel() : setShowForm(true))}
               className="inline-block bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
             >
               {showForm ? "Cancel" : "Add Course"}
@@ -141,10 +174,10 @@ const SuperAdminCourseControl = () => {
             )}
           </div>
 
-          {/* Add Course Form */}
+          {/* Add/Edit Course Form */}
           {showForm && (
             <form
-              onSubmit={handleAddCourse}
+              onSubmit={handleSaveCourse}
               className="mb-6 bg-white p-6 rounded-lg shadow-lg space-y-4"
             >
               <div>
@@ -206,7 +239,7 @@ const SuperAdminCourseControl = () => {
                 type="submit"
                 className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
               >
-                Save Course
+                {editingCourseId ? "Update Course" : "Save Course"}
               </button>
             </form>
           )}
@@ -247,23 +280,29 @@ const SuperAdminCourseControl = () => {
                     <tbody>
                       {paginatedCourses.length > 0 ? (
                         paginatedCourses.map((course) => (
-                          <tr key={course._id || course.id} className="border-b hover:bg-gray-50">
+                          <tr key={course._id} className="border-b hover:bg-gray-50">
                             <td className="px-4 py-3">{course.title}</td>
                             <td className="px-4 py-3">
                               {course.instructor?.name || "N/A"}
                             </td>
-                            <td className="px-4 py-3 capitalize">
-                              {course.status}
-                            </td>
+                            <td className="px-4 py-3 capitalize">{course.status}</td>
                             <td className="px-4 py-3">
                               {new Date(course.createdAt).toLocaleDateString()}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 space-x-2">
                               <button
-                                onClick={() => navigate(`/admin/courses/${course._id || course.id}`)}
+                                onClick={() => handleEditCourse(course)}
                                 className="text-indigo-600 hover:text-indigo-800 text-sm"
                               >
-                                View/Edit
+                                Edit
+                              </button>
+                              <button
+                                onClick={() =>
+                                  navigate(`/admin/courses/${course._id}`)
+                                }
+                                className="text-green-600 hover:text-green-800 text-sm"
+                              >
+                                View
                               </button>
                             </td>
                           </tr>
