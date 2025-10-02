@@ -292,17 +292,9 @@ const SuperAdminCourseControl = () => {
                             <td className="px-4 py-3 space-x-2">
                               <button
                                 onClick={() => handleEditCourse(course)}
-                                className="text-indigo-600 hover:text-indigo-800 text-sm"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(`/admin/courses/${course._id}`)
-                                }
                                 className="text-green-600 hover:text-green-800 text-sm"
                               >
-                                View
+                                Edit
                               </button>
                             </td>
                           </tr>

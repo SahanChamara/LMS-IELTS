@@ -20,6 +20,7 @@ import {
 import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllStudentsAPI } from "../../redux/features/studentSlice";
+import { getAllLectures } from "../../service/adminService";
 
 ChartJS.register(
   CategoryScale,
@@ -62,8 +63,8 @@ const Admindashboard = () => {
       try {
         setLoading(true);
 
+        const lecturerCount = await getAllLectures();
         const studentCount = await dispatch(getAllStudentsAPI()).unwrap();
-        console.log("All Students Fetching... :::", studentCount.data.length);
 
         // Generate random login data for the last 7 days
         const generateRandomLogins = () => {
@@ -75,7 +76,7 @@ const Admindashboard = () => {
 
         const mockData = {
           studentCount: studentCount.data.length,
-          lecturerCount: 48,
+          lecturerCount: lecturerCount.data.length,
           notificationCount: 12,
           recentNotifications: [
             {
