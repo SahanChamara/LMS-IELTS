@@ -306,9 +306,9 @@ const SuperAdminUnitControl = () => {
                           <td className="px-4 py-3">
                             <button
                               onClick={() => navigate(`/admin/units/${unit.id}`)}
-                              className="text-purple-600 hover:text-purple-800 text-sm"
+                              className="text-teal-600 hover:text-teal-800 text-sm mr-4"
                             >
-                              View/Edit
+                              Edit
                             </button>
                           </td>
                         </tr>
