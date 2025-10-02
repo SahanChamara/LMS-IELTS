@@ -82,3 +82,27 @@ export const addUnit = async (unitData) => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const updateCourse = async (courseId,updatedDetails) => {
+  const apiObject = {
+    method: 'PUT',
+    withCredentials: true,
+    prefix: 'courses',
+    endpoint: courseId,
+    body: updatedDetails,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
+
+export const updateUnit = async (UnitId,updatedDetails) => {
+  const apiObject = {
+    method: 'PUT',
+    withCredentials: true,
+    prefix: 'units',
+    endpoint: UnitId,
+    body: updatedDetails,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
