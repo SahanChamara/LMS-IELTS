@@ -8,7 +8,7 @@ const AssessmentSchema = new Schema({
   duration: { type: Number, required: true },
   passPercentage: { type: Number, required: true },
   totalMarks: { type: Number, required: true },
-  caMarksPercetage: { type: Number, required: true },
+  caMarksPercetage: { type: Number},
   description: { type: String },
   status: { type: String, enum: ["active", "inactive"], default: "active" },
   dueDate: { type: Date },

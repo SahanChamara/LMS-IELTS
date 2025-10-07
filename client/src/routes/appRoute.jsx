@@ -60,9 +60,7 @@ const AppRoutes = () => {
       <Route path='/' element={<IELTSLandingPage />} />
 
       {/* Protected routes for Students and SuperAdmin */}
-      <Route
-        element={<ProtectedRoute allowedRoles={['Student', 'SuperAdmin']} />}
-      >
+      <Route element={<ProtectedRoute allowedRoles={['Student', 'SuperAdmin']} />} >
         <Route path='/dashboard' element={<Institution />} />
         <Route path='/register' element={<Register />} />
         <Route path='/institution' element={<Institution />} />
@@ -105,14 +103,9 @@ const AppRoutes = () => {
         <Route path='/dashboard/admin' element={<SuperAdmin />} />
         <Route path='/students/admin' element={<SuperAdminstudentcontrol />} />
         <Route path='/lectures/admin' element={<SuperAdminlecturercontrol />} />
-
         <Route path='/feed/admin' element={<AdminFeed />} />
-        <Route
-          path='/notifications/admin'
-          element={<SuperAdminnotifications />}
-        />
         <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
-
+        <Route path='/notifications/admin' element={<SuperAdminnotifications />} />
       </Route>
     </Routes>
   )

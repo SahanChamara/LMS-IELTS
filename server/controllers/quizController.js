@@ -8,9 +8,9 @@ exports.createQuiz = async (req, res) => {
     const { question, options, answer, assessment, mark } = req.body;
 
     // Validate required fields
-    if (!question || !options || answer === undefined || !assessment || mark === undefined) {
-      return res.status(400).json({ success: false, message: 'Question, options, answer, assessment, and mark are required' });
-    }
+    // if (!question || !options || answer === undefined || !assessment || mark === undefined) {
+    //   return res.status(400).json({ success: false, message: 'Question, options, answer, assessment, and mark are required' });
+    // }
 
     // Validate assessment exists
     if (!mongoose.Types.ObjectId.isValid(assessment)) {
@@ -25,9 +25,9 @@ exports.createQuiz = async (req, res) => {
     if (!Array.isArray(options) || options.length < 2) {
       return res.status(400).json({ success: false, message: 'Options must be an array with at least 2 items' });
     }
-    if (!Number.isInteger(answer) || answer < 0 || answer >= options.length) {
-      return res.status(400).json({ success: false, message: 'Answer must be a valid index of the options array' });
-    }
+    // if (!Number.isInteger(answer) || answer < 0 || answer >= options.length) {
+    //   return res.status(400).json({ success: false, message: 'Answer must be a valid index of the options array' });
+    // }
 
     // Check for unique question
     const existingQuiz = await Quiz.findOne({ question });

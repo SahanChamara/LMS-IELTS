@@ -49,7 +49,7 @@ export async function getUnitByInstructorId(id) {
       method: "GET",
       withCredentials: true,
       prefix: "",
-      endpoint: `units/${id}/units`,  // Fixed here
+      endpoint: `units/instructor/${id}`,  // Fixed here
     };
     return await ApiService.callApi(apiObject);
   } catch (error) {

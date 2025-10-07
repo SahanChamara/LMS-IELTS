@@ -5,7 +5,8 @@ const Schema = mongoose.Schema;
 
 const QuizSchema = new Schema({
     question: { type: String, required: true},
-    options: [{ type: [String], required: true }],
+    // options: [{ type: [String], required: true }],
+    options: { type: [String], required: true },
     answer: { type: Number, required: true },
     assessment: { type: Schema.Types.ObjectId, ref: 'Assessment' },
     mark: { type: Number,required: true },

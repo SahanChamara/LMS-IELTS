@@ -57,6 +57,7 @@ exports.createUnit = async (req, res) => {
             title,
             course,
             order,
+            unitCode,
             subUnits,
             lessons,
             assessments,
@@ -102,6 +103,7 @@ exports.createUnit = async (req, res) => {
             title,
             course: course || null,
             order,
+            unitCode,
             subUnits: subUnits || [],
             lessons: lessons || [],
             assessments: assessments || [],
@@ -127,6 +129,7 @@ exports.createUnit = async (req, res) => {
                 title: unit.title,
                 course: unit.course,
                 order: unit.order,
+                unitCode: unit.unitCode,
                 subUnits: unit.subUnits,
                 lessons: unit.lessons,
                 assessments: unit.assessments,
@@ -220,6 +223,7 @@ exports.updateUnit = async (req, res) => {
             title,
             course,
             order,
+            unitCode,
             subUnits,
             lessons,
             assessments,
@@ -257,6 +261,7 @@ exports.updateUnit = async (req, res) => {
             ...(title && { title }),
             ...(typeof course !== 'undefined' && { course: course || null }),
             ...(order !== undefined && { order }),
+            ...(unitCode !== undefined && { unitCode }),
             ...(subUnits && { subUnits }),
             ...(lessons && { lessons }),
             ...(assessments && { assessments }),
@@ -290,6 +295,7 @@ exports.updateUnit = async (req, res) => {
                 title: unit.title,
                 course: unit.course,
                 order: unit.order,
+                unitCode: unit.unitCode,
                 subUnits: unit.subUnits,
                 lessons: unit.lessons,
                 assessments: unit.assessments,
@@ -525,53 +531,114 @@ exports.addDiscussion = async (req, res) => {
 
 
 //=========================================================================================
+// exports.getAllUnitsByInstructor = async (req, res) => {
+//   try {
+//     // const { page = 1, limit = 10, course } = req.query;
+//     const { page = 1, limit = 10 } = req.query;
+//     const instructorId = req.params.id;
+//
+//     if (!mongoose.isValidObjectId(instructorId)) {
+//       return res.status(400).json({ message: 'Invalid instructor ID' });
+//     }
+//
+//     const query = { instructor: instructorId };
+//
+//     // if (course) {
+//     //   validateObjectId(course, 'course ID');
+//     //   query.course = course;
+//     // }
+//
+//     const units = await Unit.find(query)
+//       .select('unitCode title description image')
+//       // .populate()// Only fetch the needed fields
+//       .populate(populateOptions)
+//       .limit(Number(limit))
+//       .skip((page - 1) * Number(limit))
+//       .sort({ order: 1 })
+//       .lean();
+//
+//     const total = await Unit.countDocuments(query);
+//
+//     return res.status(200).json({
+//       success: true,
+//       data: units.map(unit => ({
+//         id: unit._id,
+//         unitCode: unit.unitCode,
+//         title: unit.title,
+//         description: unit.description,
+//         image: unit.image
+//       })),
+//       pagination: {
+//         total,
+//         page: Number(page),
+//         pages: Math.ceil(total / limit)
+//       }
+//     });
+//   } catch (error) {
+//     return res.status(error.statusCode || 500).json({
+//       success: false,
+//       message: 'Error fetching units by instructor',
+//       error: error.message
+//     });
+//   }
+// };
 exports.getAllUnitsByInstructor = async (req, res) => {
-  try {
-    // const { page = 1, limit = 10, course } = req.query;
-    const { page = 1, limit = 10 } = req.query;
-    const instructorId = req.params.id;
+    try {
+        const { page = 1, limit = 10, course } = req.query;
+        const instructorId = req.params.id;
 
-    if (!mongoose.isValidObjectId(instructorId)) {
-      return res.status(400).json({ message: 'Invalid instructor ID' });
+        // Validate instructor ID
+        validateObjectId(instructorId, 'instructor');
+
+        // Build query
+        const query = { instructor: instructorId };
+        if (course) {
+            validateObjectId(course, 'course');
+            query.course = course;
+        }
+
+        // Fetch units with pagination and population
+        const units = await Unit.find(query)
+            .select('unitCode title description image assessments')
+            .populate(populateOptions)
+            .limit(Number(limit))
+            .skip((page - 1) * Number(limit))
+            .sort({ order: 1 })
+            .lean();
+
+        // Count total units for pagination
+        const total = await Unit.countDocuments(query);
+
+        // Map units to match frontend expectations
+        const formattedUnits = units.map(unit => ({
+            id: unit._id.toString(),
+            unitCode: unit.unitCode,
+            title: unit.title,
+            description: unit.description,
+            image: unit.image,
+            course: unit.course || null,
+            subUnits: unit.subUnits || [],
+            lessons: unit.lessons || [],
+            assessments: unit.assessments || [],
+            exams: unit.exams || [],
+            instructor: unit.instructor || null,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: formattedUnits,
+            pagination: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / limit),
+            },
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || 'Error fetching units by instructor',
+            error: error.message,
+        });
     }
-
-    const query = { instructor: instructorId };
-
-    // if (course) {
-    //   validateObjectId(course, 'course ID');
-    //   query.course = course;
-    // }
-
-    const units = await Unit.find(query)
-      .select('unitCode title description image') // Only fetch the needed fields
-      .limit(Number(limit))
-      .skip((page - 1) * Number(limit))
-      .sort({ order: 1 })
-      .lean();
-
-    const total = await Unit.countDocuments(query);
-
-    return res.status(200).json({
-      success: true,
-      data: units.map(unit => ({
-        id: unit._id,
-        unitCode: unit.unitCode,
-        title: unit.title,
-        description: unit.description,
-        image: unit.image
-      })),
-      pagination: {
-        total,
-        page: Number(page),
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      message: 'Error fetching units by instructor',
-      error: error.message
-    });
-  }
 };
 //=========================================================================================

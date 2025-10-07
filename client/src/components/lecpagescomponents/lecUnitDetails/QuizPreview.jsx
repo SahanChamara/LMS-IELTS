@@ -8,6 +8,8 @@ const QuizPreview = ({ quizData, marksDistribution, isOpen, onClose }) => {
   const questions = quizData?.questions || [];
   const totalQuestions = parseInt(quizData?.questionCount) || questions.length;
 
+  console.log("Quiz Data:", quizData);
+
   const handleNextQuestion = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
