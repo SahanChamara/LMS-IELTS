@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { getQuizByUnitId, postAssessmentMarks } from "../../../service/quizService";
+import { getQuestionsByAssessmentId, postAssessmentMarks } from "../../../service/quizService";
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught in ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center py-10">
+          <h3 className="text-lg font-medium text-red-600">
+            Something went wrong.
+          </h3>
+          <p className="text-gray-500">
+            Please try again or contact support.
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Define QuizInstructions
 const QuizInstructions = ({
@@ -86,6 +115,7 @@ const Quiz = ({ questions, timeLimit, onComplete, onCancel, studentId, assessmen
   };
 
   const currentQuestion = questions[currentIndex];
+  // console.log("Quiz component mounted with questions:", questions);
 
   const handleAnswer = (answer) => {
     const newAnswers = [...answers];
@@ -123,12 +153,11 @@ const Quiz = ({ questions, timeLimit, onComplete, onCancel, studentId, assessmen
       const score = calculateScore();
       const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
 
-      // Post assessment marks to API
       const response = await postAssessmentMarks({
         student: localStorage.getItem("user"),
         assessment: assessmentId,
         maxMarks: totalMarks,
-        weight: 10, // Hardcoded as per request body example
+        weight: 10,
         marks: score,
       });
 
@@ -142,7 +171,7 @@ const Quiz = ({ questions, timeLimit, onComplete, onCancel, studentId, assessmen
       console.error("Error submitting quiz:", error);
       alert("Failed to submit quiz. Please try again.");
       setIsSubmitting(false);
-      setTimerActive(true); // Re-enable timer if submission fails
+      setTimerActive(true);
     }
   };
 
@@ -475,11 +504,14 @@ function QuizApp({ assessments, unitId, studentId }) {
   const [currentAttempt, setCurrentAttempt] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState("all"); // 'all', 'completed', 'pending'
-  const [quizQuestions, setQuizQuestions] = useState({}); // Cache quiz questions by quiz ID
+  const [filter, setFilter] = useState("all");
+  const [quizQuestions, setQuizQuestions] = useState({});
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [noQuestionsError, setNoQuestionsError] = useState(null);
 
   // Log invalid assessments for debugging
   useEffect(() => {
+    console.log("Assessments data:", assessments);
     const invalidAssessments = assessments.filter(
       (assessment) => !assessment || !assessment._id || !assessment.title
     );
@@ -488,7 +520,23 @@ function QuizApp({ assessments, unitId, studentId }) {
     }
   }, [assessments]);
 
+  // Log state transitions for debugging
+  useEffect(() => {
+    console.log("QuizApp state:", {
+      activeAssessment,
+      showInstructions,
+      isLoadingQuestions,
+      noQuestionsError,
+      questions: activeAssessment?.questions,
+    });
+  }, [activeAssessment, showInstructions, isLoadingQuestions, noQuestionsError]);
+
   const startAssessment = (assessment) => {
+    if (!assessment._id) {
+      console.error("Invalid assessment ID:", assessment);
+      alert("Cannot start assessment: Invalid assessment ID.");
+      return;
+    }
     setActiveAssessment({
       ...assessment,
       id: assessment._id,
@@ -497,32 +545,65 @@ function QuizApp({ assessments, unitId, studentId }) {
       attemptsAllowed: assessment.attemptsAllowed || 3,
     });
     setShowInstructions(true);
+    setNoQuestionsError(null); // Reset error state
   };
 
   const getQuiz = async () => {
+    if (!activeAssessment?.id) {
+      console.error("No valid assessment ID provided for fetching questions");
+      alert("Cannot load quiz: Invalid assessment ID.");
+      setShowInstructions(false);
+      setActiveAssessment(null);
+      return;
+    }
+
+    setIsLoadingQuestions(true);
     try {
-      const response = await getQuizByUnitId(activeAssessment.id);
-      if (!response.success || !response.data) {
-        throw new Error("Failed to fetch quiz questions");
+      const response = await getQuestionsByAssessmentId(activeAssessment.id);
+      console.log("API response for getQuestionsByAssessmentId:", response);
+
+      if (!response.success) {
+        throw new Error(response.message || "API request failed");
+      }
+      if (!response.data) {
+        throw new Error("No data returned from API");
+      }
+      if (!Array.isArray(response.data)) {
+        throw new Error("API response data is not an array");
+      }
+      if (response.data.length === 0) {
+        setNoQuestionsError("This assessment has no questions available.");
+        setShowInstructions(false);
+        setActiveAssessment(null);
+        return;
       }
 
-      // Transform the response data to match the expected question format
-      const questions = response.data.map((quiz, index) => ({
-        text: quiz.question || "Untitled Question",
-        options: quiz.options[0] || [],
-        correctAnswer: quiz.answer,
-        marks: quiz.mark || 1,
-        type: "mcq",
-        id: quiz._id || `question-${index}`,
-      }));
+      const questions = response.data.map((quiz, index) => {
+        let options = [];
+        if (typeof quiz.options === "string") {
+          options = [quiz.options];
+        } else if (Array.isArray(quiz.options)) {
+          options = quiz.options;
+        } else {
+          options = [];
+        }
 
-      // Cache questions by quiz ID
+        return {
+          text: quiz.question || "Untitled Question",
+          options,
+          correctAnswer: quiz.answer,
+          marks: quiz.mark || 1,
+          type: "mcq",
+          id: quiz._id || `question-${index}`,
+        };
+      });
+
       const newQuizQuestions = response.data.reduce(
         (acc, quiz) => ({
           ...acc,
           [quiz._id]: {
             text: quiz.question || "Untitled Question",
-            options: quiz.options[0] || [],
+            options: typeof quiz.options === "string" ? [quiz.options] : quiz.options || [],
             correctAnswer: quiz.answer,
             marks: quiz.mark || 1,
             type: "mcq",
@@ -532,20 +613,20 @@ function QuizApp({ assessments, unitId, studentId }) {
       );
       setQuizQuestions((prev) => ({ ...prev, ...newQuizQuestions }));
 
-      // Update activeAssessment with questions and totalMarks
       setActiveAssessment((prev) => ({
         ...prev,
         questions,
         totalMarks: questions.reduce((sum, q) => sum + q.marks, 0),
       }));
 
-      // Proceed to the quiz
       setShowInstructions(false);
     } catch (error) {
       console.error("Error fetching quiz questions:", error);
-      alert("Failed to load quiz questions. Please try again.");
+      alert(`Failed to load quiz questions: ${error.message}. Please try again.`);
       setActiveAssessment(null);
       setShowInstructions(false);
+    } finally {
+      setIsLoadingQuestions(false);
     }
   };
 
@@ -579,7 +660,35 @@ function QuizApp({ assessments, unitId, studentId }) {
 
   return (
     <div className="max-w-8xl mx-auto p-4 md:p-6 rounded-lg">
-      {assessments.length === 0 ? (
+      {isLoadingQuestions && (
+        <div className="text-center py-10">
+          <p>Loading quiz questions...</p>
+        </div>
+      )}
+
+      {noQuestionsError && !isLoadingQuestions && (
+        <div className="text-center py-10">
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">
+            No Questions Available
+          </h3>
+          <p className="mt-1 text-gray-500">{noQuestionsError}</p>
+        </div>
+      )}
+
+      {assessments.length === 0 && !isLoadingQuestions && !noQuestionsError && (
         <div className="text-center py-10">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -603,13 +712,15 @@ function QuizApp({ assessments, unitId, studentId }) {
               : "No valid assessments available"}
           </p>
         </div>
-      ) : (
+      )}
+
+      {assessments.length > 0 && !isLoadingQuestions && !noQuestionsError && (
         <div className="grid gap-4 md:gap-6">
           {assessments.map((assessment) => {
             const assessmentAttempts = attempts.filter(
               (a) => a.assessmentId === assessment._id
             );
-            const lastAttempt = assessmentAttempts[0];
+            const lastAttempt = assessmentAttempts[assessmentAttempts.length - 1];
             const attemptsLeft =
               (assessment.attemptsAllowed || 3) - assessmentAttempts.length;
 
@@ -713,7 +824,11 @@ function QuizApp({ assessments, unitId, studentId }) {
         <QuizInstructions
           assessment={activeAssessment}
           onStart={getQuiz}
-          onCancel={() => setActiveAssessment(null)}
+          onCancel={() => {
+            setActiveAssessment(null);
+            setShowInstructions(false);
+            setNoQuestionsError(null);
+          }}
           attemptNumber={
             attempts.filter((a) => a.assessmentId === activeAssessment._id)
               .length + 1
@@ -725,15 +840,20 @@ function QuizApp({ assessments, unitId, studentId }) {
         />
       )}
 
-      {activeAssessment && !showInstructions && activeAssessment.questions && (
-        <Quiz
-          questions={activeAssessment.questions}
-          timeLimit={activeAssessment.duration}
-          onComplete={handleQuizComplete}
-          onCancel={() => setActiveAssessment(null)}
-          studentId={studentId}
-          assessmentId={activeAssessment.id}
-        />
+      {activeAssessment && !showInstructions && !isLoadingQuestions && !noQuestionsError && activeAssessment.questions && activeAssessment.questions.length > 0 && (
+        <ErrorBoundary>
+          <Quiz
+            questions={activeAssessment.questions}
+            timeLimit={activeAssessment.duration}
+            onComplete={handleQuizComplete}
+            onCancel={() => {
+              setActiveAssessment(null);
+              setNoQuestionsError(null);
+            }}
+            studentId={studentId}
+            assessmentId={activeAssessment.id}
+          />
+        </ErrorBoundary>
       )}
 
       {showResults && currentAttempt && (
@@ -742,9 +862,13 @@ function QuizApp({ assessments, unitId, studentId }) {
           assessment={assessments.find(
             (a) => a._id === currentAttempt.assessmentId
           )}
-          onClose={() => setShowResults(false)}
+          onClose={() => {
+            setShowResults(false);
+            setNoQuestionsError(null);
+          }}
           onRetry={() => {
             setShowResults(false);
+            setNoQuestionsError(null);
             startAssessment(
               assessments.find((a) => a._id === currentAttempt.assessmentId)
             );

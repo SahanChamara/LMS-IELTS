@@ -9,8 +9,10 @@ import {
   FiBell,
   FiGlobe,
   FiLogOut,
+  FiBookOpen,
 } from "react-icons/fi";
 import PropTypes from "prop-types";
+import { FaUserTie } from "react-icons/fa";
 
 const Adminsidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -20,8 +22,10 @@ const Adminsidebar = ({ onLogout }) => {
   const navItems = [
     { name: "Dashboard", path: "/dashboard/admin", icon: <FiHome className="text-lg" /> },
     { name: "Students", path: "/students/admin", icon: <FiUsers className="text-lg" /> },
-    { name: "Lectures", path: "/lectures/admin", icon: <FiBook className="text-lg" /> },
-    { name: "Notifications", path: "/notifications/admin", icon: <FiBell className="text-lg" /> },
+    { name: "Lectures", path: "/lectures/admin", icon: <FaUserTie className="text-lg" /> },
+    { name: "Courses", path: "/course/admin", icon: <FiBook className="text-lg" /> },
+    { name: "Units", path: "/unit/admin", icon: <FiBookOpen className="text-lg" /> },
+    // { name: "Notifications", path: "/notifications/admin", icon: <FiBell className="text-lg" /> },
     { name: "Feed Management", path: "/feed/admin", icon: <FiGlobe className="text-lg" /> },
   ];
 

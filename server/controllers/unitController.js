@@ -95,7 +95,7 @@ exports.createUnit = async (req, res) => {
         }
 
         // Validate timePeriod is a positive number
-        if (typeof timePeriod !== 'number' || timePeriod <= 0) {
+        if (timePeriod <= 0) {
             throw new ApiError(400, 'timePeriod must be a positive number');
         }
 

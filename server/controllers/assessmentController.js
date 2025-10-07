@@ -142,7 +142,7 @@ exports.getAssessmentById = async (req, res) => {
     if (!assessment) {
       return res.status(404).json({ success: false, message: 'Assessment not found' });
     }
-
+    console.log("hi awa 8")
     res.status(200).json({ success: true, data: [assessment] });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching assessment', error: error.message });

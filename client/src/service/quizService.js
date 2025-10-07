@@ -22,6 +22,7 @@ export async function postAssessmentMarks(data) {
       method: "POST",
       withCredentials: true,
       prefix: "",
+      // endpoint: "assessmentMarks",
       endpoint: "assessmentMarks",
       body:data,
     };
