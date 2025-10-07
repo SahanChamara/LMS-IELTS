@@ -95,7 +95,7 @@ const AppRoutes = () => {
         <Route path='/feed/lecture' element={<InstructorFeed />} />
         <Route path='/student-history/:quizId' element={<StudentAllHistory />} />
         <Route path='/response/:id' element={<Response />} />
-        <Route path='/students/lecture/records/:unitId' element={<StudandTabel />} />
+        <Route path='/students/lecture/records/:courseId' element={<StudandTabel />} />
         <Route path='/assignments/receive' element={<AssignmentReceive />} />
         <Route path="/exam/lecture" element={<InstructorDashboard />} />
       </Route>
