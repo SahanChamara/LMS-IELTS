@@ -1,187 +1,191 @@
-import React, { useState, useEffect } from "react";
+// LessonsTab.jsx
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { addLesson, getAllLesson } from "../../../service/lessonService";
 
-// Component to manage lessons with a modern admin panel UI
+
 const LessonsTab = ({ unit }) => {
-  // State for lessons list (default to unit.lessons or empty array)
-  const [lessons, setLessons] = useState(unit.lessons || []);
-  // State for form visibility (null = hidden, "add" or lesson ID = visible)
-  const [formMode, setFormMode] = useState(null);
-  // State for form data (new or edited lesson)
-  const [formData, setFormData] = useState({ title: "", description: "", duration: "" });
-  // State for loading during save/delete
+  const unitId = unit?.unitId || unit?.unitId || unit?.unitId || ""; // robust unit id
+  const [lessons, setLessons] = useState(Array.isArray(unit?.lessons) ? unit.lessons : []);
+  const [formMode, setFormMode] = useState(null); // null | "add" | lessonId
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    doc: "",
+    lectureLink: "",
+    completed: false,
+    duration: "",
+    order: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
-  // State for toast notifications (error or success)
-  const [toast, setToast] = useState({ message: "", type: "", visible: false });
-  // State for error tooltip visibility
+  const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
   const [showErrorTooltip, setShowErrorTooltip] = useState(false);
 
-  // Handle input changes for form fields
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setShowErrorTooltip(false); // Hide tooltip on input
-  };
+  useEffect(() => {
 
-  // Handle adding a new lesson
-  const handleAddLesson = () => {
-    if (!formData.title || !formData.description || !formData.duration) {
-      setShowErrorTooltip(true);
-      setToast({ message: "All fields are required", type: "error", visible: true });
-      return;
-    }
+    console.log("unit prop", unit.unitId);
+    
+    // sync when unit prop changes
+    if (Array.isArray(unit?.lessons)) setLessons(unit.lessons);
+  }, [unit]);
 
-    setIsLoading(true);
-    const newLesson = {
-      id: Date.now(), // Simulate unique ID (replace with backend-generated ID)
-      title: formData.title,
-      description: formData.description,
-      duration: formData.duration,
-    };
-
-    const data = new FormData();
-    data.append("unitId", unit.id || unit.code);
-    data.append("title", newLesson.title);
-    data.append("description", newLesson.description);
-    data.append("duration", newLesson.duration);
-
-    // Simulate API call
-    setTimeout(() => {
-      setLessons([...lessons, newLesson]);
-      setFormMode(null);
-      setIsLoading(false);
-      setFormData({ title: "", description: "", duration: "" });
-      setToast({ message: "Lesson added successfully", type: "success", visible: true });
-    }, 1000);
-
-    // Backend integration: POST /api/lessons
-    /*
-    fetch("/api/lessons", { method: "POST", body: data })
-      .then((response) => response.json())
-      .then((data) => {
-        setLessons([...lessons, data]);
-        setFormMode(null);
-        setIsLoading(false);
-        setToast({ message: "Lesson added successfully", type: "success", visible: true });
-      })
-      .catch((error) => {
-        console.error("Error adding lesson:", error);
-        setToast({ message: "Failed to add lesson", type: "error", visible: true });
-        setIsLoading(false);
-      });
-    */
-  };
-
-  // Handle editing an existing lesson
-  const handleEditLesson = (lesson) => {
-    setFormMode(lesson.id);
+  const resetForm = () => {
     setFormData({
-      title: lesson.title,
-      description: lesson.description,
-      duration: lesson.duration,
+      title: "",
+      content: "",
+      doc: "",
+      lectureLink: "",
+      completed: false,
+      duration: "",
+      order: "",
     });
-  };
-
-  // Handle saving an edited lesson
-  const handleSaveLesson = () => {
-    if (!formData.title || !formData.description || !formData.duration) {
-      setShowErrorTooltip(true);
-      setToast({ message: "All fields are required", type: "error", visible: true });
-      return;
-    }
-
-    setIsLoading(true);
-    const updatedLesson = {
-      id: formMode,
-      title: formData.title,
-      description: formData.description,
-      duration: formData.duration,
-    };
-
-    const data = new FormData();
-    data.append("unitId", unit.id || unit.code);
-    data.append("title", updatedLesson.title);
-    data.append("description", updatedLesson.description);
-    data.append("duration", updatedLesson.duration);
-
-    // Simulate API call
-    setTimeout(() => {
-      setLessons(lessons.map((l) => (l.id === formMode ? updatedLesson : l)));
-      setFormMode(null);
-      setIsLoading(false);
-      setFormData({ title: "", description: "", duration: "" });
-      setToast({ message: "Lesson updated successfully", type: "success", visible: true });
-    }, 1000);
-
-    // Backend integration: PUT /api/lessons/:id
-    /*
-    fetch(`/api/lessons/${formMode}`, { method: "PUT", body: data })
-      .then((response) => response.json())
-      .then((data) => {
-        setLessons(lessons.map((l) => (l.id === formMode ? data : l)));
-        setFormMode(null);
-        setIsLoading(false);
-        setToast({ message: "Lesson updated successfully", type: "success", visible: true });
-      })
-      .catch((error) => {
-        console.error("Error updating lesson:", error);
-        setToast({ message: "Failed to update lesson", type: "error", visible: true });
-        setIsLoading(false);
-      });
-    */
-  };
-
-  // Handle deleting a lesson
-  const handleDeleteLesson = (lessonId) => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLessons(lessons.filter((l) => l.id !== lessonId));
-      setIsLoading(false);
-      setToast({ message: "Lesson deleted successfully", type: "success", visible: true });
-    }, 1000);
-
-    // Backend integration: DELETE /api/lessons/:id
-    /*
-    fetch(`/api/lessons/${lessonId}`, { method: "DELETE" })
-      .then((response) => response.json())
-      .then(() => {
-        setLessons(lessons.filter((l) => l.id !== lessonId));
-        setIsLoading(false);
-        setToast({ message: "Lesson deleted successfully", type: "success", visible: true });
-      })
-      .catch((error) => {
-        console.error("Error deleting lesson:", error);
-        setToast({ message: "Failed to delete lesson", type: "error", visible: true });
-        setIsLoading(false);
-      });
-    */
-  };
-
-  // Handle cancel for add/edit form
-  const handleCancel = () => {
-    setFormMode(null);
-    setFormData({ title: "", description: "", duration: "" });
     setShowErrorTooltip(false);
   };
 
-  // Auto-hide toast after 3 seconds
-  useEffect(() => {
-    if (toast.visible) {
-      const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
-      return () => clearTimeout(timer);
+  const showToast = (message, type = "success") => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setShowErrorTooltip(false);
+  };
+
+  const validateForm = () => {
+    // minimal validation: title, content, duration, order must exist
+    if (!formData.title?.trim() || !formData.content?.trim()) return false;
+    // duration and order are numeric
+    if (formData.duration === "" || Number.isNaN(Number(formData.duration))) return false;    
+    return true;
+  };
+
+  const handleAddLesson = async () => {
+    if (!validateForm()) {
+      setShowErrorTooltip(true);
+      showToast("Please fill required fields (title, content, duration, order).", "error");
+      return;
     }
-  }, [toast.visible]);
+
+    if (!unitId) {
+      showToast("Missing unit id. Cannot add lesson.", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Build lesson payload according to your backend model
+      const payload = {
+        title: formData.title.trim(),
+        unit: unitId,
+        content: formData.content.trim(),
+        doc: formData.doc?.trim() || "",
+        lectureLink: formData.lectureLink?.trim() || "",
+        completed: false,
+        duration: Number(formData.duration),
+        order: 1,
+      };
+
+      const res = await addLesson(payload);
+      const created = res?.data || res; // accept both shapes
+      setLessons((prev) => [...prev, created]);
+
+      resetForm();
+      setFormMode(null);
+      showToast("Lesson added successfully", "success");
+    } catch (err) {
+      console.error("Error adding lesson:", err);
+      showToast("Failed to add lesson. Check console for details.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditLesson = (lesson) => {
+    setFormMode(lesson.id || lesson._id);
+    setFormData({
+      title: lesson.title || "",
+      content: lesson.content || "",
+      doc: lesson.doc || "",
+      lectureLink: lesson.lectureLink || "",
+      completed: !!lesson.completed,
+      duration: lesson.duration != null ? String(lesson.duration) : "",
+      order: lesson.order != null ? String(lesson.order) : "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSaveLesson = async () => {
+    // NOTE: you mentioned addLeson and didn't mention update API naming.
+    // If you have update API e.g. updateLeson(id, payload) use it here.
+    // For now this does a local update only (mirror of original).
+    if (!validateForm()) {
+      setShowErrorTooltip(true);
+      showToast("Please fill required fields (title, content, duration, order).", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const updatedLesson = {
+        id: formMode,
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        doc: formData.doc?.trim() || "",
+        lectureLink: formData.lectureLink?.trim() || "",
+        completed: false,
+        duration: Number(formData.duration),
+        order: 1,
+        unit: unitId,
+      };
+
+      // If you have an update API, call it here and use its response:
+      // const res = await updateLeson(formMode, updatedLesson);
+      // const saved = res.data;
+
+      // Local update for now:
+      setLessons((prev) => prev.map((l) => ((l._id || l.id) === formMode ? updatedLesson : l)));
+      setFormMode(null);
+      resetForm();
+      showToast("Lesson updated", "success");
+    } catch (err) {
+      console.error("Error saving lesson:", err);
+      showToast("Failed to save lesson", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteLesson = (lessonId) => {
+    // If you have a delete API, call it here. For now we remove locally.
+    setIsLoading(true);
+    setTimeout(() => {
+      setLessons((prev) => prev.filter((l) => (l._id || l.id) !== lessonId));
+      setIsLoading(false);
+      showToast("Lesson deleted", "success");
+    }, 300);
+  };
+
+  const handleCancel = () => {
+    setFormMode(null);
+    resetForm();
+  };
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg w-full">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold text-neutral-900">
-          Lessons for {unit.title || "Unit"}
+          Lessons for {unit?.title || unit?.name || "Unit"}
         </h3>
+
         {!formMode && (
           <button
-            onClick={() => setFormMode("add")}
-            className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
+            onClick={() => {
+              setFormMode("add");
+              resetForm();
+            }}
+            className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium ${
               isLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
             disabled={isLoading}
@@ -192,159 +196,161 @@ const LessonsTab = ({ unit }) => {
         )}
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {toast.visible && (
         <div
-          role="alert"
+          role="status"
           aria-live="polite"
-          className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-            toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-600"
-          } animate-fade-in-out`}
+          className={`fixed top-4 right-4 p-3 rounded-lg shadow-md ${
+            toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"
+          }`}
         >
           {toast.message}
         </div>
       )}
 
-      {/* Add/Edit Lesson Form */}
+      {/* Add/Edit Form */}
       {formMode && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6 transition-all duration-300 ease-in-out">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h4 className="text-lg font-medium text-neutral-900 mb-4">
             {formMode === "add" ? "Add New Lesson" : "Edit Lesson"}
           </h4>
+
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-neutral-700">
-                Lesson Title
-              </label>
+              <label className="block text-sm font-medium text-neutral-700">Title *</label>
               <input
-                id="title"
                 name="title"
-                type="text"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                placeholder="e.g., Introduction to React"
-                aria-label="Lesson Title"
-                tabIndex={0}
+                className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                placeholder="Lesson title"
+                required
+                aria-required="true"
               />
             </div>
+
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-neutral-700">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-neutral-700">Content *</label>
               <textarea
-                id="description"
-                name="description"
-                value={formData.description}
+                name="content"
+                value={formData.content}
                 onChange={handleInputChange}
-                rows={3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                placeholder="e.g., Learn the basics of React components"
-                aria-label="Lesson Description"
-                tabIndex={0}
+                rows={4}
+                className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                placeholder="Full content or summary of the lesson"
+                required
+                aria-required="true"
               />
             </div>
-            <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-neutral-700">
-                Duration
-              </label>
-              <input
-                id="duration"
-                name="duration"
-                type="text"
-                value={formData.duration}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-neutral-900 placeholder-neutral-400"
-                placeholder="e.g., 1 Hour"
-                aria-label="Lesson Duration"
-                tabIndex={0}
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">Document URL</label>
+                <input
+                  name="doc"
+                  value={formData.doc}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">Lecture Link</label>
+                <input
+                  name="lectureLink"
+                  value={formData.lectureLink}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                  placeholder="https://youtu.be/..."
+                />
+              </div>
             </div>
-            <div className="flex space-x-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">Duration *</label>
+                <input
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleInputChange}
+                  type="number"
+                  min="0"
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                  placeholder="e.g., 60 (minutes) or 1 (hours) depending on your unit)"
+                  required
+                />
+              </div>              
+            </div>
+
+            <div className="flex space-x-3">
               <button
                 onClick={formMode === "add" ? handleAddLesson : handleSaveLesson}
-                className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 text-sm font-medium ${
+                disabled={isLoading}
+                className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 ${
                   isLoading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
-                disabled={isLoading}
-                aria-label={formMode === "add" ? "Save new lesson" : "Save lesson changes"}
-                tabIndex={0}
               >
                 {isLoading ? "Saving..." : "Save"}
               </button>
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 hover:scale-105 transition-all duration-200 text-sm font-medium"
                 disabled={isLoading}
-                aria-label="Cancel"
-                tabIndex={0}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
               >
                 Cancel
               </button>
             </div>
+
+            {showErrorTooltip && (
+              <div className="mt-2 text-sm text-red-600">Please fill required fields.</div>
+            )}
           </div>
-          {showErrorTooltip && (
-            <div className="mt-2 text-red-600 text-xs italic">Please fill all fields</div>
-          )}
         </div>
       )}
 
       {/* Lessons Grid */}
-      {lessons.length > 0 ? (
+      {lessons && lessons.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map((lesson) => (
-            <div
-              key={lesson.id}
-              className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <h4 className="text-md font-medium text-neutral-900">{lesson.title}</h4>
-              <p className="text-neutral-600 text-sm line-clamp-2">{lesson.description}</p>
-              <p className="text-neutral-500 text-xs mt-1">Duration: {lesson.duration}</p>
-              <div className="mt-3 flex space-x-2">
-                <button
-                  onClick={() => handleEditLesson(lesson)}
-                  className={`px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 text-sm ${
-                    isLoading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isLoading}
-                  aria-label={`Edit lesson ${lesson.title}`}
-                  tabIndex={0}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteLesson(lesson.id)}
-                  className={`px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 hover:scale-105 transition-all duration-200 text-sm ${
-                    isLoading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isLoading}
-                  aria-label={`Delete lesson ${lesson.title}`}
-                  tabIndex={0}
-                >
-                  Delete
-                </button>
+          {lessons.map((lesson) => {
+            const lessonId = lesson._id || lesson.id;
+            return (
+              <div key={lessonId} className="bg-white p-4 rounded-lg shadow-md">
+                <h4 className="text-md font-medium text-neutral-900">{lesson.title}</h4>
+                <p className="text-neutral-600 text-sm line-clamp-3">{lesson.content}</p>
+                <p className="text-neutral-500 text-xs mt-2">
+                  Duration: {lesson.duration ?? "—"} | Order: {lesson.order ?? "—"}
+                </p>
+                <div className="mt-3 flex space-x-2">
+                  <button
+                    onClick={() => handleEditLesson(lesson)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    aria-label={`Edit lesson ${lesson.title}`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteLesson(lessonId)}
+                    className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    aria-label={`Delete lesson ${lesson.title}`}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="text-neutral-600 text-sm">No lessons available. Add a lesson to get started.</p>
       )}
-
-      {/* Placeholder for Pagination/Load More */}
-      {lessons.length > 6 && (
-        <div className="mt-6 text-center">
-          <button
-            className="px-4 py-2 bg-gray-200 text-neutral-700 rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm"
-            disabled
-          >
-            Load More
-          </button>
-          {/* Backend integration: Add pagination logic with API call (e.g., /api/lessons?page=2) */}
-        </div>
-      )}
     </div>
   );
+};
+
+LessonsTab.propTypes = {
+  unit: PropTypes.object.isRequired,
 };
 
 export default LessonsTab;

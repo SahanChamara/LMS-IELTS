@@ -16,3 +16,26 @@ export async function updateLessonCompleted(lessonId, completed) {
     throw error;
   }
 }
+
+export const addLesson  = async (lesson) => {
+    const apiObject = {
+    method: 'POST',
+    withCredentials: true,
+    prefix: 'lessons',
+    endpoint: '',
+    body: lesson,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
+
+export const getAllLesson  = async () => {
+    const apiObject = {
+    method: 'GET',
+    withCredentials: true,
+    prefix: 'lessons',
+    endpoint: '',
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}

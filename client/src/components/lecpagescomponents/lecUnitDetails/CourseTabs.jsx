@@ -4,7 +4,7 @@ import React from "react";
 const CourseTabs = ({ activeTab, setActiveTab }) => {
   const tabs = [
     "overview",
-    "lessons",
+    "materials",
     "Quizzes",
     "discussions",
     "assignments",

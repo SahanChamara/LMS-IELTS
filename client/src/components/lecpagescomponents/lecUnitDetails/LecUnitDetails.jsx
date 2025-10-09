@@ -61,7 +61,7 @@ const LecUnitDetails = () => {
     switch (activeTab.toLowerCase()) {
       case "overview":
         return <OverviewTab unit={unit} />;
-      case "lessons":
+      case "materials":
         return <LessonsTab unit={unit} />;
       case "quizzes":
         return <QuizzesTab unit={unit} />;
