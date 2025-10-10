@@ -218,8 +218,6 @@ const Leccorces = () => {
     navigate(`/unit/lecture/${unit.unitId}`, { state: { unit } }); // Navigate to unit details page with unit data
   };
   console.log("Units By Instructor ID : ", units)
-
-
   // Handling form submission for creating or updating a unit
   const handleSubmit = (e) => {
     e.preventDefault();
