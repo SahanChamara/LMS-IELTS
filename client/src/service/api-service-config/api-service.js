@@ -30,7 +30,7 @@ class ApiService {
     const url = `${serverUrl}/${basePath}${prefix ? "/" + prefix : ""}/${
       apiObject.endpoint
     }`;
-    console.log("Constructed URL:", url); // Debug URL
+    console.log("Constructed URL:", url); 
     return url;
   }
 
@@ -39,7 +39,7 @@ class ApiService {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-    }); // Log detailed error
+    }); 
     if (!error.response) {
       return {
         success: false,

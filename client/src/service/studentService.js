@@ -12,3 +12,14 @@ export const getStudentProfile = async (studentId) => {
   return response;
   
 };
+
+export const getAllStudents = async () => {
+  const apiObject = {
+    method: 'GET',
+    withCredentials: true,
+    prefix: 'students',
+    endpoint: '',
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}

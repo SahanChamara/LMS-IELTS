@@ -3,6 +3,7 @@ const Marks = require('../models/Marks');
 const Student = require('../models/Student');
 const Assessment = require('../models/Assessment');
 const mongoose = require('mongoose');
+const {getAssessmentById} = require("./assessmentController");
 
 // Create a new assessment mark
 exports.createMark = async (req, res) => {
@@ -49,6 +50,7 @@ exports.createMark = async (req, res) => {
             });
         }
 
+        console.log("hi awa");
         // Calculate weighted marks
         const weightedMarks = ((marks/maxMarks) * 100) / weight;
 
@@ -63,13 +65,15 @@ exports.createMark = async (req, res) => {
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
-
+        console.log("hi awa2");
         // Save assessment marks
         await assessmentMark.save();
 
+        console.log("hi awa3");
         // Update Marks collection
         let marksDoc = await Marks.findOne({ student });
         if (marksDoc) {
+            console.log("hi awa5");
             // Update existing Marks document
             marksDoc.caMarks = (marksDoc.caMarks || 0) + weightedMarks;
             marksDoc.totalMarks = (marksDoc.totalMarks || 0) + weightedMarks;
@@ -77,18 +81,23 @@ exports.createMark = async (req, res) => {
             marksDoc.updatedAt = Date.now();
             await marksDoc.save();
         } else {
+            console.log("hi awa4");
+            console.log("hi"+assessment);
+            let assessmentExists = await Assessment.findById(assessment);
+            const unitId = assessmentExists.unit;
             // Create new Marks document
             marksDoc = new Marks({
                 caMarks: weightedMarks,
+                unit: unitId,
                 totalMarks: weightedMarks,
                 maxMarks: Math.max(maxMarks, assessmentExists.totalMarks || 100), // Use reasonable default
-                student,
+                studentId: student,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
             await marksDoc.save();
         }
-
+        console.log("hi awa6");
         res.status(201).json({ success: true, data: assessmentMark });
     } catch (error) {
         res.status(500).json({
