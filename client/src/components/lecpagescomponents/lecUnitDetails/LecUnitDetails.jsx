@@ -10,6 +10,7 @@ import AssignmentsTab from "./AssignmentsTab";
 import OnlineSessionTab from "./OnlineSessionTab";
 import { useSelector } from "react-redux";
 import { useAppDispatch } from "../../../redux/store-config/store";
+import InstructorDiscussionsTab from "../../course/tabs/InstructorDisccussionTab";
 
 // Defining the LecUnitDetails component to display unit details as a full page
 const LecUnitDetails = () => {
@@ -66,7 +67,7 @@ const LecUnitDetails = () => {
       case "quizzes":
         return <QuizzesTab unit={unit} />;
       case "discussions":
-        return <DiscussionsTab unit={unit} />;
+        return <InstructorDiscussionsTab unitId={unit.unitId} />;
       case "assignments":
         return <AssignmentsTab unit={unit} />;
       case "online-session":

@@ -1,256 +1,334 @@
 // components/InstructorDiscussionsTab.js
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
-import { Send, Paperclip, Image } from "lucide-react";
-import { Check } from "lucide-react";
-import {
-  useAppDispatch,
-  useAppSelector,
-} from "../../../redux/store-config/store";
+import { Send } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "../../../redux/store-config/store";
 import { getMessageAPI, replyMessageAPI } from "../../../redux/features/discussionSlice";
+
+/**
+ * InstructorDiscussionsTab
+ * - left: thread list (students)
+ * - right: messages for selected thread
+ * - composer sends { discussionId, reply } via replyMessageAPI
+ *
+ * Important:
+ * - Backend getMessageAPI(unitId) must return an array of discussions like:
+ *   [{ discussionId, student: { _id, name }, content: [{ user, msg, timestamp }, ...], updatedAt }]
+ * - This component will enrich each content item with senderId/senderName for ownership detection.
+ */
 
 const InstructorDiscussionsTab = ({ unitId }) => {
   const dispatch = useAppDispatch();
-  const { chat, loading } = useAppSelector((state) => state.discussions);
+  const { loading: reduxLoading } = useAppSelector((s) => s.discussions);
 
-  const [messages, setMessages] = useState([]);
+  const [discussions, setDiscussions] = useState([]); // enriched discussions
+  const [selectedDiscussionId, setSelectedDiscussionId] = useState(null);
+  const [messages, setMessages] = useState([]); // messages of selected discussion (enriched)
   const [newReply, setNewReply] = useState("");
   const [error, setError] = useState(null);
-  const messagesEndRef = useRef(null);
-  //const currentUser = JSON.parse(localStorage.getItem('user')) || { name: "Dr. Sarah Wilson", role: "instructor", id: "instructor1" };
-  const currentUserId = localStorage.getItem("user");
-  const currentUserRole = localStorage.getItem("userRole");
-  const currentUserName = localStorage.getItem("userName");
+  const [isSending, setIsSending] = useState(false);
 
+  const messagesEndRef = useRef(null);
+
+  // current user from localStorage (adjust to your app)
+  const stored = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const currentUserId = stored?._id || stored?.id || null;
+  const currentUserName = stored?.name || localStorage.getItem("userName") || "Instructor";
+  const currentUserRole = stored?.role || localStorage.getItem("userRole") || "instructor";
+
+  // scroll helper
   useEffect(() => {
-    const fetchMessages = async () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
+
+  // fetch discussions for the unit and enrich each message with senderId/senderName
+  useEffect(() => {
+    if (!unitId) {
+      setDiscussions([]);
+      setSelectedDiscussionId(null);
+      setMessages([]);
+      return;
+    }
+
+    const fetch = async () => {
       try {
+        setError(null);
         const response = await dispatch(getMessageAPI(unitId)).unwrap();
-        setMessages(
-          response.data.data.map((m) => ({
-            id: Date.now() + Math.random(),
-            userId: m.senderId,
-            sender: m.senderName,
-            role: m.user,
-            content: m.msg,
-            timestamp: m.timestamp,
-            avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
-            status: currentUserId === m.senderId ? "sent" : "read",
-          }))
-        );
+        // response expected: { success:true, data: [ { discussionId, student, content, updatedAt } ] }
+        const raw = response?.data || response || [];
+        if (!Array.isArray(raw)) {
+          setError("Unexpected response format from server.");
+          setDiscussions([]);
+          setMessages([]);
+          setSelectedDiscussionId(null);
+          return;
+        }
+
+        // Enrich content items: attach senderId and senderName for each content item.
+        // For 'Student' messages -> senderId = student._id
+        // For 'Instructor' messages -> senderId = instructor id (currentUserId)
+        // (backend does not necessarily include instructor object here, but instructor is current user)
+        const enriched = raw.map((d) => {
+          const student = d.student || null;
+          const instructor = d.instructor || null; // if backend includes instructor, good; otherwise use currentUser
+          const content = Array.isArray(d.content)
+            ? d.content.map((c, idx) => {
+                const role = c.user || (c.user === "Student" ? "Student" : "Instructor");
+                const senderId =
+                  role === "Student"
+                    ? (student?._id || student?._id || null)
+                    : (instructor?._id || currentUserId); // instructor messages -> currentUser
+                const senderName =
+                  role === "Student"
+                    ? (student?.name || "Student")
+                    : (instructor?.name || currentUserName);
+                return {
+                  id: c._id || `${d.discussionId || "disc"}-${idx}-${(c.timestamp || Date.now())}`,
+                  discussionId: d.discussionId,
+                  user: role,
+                  msg: c.msg || c.message || c.content || "",
+                  timestamp: c.timestamp || c.date || c.createdAt || new Date().toISOString(),
+                  senderId,
+                  senderName,
+                };
+              })
+            : [];
+
+          return {
+            discussionId: d.discussionId,
+            student,
+            instructor: instructor || { _id: currentUserId, name: currentUserName },
+            content,
+            updatedAt: d.updatedAt || null,
+          };
+        });
+
+        setDiscussions(enriched);
+
+        // pick default selected discussion (first) if none selected
+        const first = enriched[0];
+        const defaultId = first ? first.discussionId : null;
+        setSelectedDiscussionId((prev) => (prev ? prev : defaultId));
+        setMessages(first ? first.content || [] : []);
       } catch (err) {
-        setError("Failed to load messages");
+        console.error("Failed to load discussions:", err);
+        setError("Failed to load discussions.");
       }
     };
-    fetchMessages();
-  }, [unitId]);
 
-  const scrollToBottom = () =>
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    fetch();
+  }, [unitId, dispatch, currentUserId, currentUserName]);
 
-  useEffect(() => scrollToBottom(), [messages]);
+  // update messages for currently selected discussion
+  useEffect(() => {
+    if (!selectedDiscussionId) {
+      setMessages([]);
+      return;
+    }
+    const discussion = discussions.find((d) => String(d.discussionId) === String(selectedDiscussionId));
+    setMessages(discussion ? discussion.content || [] : []);
+  }, [selectedDiscussionId, discussions]);
 
-  const formatTime = (timestamp) =>
-    new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    const today = new Date();
-    return date.toDateString() === today.toDateString()
-      ? "Today"
-      : date.toLocaleDateString();
-  };
+  const formatTime = (ts) =>
+    ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
 
-  const handleReply = async (messageId) => {
-    if (!newReply.trim()) return;
-    const discussionId =
-      messages.find((m) => m.id === messageId)?.discussionId || ""; // Placeholder, adjust logic
-    if (!discussionId) return;
+  // send a reply: must include discussionId (backend requires it)
+  const handleReply = async () => {
+    if (!newReply || !newReply.trim()) return;
+    if (!selectedDiscussionId) {
+      setError("No discussion selected to reply to.");
+      return;
+    }
 
-    const replyMessage = {
-      id: Date.now() + Math.random(),
-      userId: currentUserId,
-      sender: currentUserName,
-      role: currentUserRole,
-      content: newReply,
+    setIsSending(true);
+    setError(null);
+
+    // optimistic message (enriched)
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticMsg = {
+      id: tempId,
+      discussionId: selectedDiscussionId,
+      user: "Instructor",
+      msg: newReply,
       timestamp: new Date().toISOString(),
-      avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
-      status: "sending",
+      senderId: currentUserId,
+      senderName: currentUserName,
     };
 
-    setMessages((prev) => [...prev, replyMessage]);
+    setMessages((prev) => [...prev, optimisticMsg]);
     setNewReply("");
 
-    try {
-      await axios.post(
-        "/api/discussion/reply",
-        { discussionId, reply: newReply },
-        { withCredentials: true }
-      );
+    const payload = { discussionId: selectedDiscussionId, reply: newReply };
 
-      const newSendReply = { discussionId, newReply };
-      const result = await dispatch(replyMessageAPI(newSendReply)).unwrap();
-      console.log("new Reply message send result", result);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === replyMessage.id ? { ...m, status: "sent" } : m
-        )
-      );
-      // Refresh to get updated discussion
-      const response = await dispatch(getMessageAPI(unitId)).unwrap();
-      setMessages(
-        response.data.data.map((m) => ({
-          id: Date.now() + Math.random(),
-          userId: m.senderId,
-          sender: m.senderName,
-          role: m.user,
-          content: m.msg,
-          timestamp: m.timestamp,
-          avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
-          status: currentUserId === m.senderId ? "sent" : "read",
-        }))
-      );
+    try {
+      await dispatch(replyMessageAPI(payload)).unwrap();
+
+      // refresh discussions to get canonical messages for selected thread
+      const refresh = await dispatch(getMessageAPI(unitId)).unwrap();
+      const raw = refresh?.data || refresh || [];
+      const enriched = raw.map((d) => {
+        const student = d.student || null;
+        const instructor = d.instructor || null;
+        const content = Array.isArray(d.content)
+          ? d.content.map((c, idx) => {
+              const role = c.user || (c.user === "Student" ? "Student" : "Instructor");
+              const senderId =
+                role === "Student"
+                  ? (student?._id || null)
+                  : (instructor?._id || currentUserId);
+              const senderName =
+                role === "Student"
+                  ? (student?.name || "Student")
+                  : (instructor?.name || currentUserName);
+              return {
+                id: c._id || `${d.discussionId}-${idx}-${(c.timestamp || Date.now())}`,
+                discussionId: d.discussionId,
+                user: role,
+                msg: c.msg || c.message || c.content || "",
+                timestamp: c.timestamp || c.date || c.createdAt || new Date().toISOString(),
+                senderId,
+                senderName,
+              };
+            })
+          : [];
+        return {
+          discussionId: d.discussionId,
+          student,
+          instructor: instructor || { _id: currentUserId, name: currentUserName },
+          content,
+          updatedAt: d.updatedAt || null,
+        };
+      });
+
+      setDiscussions(enriched);
+      const refreshed = enriched.find((x) => String(x.discussionId) === String(selectedDiscussionId));
+      setMessages(refreshed ? refreshed.content || [] : []);
       setError(null);
     } catch (err) {
-      setError("Failed to send reply", err);
-      setMessages((prev) => prev.filter((m) => m.id !== replyMessage.id));
+      console.error("Failed to send reply:", err);
+      // rollback optimistic message
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setError("Failed to send reply. Please try again.");
+    } finally {
+      setIsSending(false);
     }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleReply(messages[messages.length - 1]?.id); // Reply to the latest message
+      handleReply();
     }
   };
 
-  const groupMessagesByDate = (msgs) => {
-    const groups = {};
-    msgs.forEach((m) => {
-      const date = formatDate(m.timestamp);
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(m);
-    });
-    return groups;
-  };
-
-  const messageGroups = groupMessagesByDate(messages);
-
   return (
-    <div className="flex flex-col h-[600px] bg-white rounded-lg">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {Object.entries(messageGroups).map(([date, dateMessages]) => (
-          <div key={date}>
-            <div className="flex items-center justify-center my-4">
-              <div className="bg-gray-100 px-3 py-1 rounded-full">
-                <span className="text-xs font-medium text-gray-600">
-                  {date}
-                </span>
-              </div>
-            </div>
-            {dateMessages.map((message, index) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.userId === currentUserId
-                    ? "justify-end"
-                    : "justify-start"
-                } mt-4`}
-              >
-                <div
-                  className={`flex max-w-xs lg:max-w-md ${
-                    message.userId === currentUserId
-                      ? "flex-row-reverse"
-                      : "flex-row"
-                  }`}
-                >
-                  <img
-                    src={message.avatar}
-                    alt={message.sender}
-                    className="w-8 h-8 rounded-full object-cover mr-2"
-                  />
-                  <div
-                    className={`flex flex-col ${
-                      message.userId === currentUserId
-                        ? "items-end"
-                        : "items-start"
+    <div className="flex gap-4 h-[600px] bg-white rounded-lg overflow-hidden">
+      {/* Threads list */}
+      <aside className="w-64 border-r border-gray-200 p-3 bg-gray-50 overflow-auto">
+        <h4 className="text-sm font-semibold mb-3">Threads</h4>
+
+        {discussions.length === 0 ? (
+          <p className="text-xs text-gray-500">No threads found for this unit.</p>
+        ) : (
+          <ul className="space-y-2">
+            {discussions.map((d) => {
+              const last = d.content && d.content.length ? d.content[d.content.length - 1] : null;
+              const studentName = d.student?.name || "Student";
+              return (
+                <li key={d.discussionId}>
+                  <button
+                    onClick={() => setSelectedDiscussionId(d.discussionId)}
+                    className={`w-full text-left p-2 rounded-md transition-colors ${
+                      String(selectedDiscussionId) === String(d.discussionId)
+                        ? "bg-purple-100"
+                        : "hover:bg-gray-100"
                     }`}
                   >
-                    {!message.userId === currentUserId && (
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-xs font-medium text-gray-900">
-                          {message.sender}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            message.role === "instructor"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {message.role}
-                        </span>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-sm font-medium">{studentName}</div>
+                        <div className="text-xs text-gray-500 truncate" title={last?.msg || ""}>
+                          {last ? (last.msg.length > 50 ? `${last.msg.slice(0, 50)}...` : last.msg) : "No messages yet"}
+                        </div>
                       </div>
-                    )}
-                    <div
-                      className={`px-4 py-2 rounded-2xl ${
-                        message.userId === currentUserId
-                          ? "bg-purple-500 text-white"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      <div className="text-xs text-gray-400">{last ? formatTime(last.timestamp) : ""}</div>
                     </div>
-                    <div
-                      className={`flex items-center mt-1 ${
-                        message.userId === currentUserId
-                          ? "flex-row-reverse space-x-reverse"
-                          : "flex-row"
-                      }`}
-                    >
-                      <span className="text-xs text-gray-500">
-                        {formatTime(message.timestamp)}
-                      </span>
-                      {message.userId === currentUserId &&
-                        message.status === "sent" && (
-                          <Check className="w-3 h-3 text-purple-500 ml-1" />
-                        )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </aside>
+
+      {/* Messages + composer */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* header */}
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-lg font-semibold">
+                {(() => {
+                  const sel = discussions.find((d) => String(d.discussionId) === String(selectedDiscussionId));
+                  return sel ? sel.student?.name || "Student" : "Select a thread";
+                })()}
+              </h3>
+              <div className="text-xs text-gray-500">
+                {selectedDiscussionId ? `Thread ID: ${selectedDiscussionId}` : ""}
+              </div>
+            </div>
+          </div>
+
+          {/* messages */}
+          {messages.length === 0 ? (
+            <div className="text-sm text-gray-500">No messages in this thread.</div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((m) => {
+                const isMine = String(m.senderId) === String(currentUserId);
+                return (
+                  <div key={m.id || m.timestamp} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] p-3 rounded-2xl ${isMine ? "bg-blue-700 text-white" : "bg-gray-100 text-gray-900"}`}>
+                      {!isMine && <div className="text-xs font-medium mb-1">{m.senderName}</div>}
+                      <div className="text-sm whitespace-pre-wrap">{m.msg}</div>
+                      <div className="text-xs text-gray-400 mt-1 text-right">{formatTime(m.timestamp)}</div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-lg">
-        <div className="flex items-end space-x-2">
-          <textarea
-            value={newReply}
-            onChange={(e) => setNewReply(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your reply..."
-            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-white"
-            rows="1"
-          />
-          <button
-            onClick={() => handleReply(messages[messages.length - 1]?.id)}
-            disabled={!newReply.trim()}
-            className={`p-3 rounded-full ${
-              newReply.trim()
-                ? "bg-purple-500 text-white hover:bg-purple-600"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            <Send className="w-5 h-5" />
-          </button>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
-        {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
+
+        {/* composer */}
+        <div className="border-t border-gray-200 p-3 bg-gray-50">
+          <div className="flex items-end gap-2">
+            <textarea
+              value={newReply}
+              onChange={(e) => setNewReply(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={selectedDiscussionId ? "Write a reply..." : "Select a thread to reply"}
+              className="flex-1 resize-none p-3 rounded-xl border border-gray-300"
+              rows={2}
+              disabled={isSending || !selectedDiscussionId}
+            />
+            <button
+              onClick={handleReply}
+              disabled={!newReply.trim() || isSending || !selectedDiscussionId}
+              className={`p-3 rounded-full ${newReply.trim() && !isSending && selectedDiscussionId ? "bg-purple-500 text-white" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+              aria-label="Send message"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+          {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
+        </div>
       </div>
     </div>
   );

@@ -72,45 +72,54 @@ exports.addChat = async (req, res) => {
     }
 };
 
+// (only the getMessageByUnit function changed)
 exports.getMessageByUnit = async (req, res) => {
     try {
-        const {unitId} = req.params;
+        const { unitId } = req.params;
         const userId = req.user.id;
         const role = req.user.role;
 
         validateObjectId(unitId, 'unit ID');
 
         if (role === 'Student') {
-            const discussion = await Discussion.findOne({student: userId, unit: unitId, instructor: {$exists: true}})
+            // Student -> return the single discussion between student and the instructor for that unit
+            const discussion = await Discussion.findOne({ student: userId, unit: unitId, instructor: { $exists: true } })
                 .populate('instructor', 'name email')
                 .lean();
             if (!discussion) throw new ApiError(404, 'No discussion found');
 
+            // Map content items into message objects
             const messages = discussion.content.map(c => ({
-                senderId: discussion.student._id,
-                senderName: discussion.student.name,
+                discussionId: discussion._id,
+                senderId: discussion.student, // student's id
+                senderName: discussion.student.name || '', // may be populated only if student populated
                 user: c.user,
                 msg: c.msg,
                 timestamp: c.timestamp
             }));
-            return res.status(HttpsStatus.OK).json({success: true, data: messages});
+
+            return res.status(HttpsStatus.OK).json({ success: true, data: messages });
         } else if (role === 'Instructor') {
-            const unit = await Unit.findOne({_id: unitId, instructor: userId});
+            // Instructor -> return all discussions for this unit where instructor is the current user
+            // We return the discussion objects (id, student, content) so frontend knows discussion ids and student info
+            const unit = await Unit.findOne({ _id: unitId, instructor: userId });
             if (!unit) throw new ApiError(404, 'Unit not found or access denied');
 
-            const discussions = await Discussion.find({unit: unitId, instructor: userId})
-                .populate('student', 'name email')
+            const discussions = await Discussion.find({ unit: unitId, instructor: userId })
+                .populate('student', 'name email') // include student info
                 .lean();
 
-            const messages = discussions.flatMap(d => d.content.map(c => ({
-                senderId: d.instructor._id,
-                senderName: d.instructor.name,
-                user: c.user,
-                msg: c.msg,
-                timestamp: c.date
-            }))).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            return res.status(HttpsStatus.OK).json({success: true, data: messages});
+            // Normalize response: return array of discussion objects including _id, student (with name/email), content array
+            // Each discussion.content item has { user, msg, timestamp, ... }
+            return res.status(HttpsStatus.OK).json({
+                success: true,
+                data: discussions.map(d => ({
+                    discussionId: d._id,
+                    student: d.student ? { _id: d.student._id, name: d.student.name, email: d.student.email } : null,
+                    content: d.content || [],
+                    updatedAt: d.updatedAt
+                }))
+            });
         } else {
             throw new ApiError(403, 'Unauthorized role');
         }
@@ -122,6 +131,7 @@ exports.getMessageByUnit = async (req, res) => {
         });
     }
 };
+
 
 exports.replyToMessage = async (req, res) => {
     try {
