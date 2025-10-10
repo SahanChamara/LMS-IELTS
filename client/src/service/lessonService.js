@@ -39,3 +39,26 @@ export const getAllLesson  = async () => {
   const response = await ApiService.callApi(apiObject);
   return response;
 }
+
+export const updateLesson  = async (lesson, lessonId) => {
+    const apiObject = {
+    method: 'PUT',
+    withCredentials: true,
+    prefix: 'lessons',
+    endpoint: lessonId,
+    body: lesson,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}
+
+export const deleteLesson  = async (lessonId) => {
+    const apiObject = {
+    method: 'DELETE',
+    withCredentials: true,
+    prefix: 'lessons',
+    endpoint: lessonId,
+  }
+  const response = await ApiService.callApi(apiObject);
+  return response;
+}

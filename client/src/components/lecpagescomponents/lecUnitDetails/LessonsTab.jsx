@@ -1,7 +1,12 @@
-// LessonsTab.jsx
+// components/LessonsTab.jsx
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { addLesson, getAllLesson /*, updateLesson */ } from "../../../service/lessonService";
+import {
+  addLesson,
+  deleteLesson,
+  getAllLesson,
+  updateLesson,
+} from "../../../service/lessonService";
 
 const LessonsTab = ({ unit }) => {
   // robust unit id detection
@@ -13,7 +18,7 @@ const LessonsTab = ({ unit }) => {
     "";
 
   const [lessons, setLessons] = useState([]);
-  const [formMode, setFormMode] = useState(null);
+  const [formMode, setFormMode] = useState(null); // null | "add" | lessonId
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -27,13 +32,19 @@ const LessonsTab = ({ unit }) => {
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
   const [showErrorTooltip, setShowErrorTooltip] = useState(false);
 
+  // fetch and filter lessons by unit on mount / unit change
   useEffect(() => {
     const fetchAndFilter = async () => {
       setIsLoading(true);
       try {
         const res = await getAllLesson();
-        const all = (res && (res.data || res?.data?.data || res)) || [];
-        const arr = Array.isArray(all) ? all : (all.data && Array.isArray(all.data) ? all.data : []);
+        // support multiple shapes: res.data, res.data.data, res
+        const maybe = res?.data ?? res;
+        const arr = Array.isArray(maybe)
+          ? maybe
+          : Array.isArray(maybe?.data)
+          ? maybe.data
+          : [];
         if (!unitId) {
           setLessons([]);
         } else {
@@ -49,17 +60,16 @@ const LessonsTab = ({ unit }) => {
         }
       } catch (err) {
         console.error("Failed to fetch lessons:", err);
-        setToast({ visible: true, message: "Failed to fetch lessons", type: "error" });
+        showToast("Failed to fetch lessons", "error");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAndFilter();
-    // run when unitId changes
   }, [unitId]);
 
-  // Reset form helper
+  // helpers
   const resetForm = () => {
     setFormData({
       title: "",
@@ -78,7 +88,7 @@ const LessonsTab = ({ unit }) => {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
   };
 
-  // Basic validation
+  // validation
   const validateForm = () => {
     if (!formData.title?.trim() || !formData.content?.trim()) return false;
     if (formData.duration === "" || Number.isNaN(Number(formData.duration))) return false;
@@ -91,7 +101,7 @@ const LessonsTab = ({ unit }) => {
     setShowErrorTooltip(false);
   };
 
-  // Add lesson (calls addLesson service)
+  // ADD lesson
   const handleAddLesson = async () => {
     if (!validateForm()) {
       setShowErrorTooltip(true);
@@ -117,10 +127,11 @@ const LessonsTab = ({ unit }) => {
       };
 
       const res = await addLesson(payload);
-      // res.data expected to be created lesson (or res itself)
-      const created = res?.data || res;
-      // ensure created.unit contains minimal unit info (optional)
-      // append and show success
+      // Normalize created lesson (support res.data or res)
+      const created = res?.data ?? res;
+      // Ensure created has unit populated minimally for UI
+      if (!created.unit) created.unit = { _id: unitId, title: unit?.title || unit?.name || "" };
+
       setLessons((prev) => [...prev, created]);
       resetForm();
       setFormMode(null);
@@ -133,7 +144,7 @@ const LessonsTab = ({ unit }) => {
     }
   };
 
-  // Prefill edit form
+  // PREFILL edit form
   const handleEditLesson = (lesson) => {
     const id = lesson._id || lesson.id;
     setFormMode(id);
@@ -149,16 +160,21 @@ const LessonsTab = ({ unit }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Save edited lesson — currently local update; replace with API call if you have updateLesson
+  // SAVE edited lesson (calls editLesson)
   const handleSaveLesson = async () => {
     if (!validateForm()) {
       setShowErrorTooltip(true);
       showToast("Please fill required fields (title, content, duration).", "error");
       return;
     }
+    if (!formMode) {
+      showToast("No lesson selected for update", "error");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const updatedPayload = {
+      const payload = {
         title: formData.title.trim(),
         content: formData.content.trim(),
         doc: formData.doc?.trim() || "",
@@ -169,17 +185,19 @@ const LessonsTab = ({ unit }) => {
         unit: unitId,
       };
 
-      // If you have an API to update lessons on server:
-      // const res = await updateLesson(formMode, updatedPayload);
-      // const saved = res.data;
-      // setLessons(prev => prev.map(l => ((l._id || l.id) === formMode ? saved : l)));
+      // call the update API: editLesson(lessonPayload, lessonId)
+      const res = await updateLesson(payload, formMode);
+      const saved = res?.data ?? res;
 
-      // For now do a local update with stable shape
+      // Update UI with returned saved object (or merge if minimal response)
       setLessons((prev) =>
         prev.map((l) => {
           const lid = l._id || l.id;
           if (String(lid) === String(formMode)) {
-            return { ...l, ...updatedPayload, _id: lid, id: lid };
+            // Use server-sent saved if available, otherwise merge
+            return saved && (saved._id || saved.id)
+              ? { ...saved }
+              : { ...l, ...payload, _id: lid, id: lid };
           }
           return l;
         })
@@ -189,21 +207,37 @@ const LessonsTab = ({ unit }) => {
       resetForm();
       showToast("Lesson updated", "success");
     } catch (err) {
-      console.error("Error saving lesson:", err);
-      showToast("Failed to save lesson", "error");
+      console.error("Error updating lesson:", err);
+      showToast("Failed to update lesson. See console for details.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Delete (local). If you have an API, call it and then remove from state.
-  const handleDeleteLesson = (lessonId) => {
+  // DELETE lesson
+  const handleDeleteLesson = async (lessonId) => {
+    // lessonId may be _id or id value
+    if (!lessonId) return;
+    const confirmDel = window.confirm("Are you sure you want to delete this lesson?");
+    if (!confirmDel) return;
+
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await deleteLesson(lessonId);
+      // Remove from UI
       setLessons((prev) => prev.filter((l) => (l._id || l.id) !== lessonId));
-      setIsLoading(false);
+      // if currently editing this lesson, reset form
+      if (formMode && String(formMode) === String(lessonId)) {
+        setFormMode(null);
+        resetForm();
+      }
       showToast("Lesson deleted", "success");
-    }, 300);
+    } catch (err) {
+      console.error("Failed to delete lesson:", err);
+      showToast("Failed to delete lesson. See console for details.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -257,9 +291,7 @@ const LessonsTab = ({ unit }) => {
 
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700">
-                Title *
-              </label>
+              <label className="block text-sm font-medium text-neutral-700">Title *</label>
               <input
                 name="title"
                 value={formData.title}
@@ -272,9 +304,7 @@ const LessonsTab = ({ unit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700">
-                Content *
-              </label>
+              <label className="block text-sm font-medium text-neutral-700">Content *</label>
               <textarea
                 name="content"
                 value={formData.content}
@@ -289,9 +319,7 @@ const LessonsTab = ({ unit }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700">
-                  Document URL
-                </label>
+                <label className="block text-sm font-medium text-neutral-700">Document URL</label>
                 <input
                   name="doc"
                   value={formData.doc}
@@ -302,9 +330,7 @@ const LessonsTab = ({ unit }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700">
-                  Lecture Link
-                </label>
+                <label className="block text-sm font-medium text-neutral-700">Lecture Link</label>
                 <input
                   name="lectureLink"
                   value={formData.lectureLink}
@@ -317,9 +343,7 @@ const LessonsTab = ({ unit }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700">
-                  Duration (minutes) *
-                </label>
+                <label className="block text-sm font-medium text-neutral-700">Duration (minutes) *</label>
                 <input
                   name="duration"
                   value={formData.duration}
@@ -333,9 +357,7 @@ const LessonsTab = ({ unit }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700">
-                  Order
-                </label>
+                <label className="block text-sm font-medium text-neutral-700">Order</label>
                 <input
                   name="order"
                   value={formData.order}
