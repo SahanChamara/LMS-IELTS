@@ -29,6 +29,7 @@ const LecUnitDetails = () => {
   // ======================================================================================
 
     console.log('Unit Details : ', unit)
+    console.table(unit)
 
   // Simulating content load with a delay
   useEffect(() => {
