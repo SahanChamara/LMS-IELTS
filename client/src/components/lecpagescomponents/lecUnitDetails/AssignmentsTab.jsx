@@ -1,255 +1,480 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Upload, CheckCircle, X, Bell , ExternalLink } from "lucide-react";
+// components/instructor/InstructorAssignmentsTab.jsx
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import PropTypes from "prop-types";
+import { Upload, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import useDrivePicker from "react-google-drive-picker";
+import { addAssignmentByInstructor, getAllAssignments } from "../../../service/assignmentsService";
 
+/**
+ * InstructorAssignmentsTab
+ *
+ * - When Drive links are used, backend expects `file` to be a string.
+ *   If multiple Drive links are selected we join them with commas and send as one string.
+ * - Browser File uploads still use FormData ("file" entries).
+ */
 const AssignmentsTab = ({ unit }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [reflection, setReflection] = useState("");
-  const [images, setImages] = useState([]);
-  const [toast, setToast] = useState({ message: "", type: "", visible: false });
-  const [receivedAssignments, setReceivedAssignments] = useState([]);
-  const fileInputRef = useRef(null);
+  const fileRef = useRef(null);
+  const [openPicker] = useDrivePicker();
 
-  // Retrieve tableId from navigation state or unit prop
-  const tableId = location.state?.tableId || unit?.tableId || unit?.id || "";
+  const unitId = unit?._id || unit?.id || unit?.unitId || "";
 
-  // Simulate submission (no real API)
-  const handleSubmit = async () => {
-    if (!reflection.trim() && images.length === 0) {
-      setToast({
-        message: "Please add a reflection or upload an image",
-        type: "error",
-        visible: true,
-      });
-      return;
-    }
+  // form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [points, setPoints] = useState("");
+  const [passPercentage, setPassPercentage] = useState("");
+  const [totalMarks, setTotalMarks] = useState("");
 
-    const submission = {
-      id: Date.now(),
-      tableId,
-      reflection,
-      images: images.map((img) => img.name),
-      timestamp: new Date().toISOString(),
+  // files array holds both browser File objects and Drive doc objects
+  const [files, setFiles] = useState([]);
+  const [attachmentPreviewName, setAttachmentPreviewName] = useState("");
+
+  // list + UI state
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ visible: false, message: "", type: "info" });
+
+  // fetch assignments for unit
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getAllAssignments();
+        const maybe = res?.data ?? res;
+        const arr = Array.isArray(maybe) ? maybe : Array.isArray(maybe?.data) ? maybe.data : [];
+        const filtered = arr.filter((a) => {
+          const aUnitId = (a.unit && (a.unit._id || a.unit.id)) || a.unit || a.unitId;
+          return String(aUnitId) === String(unitId);
+        });
+        filtered.sort((a, b) => {
+          const da = a.dueDate ? new Date(a.dueDate) : new Date(a.createdAt || 0);
+          const db = b.dueDate ? new Date(b.dueDate) : new Date(b.createdAt || 0);
+          return da - db;
+        });
+        setAssignments(filtered);
+      } catch (err) {
+        console.error("Failed to fetch assignments:", err);
+        setError("Failed to fetch assignments. See console.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Add to received assignments
-    setReceivedAssignments((prev) => [submission, ...prev]);
-    setToast({
-      message: "Assignment update submitted successfully",
-      type: "success",
-      visible: true,
-    });
-    setReflection("");
-    setImages([]);
-    console.log("Submitted:", submission);
+    if (unitId) fetch();
+    else setAssignments([]);
+  }, [unitId]);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  };
-
-  // Handle image upload
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const validImages = files.filter((file) => file.type.startsWith("image/"));
-    if (validImages.length !== files.length) {
-      setToast({
-        message: "Only image files are allowed",
-        type: "error",
-        visible: true,
-      });
-    }
-    setImages((prev) => [...prev, ...validImages]);
-    fileInputRef.current.value = ""; // Reset input
-  };
-
-  // Remove image
-  const removeImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Analyze image (simulated)
-  const analyzeImage = (image) => {
-    // Simulate image analysis
-    console.log("Analyzing image:", image.name);
-    setToast({
-      message: "Image analyzed (simulated): Text or content detected",
-      type: "success",
-      visible: true,
-    });
-    return { text: "Sample text from image", confidence: 0.95 };
-  };
-
-  // Auto-hide toast
+  // toast auto-hide
   useEffect(() => {
-    if (toast.visible) {
-      const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!toast.visible) return;
+    const t = setTimeout(() => setToast((s) => ({ ...s, visible: false })), 3500);
+    return () => clearTimeout(t);
   }, [toast.visible]);
 
-  const closeToast = () => setToast((prev) => ({ ...prev, visible: false }));
+  const showToast = (message, type = "info") => setToast({ visible: true, message, type });
+
+  // Browser file input: can append multiple
+  const onBrowserFileChange = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (!selected.length) return;
+    setFiles((prev) => [...prev, ...selected]);
+    setAttachmentPreviewName(selected[0]?.name || "");
+    e.target.value = "";
+  };
+
+  const onFileRemove = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Drive picker
+  const handleOpenPicker = useCallback(() => {
+    openPicker({
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      developerKey: import.meta.env.VITE_GOOGLE_DEVELOPER_KEY,
+      viewId: "DOCS",
+      showUploadView: true,
+      showUploadFolders: true,
+      supportDrives: true,
+      multiselect: true,
+      customScopes: ["https://www.googleapis.com/auth/drive.file"],
+      callbackFunction: (data) => {
+        if (!data) return;
+        if (data.action === "cancel") return;
+        if (Array.isArray(data.docs) && data.docs.length) {
+          // docs usually contain: id, name, mimeType, url, size, etc.
+          setFiles((prev) => [...prev, ...data.docs]);
+          if (data.docs[0]?.name) setAttachmentPreviewName(data.docs[0].name);
+        }
+      },
+    });
+  }, [openPicker]);
+
+  const clearForm = () => {
+    setTitle("");
+    setDescription("");
+    setDueDate("");
+    setPoints("");
+    setFiles([]);
+    setAttachmentPreviewName("");
+    setPassPercentage("");
+    setTotalMarks("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // Validate required fields
+  const validate = () => {
+    if (!title.trim()) {
+      showToast("Title is required", "error");
+      return false;
+    }
+    if (!unitId) {
+      showToast("Missing unit id", "error");
+      return false;
+    }
+    if (passPercentage === "" || Number.isNaN(Number(passPercentage))) {
+      showToast("passPercentage is required and must be a number", "error");
+      return false;
+    }
+    if (totalMarks === "" || Number.isNaN(Number(totalMarks))) {
+      showToast("totalMarks is required and must be a number", "error");
+      return false;
+    }
+    if (files.length === 0) {
+      showToast("Please attach a file or pick from Google Drive (backend requires file)", "error");
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateAssignment = async () => {
+    if (!validate()) return;
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Detect browser File objects vs Drive docs
+      const hasBrowserFiles = files.some((f) => f instanceof File);
+      const driveFiles = files.filter((f) => !(f instanceof File) && (f.url || f.id || f.alternateLink));
+
+      if (hasBrowserFiles) {
+        // Create FormData and append required fields and files (backend expects "file" or "files")
+        const fd = new FormData();
+        fd.append("title", title.trim());
+        fd.append("description", description.trim());
+        if (dueDate) fd.append("dueDate", dueDate);
+        if (points) fd.append("points", String(points));
+        fd.append("unit", unitId);
+        fd.append("passPercentage", String(passPercentage));
+        fd.append("totalMarks", String(totalMarks));
+
+        // Append browser files - append each as "file"
+        files.forEach((f) => {
+          if (f instanceof File) {
+            fd.append("file", f, f.name);
+          }
+        });
+
+        const res = await addAssignmentByInstructor(fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const created = res?.data ?? res;
+        setAssignments((prev) => [...prev, created]);
+        showToast("Assignment created and files uploaded", "success");
+      } else if (driveFiles.length > 0) {
+        // Convert driveUrls array to a single string for `file` field (backend expects string)
+        const attachmentUrls = driveFiles.map((d) => d.url || d.alternateLink || d.id);
+        let fileFieldValue = "";
+        if (attachmentUrls.length === 1) {
+          fileFieldValue = attachmentUrls[0];
+        } else {
+          // multiple links -> join by comma (server will get a string)
+          fileFieldValue = attachmentUrls.join(",");
+        }
+
+        const payload = {
+          title: title.trim(),
+          description: description.trim(),
+          dueDate: dueDate || null,
+          points: points ? Number(points) : null,
+          unit: unitId,
+          passPercentage: Number(passPercentage),
+          totalMarks: Number(totalMarks),
+          // pass a single string (not an array) to satisfy schema
+          file: fileFieldValue,
+        };
+
+        const res = await addAssignmentByInstructor(payload);
+        const created = res?.data ?? res;
+        setAssignments((prev) => [...prev, created]);
+        showToast("Assignment created (Drive links saved)", "success");
+      } else {
+        // fallback: send required fields without file (only if backend allows)
+        const payload = {
+          title: title.trim(),
+          description: description.trim(),
+          dueDate: dueDate || null,
+          points: points ? Number(points) : null,
+          unit: unitId,
+          passPercentage: Number(passPercentage),
+          totalMarks: Number(totalMarks),
+        };
+        const res = await addAssignmentByInstructor(payload);
+        const created = res?.data ?? res;
+        setAssignments((prev) => [...prev, created]);
+        showToast("Assignment created", "success");
+      }
+
+      clearForm();
+    } catch (err) {
+      console.error("Create assignment failed:", err);
+      // prefer server-provided message
+      const msg =
+        (err?.response && (err.response.data?.message || err.response.data?.error)) ||
+        err?.message ||
+        "Failed to create assignment";
+      setError(msg);
+      showToast(msg, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleViewSubmissions = (assignment) => {
+    navigate(`/instructor/assignments/${assignment._id || assignment.id}/submissions`, {
+      state: { assignment, unit },
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">
-          Assignments for {unit?.title || "Unit"} {tableId && `(Table ID: ${tableId})`}
-        </h1>
-        <button
-          onClick={() => navigate(`/unit/lecture/${tableId || unit?.id || "default"}`, { state: { tableId } })}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-sm font-semibold"
-          aria-label="Back to Lectures"
-        >
-          Back to Lectures
-        </button>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-5xl mx-auto">
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Assignments — {unit?.title || unit?.name || "Unit"}
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">Create and manage assignments for this unit.</p>
+          </div>
+        </header>
+
+        {/* Create form */}
+        <section className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Create new assignment</h2>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Title *</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Assignment title (e.g., Project 1)"
+                className="mt-1 block w-full rounded-md border-gray-300 p-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                placeholder="Describe the assignment, deliverables, grading criteria..."
+                className="mt-1 block w-full rounded-md border-gray-300 p-2"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Due date</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Points</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={points}
+                  onChange={(e) => setPoints(e.target.value)}
+                  placeholder="e.g., 100"
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Pass % *</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={passPercentage}
+                  onChange={(e) => setPassPercentage(e.target.value)}
+                  placeholder="e.g., 50"
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Total Marks *</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={totalMarks}
+                  onChange={(e) => setTotalMarks(e.target.value)}
+                  placeholder="e.g., 100"
+                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Attachment (required)</label>
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  aria-label="Attach file"
+                >
+                  <Upload size={16} /> Attach file
+                </button>
+
+                <input ref={fileRef} type="file" className="hidden" onChange={onBrowserFileChange} multiple />
+
+                <button
+                  type="button"
+                  onClick={handleOpenPicker}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-md hover:bg-gray-50"
+                >
+                  Pick from Google Drive
+                </button>
+
+                <div className="text-sm text-gray-600">
+                  {attachmentPreviewName || (files.length ? `${files.length} file(s)` : "No files selected")}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Attach PDF, doc, or small resources. Browser files will be uploaded. Drive links are saved as references (sent as a single string in `file`).
+              </p>
+
+              {files.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm text-gray-700">
+                          {f.name || f.title || f.url || f.id}
+                        </div>
+                        <div className="text-xs text-gray-500">{f.size ? `${(f.size / 1024).toFixed(1)} KB` : ""}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {f.url && (
+                          <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline text-sm inline-flex items-center gap-1">
+                            View <ExternalLink size={12} />
+                          </a>
+                        )}
+                        <button type="button" onClick={() => onFileRemove(i)} className="text-red-600">
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={clearForm}
+                type="button"
+                className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
+                disabled={submitting}
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleCreateAssignment}
+                type="button"
+                className={`px-4 py-2 rounded-md text-white ${submitting ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Create Assignment"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Existing assignments list */}
+        <section className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Assignments for this unit</h2>
+            <div className="text-sm text-gray-600">{loading ? "Loading..." : `${assignments.length} assignment(s)`}</div>
+          </div>
+
+          {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
+
+          {assignments.length === 0 && !loading ? (
+            <p className="text-gray-600">No assignments created for this unit yet.</p>
+          ) : (
+            <ul className="space-y-4">
+              {assignments.map((a) => {
+                const id = a._id || a.id;
+                return (
+                  <li key={id} className="border rounded-md p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-md font-semibold">{a.title}</h3>
+                        <span className="text-xs text-gray-500">{a.points ? `${a.points} pts` : ""}</span>
+                      </div>
+                      <p className="text-sm text-gray-700 mt-2">{a.description}</p>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Due: {a.dueDate ? new Date(a.dueDate).toLocaleString() : "No due date"} • Created: {a.createdAt ? new Date(a.createdAt).toLocaleString() : "—"}
+                      </div>
+                      {a.attachment && (
+                        <div className="mt-2">
+                          <a href={a.attachment} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                            View attachment <ExternalLink size={14} />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleViewSubmissions(a)} className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">
+                        View Submissions
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </div>
 
-      {/* Toast Notification */}
+      {/* toast */}
       {toast.visible && (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg bg-green-100 text-green-800 flex items-center justify-between max-w-md"
-        >
-          <span className="text-sm">{toast.message}</span>
-          <button
-            onClick={closeToast}
-            className="ml-4 text-green-600 hover:text-green-800 focus:outline-none"
-            aria-label="Close notification"
-          >
-            <X size={16} />
-          </button>
+        <div className={`fixed bottom-6 right-6 p-3 rounded-md shadow-md ${toast.type === "error" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+          {toast.message}
         </div>
       )}
-
-      {/* Form Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md space-y-6 mb-6">
-        <div>
-          <label htmlFor="reflection" className="block text-lg font-semibold text-neutral-900 mb-2">
-            Your Assignment Reflection
-          </label>
-          <textarea
-            id="reflection"
-            value={reflection}
-            onChange={(e) => setReflection(e.target.value)}
-            placeholder="Add your thoughts, progress, or updates about the assignment..."
-            className="w-full h-32 p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base resize-vertical"
-            aria-label="Enter your assignment reflection"
-          />
-        </div>
-
-        <div>
-          <label className="block text-lg font-semibold text-neutral-900 mb-2">Upload Assignment Files</label>
-          <div className="flex flex-col md:flex-row gap-4">
-            <button
-              onClick={() => fileInputRef.current.click()}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-              aria-label="Upload assignment file"
-            >
-              <Upload size={16} className="mr-2" /> Upload Image
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept="image/*"
-              multiple
-              className="hidden"
-            />
-            {images.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={URL.createObjectURL(image)}
-                      alt={`Upload preview ${index + 1}`}
-                      className="w-24 h-24 object-cover rounded-lg border border-gray-300"
-                    />
-                    <button
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 focus:outline-none"
-                      aria-label={`Remove image ${index + 1}`}
-                    >
-                      <X size={12} />
-                    </button>
-                    <button
-                      onClick={() => analyzeImage(image)}
-                      className="absolute bottom-1 left-1 bg-green-600 text-white rounded-full p-1 hover:bg-green-700 focus:outline-none"
-                      aria-label={`Analyze image ${index + 1}`}
-                    >
-                      <CheckCircle size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={handleSubmit}
-            disabled={!reflection.trim() && images.length === 0}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-from-blue-500 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            aria-label="Submit assignment update"
-          >
-            Submit Update
-          </button>
-        </div>
-      </div>
-
-      {/* Received Assignments Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <Bell size={24} className="text-blue-600 mr-2" />
-            <h2 className="text-lg font-semibold text-neutral-900">Received Assignments</h2>
-          </div>
-         <button
-  onClick={() =>
-    navigate(`/assignments/receive`, {
-      state: { assignments: receivedAssignments },
-    })
-  }
-  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-sm font-semibold"
-  aria-label="View Assignment Responses"
->
-  View Responses
-  <ExternalLink className="w-4 h-4" />
-</button>
-          
-        </div>
-        {receivedAssignments.length === 0 ? (
-          <p className="text-neutral-600">No assignments submitted yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {receivedAssignments.map((assignment) => (
-              <div key={assignment.id} className="border-b border-gray-200 pb-4">
-                <p className="text-sm text-neutral-600">
-                  Submitted on: {new Date(assignment.timestamp).toLocaleString()}
-                </p>
-                {assignment.reflection && (
-                  <p className="text-neutral-900 mt-2">{assignment.reflection}</p>
-                )}
-                {assignment.images.length > 0 && (
-                  <div className="flex flex-wrap gap-4 mt-2">
-                    {assignment.images.map((imageName, index) => (
-                      <div key={index} className="relative">
-                        <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <span className="text-sm text-neutral-600">{imageName}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
+};
+
+AssignmentsTab.propTypes = {
+  unit: PropTypes.object.isRequired,
 };
 
 export default AssignmentsTab;

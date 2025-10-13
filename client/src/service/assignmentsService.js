@@ -1,3 +1,4 @@
+import { method } from "lodash";
 import ApiService from "./api-service-config/api-service";
 
 // Get All Asignments...
@@ -11,7 +12,7 @@ export const getAllAssignments = async () => {
   return ApiService.callApi(apiObject);
 };
 
-// Upload Assignment
+// Upload Assignment by Student
 export const uploadAssignment = async (uploadAssignment) => {
   const apiObject = {
     method: "POST",
@@ -32,3 +33,15 @@ export const getAssignmentsByUnitId = async (unitId) => {
   };
   return ApiService.callApi(apiObject);
 };
+
+
+export const addAssignmentByInstructor = async (assignment) => {
+  const apiObject = {
+    method: "POST",
+    withCredentials: true,
+    prefix: "assignment",
+    endpoint: "",
+    body: assignment,
+  };
+  return ApiService.callApi(apiObject);
+}
