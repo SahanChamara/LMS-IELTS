@@ -45,3 +45,35 @@ export const addAssignmentByInstructor = async (assignment) => {
   };
   return ApiService.callApi(apiObject);
 }
+
+
+export const getAllSubmittedAssignment = async () => {
+  const apiObject = {
+    method: "GET",
+    withCredentials: true,
+    prefix: "submitAssignment",
+    endpoint: "getAllSubmissions",
+  };
+  return ApiService.callApi(apiObject);
+};
+
+export const getSubmitAssByUnitId = async (unitId) => {
+  const apiObject = {
+    method: "GET",
+    withCredentials: true,
+    prefix: "submitAssignment",
+    endpoint: `submissions/unit/${unitId}`,
+  };
+  return ApiService.callApi(apiObject);
+};
+
+export const updateSubmissionGrade = async (submissionId,updateSubmissionGrade) => {
+  const apiObject = {
+    method: "PUT",
+    withCredentials: true,
+    prefix: "submitAssignment",
+    endpoint: `submissions/${submissionId}/grade `,
+    body: updateSubmissionGrade,
+  };
+  return ApiService.callApi(apiObject);
+};

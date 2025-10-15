@@ -4,14 +4,23 @@ import PropTypes from "prop-types";
 import { Upload, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDrivePicker from "react-google-drive-picker";
-import { addAssignmentByInstructor, getAllAssignments } from "../../../service/assignmentsService";
+import {
+  addAssignmentByInstructor,
+  getAllAssignments,
+  getSubmitAssByUnitId,
+  updateSubmissionGrade,
+} from "../../../service/assignmentsService";
 
 /**
  * InstructorAssignmentsTab
  *
- * - When Drive links are used, backend expects `file` to be a string.
- *   If multiple Drive links are selected we join them with commas and send as one string.
- * - Browser File uploads still use FormData ("file" entries).
+ * - Create assignments (supports browser files or Drive links)
+ * - View submissions modal: shows submissions for this unit
+ * - Update student grade inline
+ *
+ * Notes:
+ * - For Drive links we send `file` as a string (single link or comma-joined links)
+ * - For browser files we send FormData with "file" entries
  */
 const AssignmentsTab = ({ unit }) => {
   const navigate = useNavigate();
@@ -20,15 +29,13 @@ const AssignmentsTab = ({ unit }) => {
 
   const unitId = unit?._id || unit?.id || unit?.unitId || "";
 
-  // form state
+  // assignment create form
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [points, setPoints] = useState("");
   const [passPercentage, setPassPercentage] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
-
-  // files array holds both browser File objects and Drive doc objects
   const [files, setFiles] = useState([]);
   const [attachmentPreviewName, setAttachmentPreviewName] = useState("");
 
@@ -38,6 +45,14 @@ const AssignmentsTab = ({ unit }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: "", type: "info" });
+
+  // submissions modal
+  const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [submissions, setSubmissions] = useState([]); // array of submission objects
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [updatingSubmissionIds, setUpdatingSubmissionIds] = useState({}); // { [id]: true } for loading states
+  const [gradeInputs, setGradeInputs] = useState({}); // { submissionId: gradeValue }
+  const [feedbackInputs, setFeedbackInputs] = useState({}); // { submissionId: feedbackValue }
 
   // fetch assignments for unit
   useEffect(() => {
@@ -79,7 +94,7 @@ const AssignmentsTab = ({ unit }) => {
 
   const showToast = (message, type = "info") => setToast({ visible: true, message, type });
 
-  // Browser file input: can append multiple
+  // Browser file input handler
   const onBrowserFileChange = (e) => {
     const selected = Array.from(e.target.files || []);
     if (!selected.length) return;
@@ -107,7 +122,6 @@ const AssignmentsTab = ({ unit }) => {
         if (!data) return;
         if (data.action === "cancel") return;
         if (Array.isArray(data.docs) && data.docs.length) {
-          // docs usually contain: id, name, mimeType, url, size, etc.
           setFiles((prev) => [...prev, ...data.docs]);
           if (data.docs[0]?.name) setAttachmentPreviewName(data.docs[0].name);
         }
@@ -115,19 +129,6 @@ const AssignmentsTab = ({ unit }) => {
     });
   }, [openPicker]);
 
-  const clearForm = () => {
-    setTitle("");
-    setDescription("");
-    setDueDate("");
-    setPoints("");
-    setFiles([]);
-    setAttachmentPreviewName("");
-    setPassPercentage("");
-    setTotalMarks("");
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  // Validate required fields
   const validate = () => {
     if (!title.trim()) {
       showToast("Title is required", "error");
@@ -152,18 +153,28 @@ const AssignmentsTab = ({ unit }) => {
     return true;
   };
 
+  const clearForm = () => {
+    setTitle("");
+    setDescription("");
+    setDueDate("");
+    setPoints("");
+    setFiles([]);
+    setAttachmentPreviewName("");
+    setPassPercentage("");
+    setTotalMarks("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const handleCreateAssignment = async () => {
     if (!validate()) return;
     setSubmitting(true);
     setError(null);
 
     try {
-      // Detect browser File objects vs Drive docs
       const hasBrowserFiles = files.some((f) => f instanceof File);
       const driveFiles = files.filter((f) => !(f instanceof File) && (f.url || f.id || f.alternateLink));
 
       if (hasBrowserFiles) {
-        // Create FormData and append required fields and files (backend expects "file" or "files")
         const fd = new FormData();
         fd.append("title", title.trim());
         fd.append("description", description.trim());
@@ -172,12 +183,8 @@ const AssignmentsTab = ({ unit }) => {
         fd.append("unit", unitId);
         fd.append("passPercentage", String(passPercentage));
         fd.append("totalMarks", String(totalMarks));
-
-        // Append browser files - append each as "file"
         files.forEach((f) => {
-          if (f instanceof File) {
-            fd.append("file", f, f.name);
-          }
+          if (f instanceof File) fd.append("file", f, f.name);
         });
 
         const res = await addAssignmentByInstructor(fd, {
@@ -187,16 +194,8 @@ const AssignmentsTab = ({ unit }) => {
         setAssignments((prev) => [...prev, created]);
         showToast("Assignment created and files uploaded", "success");
       } else if (driveFiles.length > 0) {
-        // Convert driveUrls array to a single string for `file` field (backend expects string)
         const attachmentUrls = driveFiles.map((d) => d.url || d.alternateLink || d.id);
-        let fileFieldValue = "";
-        if (attachmentUrls.length === 1) {
-          fileFieldValue = attachmentUrls[0];
-        } else {
-          // multiple links -> join by comma (server will get a string)
-          fileFieldValue = attachmentUrls.join(",");
-        }
-
+        const fileFieldValue = attachmentUrls.length === 1 ? attachmentUrls[0] : attachmentUrls.join(",");
         const payload = {
           title: title.trim(),
           description: description.trim(),
@@ -205,7 +204,6 @@ const AssignmentsTab = ({ unit }) => {
           unit: unitId,
           passPercentage: Number(passPercentage),
           totalMarks: Number(totalMarks),
-          // pass a single string (not an array) to satisfy schema
           file: fileFieldValue,
         };
 
@@ -214,7 +212,6 @@ const AssignmentsTab = ({ unit }) => {
         setAssignments((prev) => [...prev, created]);
         showToast("Assignment created (Drive links saved)", "success");
       } else {
-        // fallback: send required fields without file (only if backend allows)
         const payload = {
           title: title.trim(),
           description: description.trim(),
@@ -233,11 +230,7 @@ const AssignmentsTab = ({ unit }) => {
       clearForm();
     } catch (err) {
       console.error("Create assignment failed:", err);
-      // prefer server-provided message
-      const msg =
-        (err?.response && (err.response.data?.message || err.response.data?.error)) ||
-        err?.message ||
-        "Failed to create assignment";
+      const msg = (err?.response && (err.response.data?.message || err.response.data?.error)) || err?.message || "Failed to create assignment";
       setError(msg);
       showToast(msg, "error");
     } finally {
@@ -245,21 +238,125 @@ const AssignmentsTab = ({ unit }) => {
     }
   };
 
-  const handleViewSubmissions = (assignment) => {
-    navigate(`/instructor/assignments/${assignment._id || assignment.id}/submissions`, {
-      state: { assignment, unit },
-    });
+  // ===== Submissions modal logic =====
+  const openSubmissionsModal = async () => {
+    setShowSubmissionsModal(true);
+    await fetchSubmissions();
+  };
+
+  const closeSubmissionsModal = () => {
+    setShowSubmissionsModal(false);
+    setSubmissions([]);
+    setGradeInputs({});
+    setFeedbackInputs({});
+  };
+
+  const fetchSubmissions = async () => {
+    if (!unitId) return;
+    setLoadingSubmissions(true);
+    try {
+      // service should return submissions for a unit — implement server endpoint getSubmissionsByUnit(unitId)
+      const res = await getSubmitAssByUnitId(unitId);
+      const data = res?.data ?? res;
+      // normalize into array
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      // populate gradeInputs/feedbackInputs for editing
+      const gradeMap = {};
+      const fbMap = {};
+      arr.forEach((s) => {
+        const id = s._id || s.id;
+        gradeMap[id] = s.grade ?? "";
+        fbMap[id] = s.instructorFeedback ?? s.feedback ?? "";
+      });
+      setSubmissions(arr);
+      setGradeInputs(gradeMap);
+      setFeedbackInputs(fbMap);
+    } catch (err) {
+      console.error("Failed to fetch submissions:", err);
+      showToast("Failed to load submissions", "error");
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
+  const handleGradeChange = (submissionId, value) => {
+    setGradeInputs((prev) => ({ ...prev, [submissionId]: value }));
+  };
+  const handleFeedbackChange = (submissionId, value) => {
+    setFeedbackInputs((prev) => ({ ...prev, [submissionId]: value }));
+  };
+
+  const handleUpdateGrade = async (submission) => {
+    const id = submission._id || submission.id;
+    const newGrade = gradeInputs[id];
+    const newFeedback = feedbackInputs[id];
+
+    if (newGrade === undefined || newGrade === null || newGrade === "") {
+      showToast("Please enter a grade before updating", "error");
+      return;
+    }
+
+    setUpdatingSubmissionIds((s) => ({ ...s, [id]: true }));
+
+    try {
+      // payload shape depends on your backend; I'm using { grade, feedback }
+      const payload = { grade: newGrade, feedback: newFeedback };
+      const res = await updateSubmissionGrade(id, payload);
+      const updated = res?.data ?? res;
+
+      // update local copy
+      setSubmissions((prev) => prev.map((p) => ((p._id || p.id) === id ? { ...p, ...updated } : p)));
+      showToast("Grade updated", "success");
+    } catch (err) {
+      console.error("Failed to update grade:", err);
+      const msg = (err?.response && (err.response.data?.message || err.response.data?.error)) || err?.message || "Update failed";
+      showToast(msg, "error");
+    } finally {
+      setUpdatingSubmissionIds((s) => {
+        const copy = { ...s };
+        delete copy[id];
+        return copy;
+      });
+    }
+  };
+
+  // helper to render download links — file field could be comma joined string or a plain URL
+  const renderFileLinks = (fileField) => {
+    if (!fileField) return <span className="text-sm text-gray-500">No file</span>;
+    // if it's an array-like object, handle it
+    if (Array.isArray(fileField)) {
+      return fileField.map((f, i) => (
+        <div key={i}>
+          <a href={f} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline text-sm">{f}</a>
+        </div>
+      ));
+    }
+    // string — maybe comma-separated
+    const joined = String(fileField);
+    const parts = joined.includes(",") ? joined.split(",").map((p) => p.trim()).filter(Boolean) : [joined];
+    return parts.map((p, i) => (
+      <div key={i}>
+        <a href={p} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline text-sm break-all">{p}</a>
+      </div>
+    ));
   };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <header className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Assignments — {unit?.title || unit?.name || "Unit"}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Assignments — {unit?.title || unit?.name || "Unit"}</h1>
             <p className="text-sm text-gray-600 mt-1">Create and manage assignments for this unit.</p>
+          </div>
+
+          <div>
+            <button
+              onClick={() => openSubmissionsModal()}
+              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              View Submissions (Unit)
+            </button>
           </div>
         </header>
 
@@ -270,112 +367,60 @@ const AssignmentsTab = ({ unit }) => {
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Title *</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Assignment title (e.g., Project 1)"
-                className="mt-1 block w-full rounded-md border-gray-300 p-2"
-              />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Assignment title" className="mt-1 block w-full rounded-md border-gray-300 p-2" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Describe the assignment, deliverables, grading criteria..."
-                className="mt-1 block w-full rounded-md border-gray-300 p-2"
-              />
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Describe deliverables..." className="mt-1 block w-full rounded-md border-gray-300 p-2" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Due date</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
-                />
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 p-2" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Points</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  placeholder="e.g., 100"
-                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
-                />
+                <input type="number" min="0" value={points} onChange={(e) => setPoints(e.target.value)} placeholder="e.g., 100" className="mt-1 block w-full rounded-md border-gray-300 p-2" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Pass % *</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={passPercentage}
-                  onChange={(e) => setPassPercentage(e.target.value)}
-                  placeholder="e.g., 50"
-                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
-                />
+                <input type="number" min="0" max="100" value={passPercentage} onChange={(e) => setPassPercentage(e.target.value)} placeholder="e.g., 50" className="mt-1 block w-full rounded-md border-gray-300 p-2" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Total Marks *</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={totalMarks}
-                  onChange={(e) => setTotalMarks(e.target.value)}
-                  placeholder="e.g., 100"
-                  className="mt-1 block w-full rounded-md border-gray-300 p-2"
-                />
+                <input type="number" min="0" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} placeholder="e.g., 100" className="mt-1 block w-full rounded-md border-gray-300 p-2" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Attachment (required)</label>
               <div className="flex items-center gap-3 mt-1">
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  aria-label="Attach file"
-                >
+                <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" aria-label="Attach file">
                   <Upload size={16} /> Attach file
                 </button>
 
                 <input ref={fileRef} type="file" className="hidden" onChange={onBrowserFileChange} multiple />
 
-                <button
-                  type="button"
-                  onClick={handleOpenPicker}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-md hover:bg-gray-50"
-                >
+                <button type="button" onClick={handleOpenPicker} className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-md hover:bg-gray-50">
                   Pick from Google Drive
                 </button>
 
-                <div className="text-sm text-gray-600">
-                  {attachmentPreviewName || (files.length ? `${files.length} file(s)` : "No files selected")}
-                </div>
+                <div className="text-sm text-gray-600">{attachmentPreviewName || (files.length ? `${files.length} file(s)` : "No files selected")}</div>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Attach PDF, doc, or small resources. Browser files will be uploaded. Drive links are saved as references (sent as a single string in `file`).
-              </p>
+
+              <p className="text-xs text-gray-400 mt-1">Attach PDF/doc or select Drive links. Drive links are saved as a single string in `file`.</p>
 
               {files.length > 0 && (
                 <div className="mt-2 space-y-2">
                   {files.map((f, i) => (
                     <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div className="flex items-center gap-3">
-                        <div className="text-sm text-gray-700">
-                          {f.name || f.title || f.url || f.id}
-                        </div>
+                        <div className="text-sm text-gray-700">{f.name || f.title || f.url || f.id}</div>
                         <div className="text-xs text-gray-500">{f.size ? `${(f.size / 1024).toFixed(1)} KB` : ""}</div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -384,9 +429,7 @@ const AssignmentsTab = ({ unit }) => {
                             View <ExternalLink size={12} />
                           </a>
                         )}
-                        <button type="button" onClick={() => onFileRemove(i)} className="text-red-600">
-                          Remove
-                        </button>
+                        <button type="button" onClick={() => onFileRemove(i)} className="text-red-600">Remove</button>
                       </div>
                     </div>
                   ))}
@@ -395,20 +438,8 @@ const AssignmentsTab = ({ unit }) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={clearForm}
-                type="button"
-                className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
-                disabled={submitting}
-              >
-                Reset
-              </button>
-              <button
-                onClick={handleCreateAssignment}
-                type="button"
-                className={`px-4 py-2 rounded-md text-white ${submitting ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`}
-                disabled={submitting}
-              >
+              <button onClick={clearForm} type="button" className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300" disabled={submitting}>Reset</button>
+              <button onClick={handleCreateAssignment} type="button" className={`px-4 py-2 rounded-md text-white ${submitting ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`} disabled={submitting}>
                 {submitting ? "Submitting..." : "Create Assignment"}
               </button>
             </div>
@@ -451,9 +482,7 @@ const AssignmentsTab = ({ unit }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button onClick={() => handleViewSubmissions(a)} className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">
-                        View Submissions
-                      </button>
+                      <button onClick={() => openSubmissionsModal()} className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">View Submissions</button>
                     </div>
                   </li>
                 );
@@ -462,6 +491,88 @@ const AssignmentsTab = ({ unit }) => {
           )}
         </section>
       </div>
+
+      {/* Submissions modal */}
+      {showSubmissionsModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={closeSubmissionsModal} />
+          <div className="relative bg-white rounded-lg w-full max-w-5xl p-6 shadow-lg z-50 max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Submissions — Unit: {unit?.title || unit?.name || unitId}</h3>
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1 bg-gray-200 rounded" onClick={fetchSubmissions}>Refresh</button>
+                <button className="px-3 py-1 bg-red-100 rounded" onClick={closeSubmissionsModal}>Close</button>
+              </div>
+            </div>
+
+            {loadingSubmissions ? (
+              <div>Loading submissions...</div>
+            ) : submissions.length === 0 ? (
+              <div className="text-sm text-gray-600">No submissions yet for this unit.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left p-2 text-xs font-medium text-gray-600 border-b">Student</th>
+                      <th className="text-left p-2 text-xs font-medium text-gray-600 border-b">Assignment</th>
+                      <th className="text-left p-2 text-xs font-medium text-gray-600 border-b">Submitted File(s)</th>
+                      <th className="text-left p-2 text-xs font-medium text-gray-600 border-b">Grade</th>
+                      <th className="text-left p-2 text-xs font-medium text-gray-600 border-b">Instructor Feedback</th>
+                      <th className="p-2 text-xs font-medium text-gray-600 border-b">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submissions.map((s) => {
+                      const id = s._id || s.id;
+                      const studentName = (s.student && (s.student.name || s.student.fullName)) || s.studentName || s.student || "Student";
+                      const assignmentTitle = (s.assignment && (s.assignment.title || s.assignment.name)) || s.assignmentName || s.assignment || "Assignment";
+                      return (
+                        <tr key={id} className="odd:bg-white even:bg-gray-50">
+                          <td className="p-2 align-top text-sm border-b">{studentName}</td>
+                          <td className="p-2 align-top text-sm border-b">{assignmentTitle}</td>
+                          <td className="p-2 align-top text-sm border-b">{renderFileLinks(s.file)}</td>
+                          <td className="p-2 align-top text-sm border-b">
+                            <input
+                              value={gradeInputs[id] ?? ""}
+                              onChange={(e) => handleGradeChange(id, e.target.value)}
+                              className="px-2 py-1 border rounded w-24"
+                              placeholder="e.g., 85"
+                            />
+                          </td>
+                          <td className="p-2 align-top text-sm border-b">
+                            <textarea
+                              value={feedbackInputs[id] ?? ""}
+                              onChange={(e) => handleFeedbackChange(id, e.target.value)}
+                              className="w-full px-2 py-1 border rounded"
+                              rows={2}
+                              placeholder="Optional feedback"
+                            />
+                          </td>
+                          <td className="p-2 align-top text-sm border-b">
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => handleUpdateGrade(s)}
+                                disabled={!!updatingSubmissionIds[id]}
+                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                              >
+                                {updatingSubmissionIds[id] ? "Updating..." : "Update Grade"}
+                              </button>
+                              <a href={Array.isArray(s.file) ? s.file[0] : String(s.file).split(",")[0]} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline text-sm">
+                                Download
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* toast */}
       {toast.visible && (
