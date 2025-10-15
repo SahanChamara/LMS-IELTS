@@ -48,6 +48,7 @@ const AssignmentsTab = ({ unit }) => {
 
   // submissions modal
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [modalMounted, setModalMounted] = useState(false); // controls enter/exit animation
   const [submissions, setSubmissions] = useState([]); // array of submission objects
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [updatingSubmissionIds, setUpdatingSubmissionIds] = useState({}); // { [id]: true } for loading states
@@ -239,17 +240,35 @@ const AssignmentsTab = ({ unit }) => {
   };
 
   // ===== Submissions modal logic =====
+  // open modal and fetch submissions; also trigger enter animation and lock scroll
   const openSubmissionsModal = async () => {
     setShowSubmissionsModal(true);
+    // small delay to let DOM mount before animate
+    requestAnimationFrame(() => setModalMounted(true));
     await fetchSubmissions();
   };
 
   const closeSubmissionsModal = () => {
-    setShowSubmissionsModal(false);
-    setSubmissions([]);
-    setGradeInputs({});
-    setFeedbackInputs({});
+    // trigger exit animation
+    setModalMounted(false);
+    // wait for animation duration to finish (match CSS duration below: 300ms)
+    setTimeout(() => {
+      setShowSubmissionsModal(false);
+      setSubmissions([]);
+      setGradeInputs({});
+      setFeedbackInputs({});
+    }, 320);
   };
+
+  // lock body scroll while modal open
+  useEffect(() => {
+    if (showSubmissionsModal) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [showSubmissionsModal]);
 
   const fetchSubmissions = async () => {
     if (!unitId) return;
@@ -258,7 +277,6 @@ const AssignmentsTab = ({ unit }) => {
       // service should return submissions for a unit — implement server endpoint getSubmissionsByUnit(unitId)
       const res = await getSubmitAssByUnitId(unitId);
       const data = res?.data ?? res;
-      // normalize into array
       const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
       // populate gradeInputs/feedbackInputs for editing
       const gradeMap = {};
@@ -304,7 +322,7 @@ const AssignmentsTab = ({ unit }) => {
       const res = await updateSubmissionGrade(id, payload);
       const updated = res?.data ?? res;
 
-      // update local copy
+      // update local copy (merge returned updated doc if present)
       setSubmissions((prev) => prev.map((p) => ((p._id || p.id) === id ? { ...p, ...updated } : p)));
       showToast("Grade updated", "success");
     } catch (err) {
@@ -323,7 +341,6 @@ const AssignmentsTab = ({ unit }) => {
   // helper to render download links — file field could be comma joined string or a plain URL
   const renderFileLinks = (fileField) => {
     if (!fileField) return <span className="text-sm text-gray-500">No file</span>;
-    // if it's an array-like object, handle it
     if (Array.isArray(fileField)) {
       return fileField.map((f, i) => (
         <div key={i}>
@@ -331,7 +348,6 @@ const AssignmentsTab = ({ unit }) => {
         </div>
       ));
     }
-    // string — maybe comma-separated
     const joined = String(fileField);
     const parts = joined.includes(",") ? joined.split(",").map((p) => p.trim()).filter(Boolean) : [joined];
     return parts.map((p, i) => (
@@ -494,9 +510,21 @@ const AssignmentsTab = ({ unit }) => {
 
       {/* Submissions modal */}
       {showSubmissionsModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4">
-          <div className="absolute inset-0 bg-black opacity-40" onClick={closeSubmissionsModal} />
-          <div className="relative bg-white rounded-lg w-full max-w-5xl p-6 shadow-lg z-50 max-h-[80vh] overflow-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4" aria-modal="true" role="dialog">
+          {/* overlay: semi opaque + blur; animate opacity */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-300 ${modalMounted ? "opacity-80 backdrop-blur-sm" : "opacity-0"}`}
+            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+            onClick={closeSubmissionsModal}
+            aria-hidden="true"
+          />
+
+          {/* modal panel: slide + fade animation */}
+          <div
+            className={`relative bg-white rounded-lg w-full max-w-5xl p-6 shadow-lg z-50 max-h-[80vh] overflow-auto transform transition-all duration-300
+              ${modalMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"}`}
+            role="document"
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Submissions — Unit: {unit?.title || unit?.name || unitId}</h3>
               <div className="flex items-center gap-2">
@@ -506,7 +534,7 @@ const AssignmentsTab = ({ unit }) => {
             </div>
 
             {loadingSubmissions ? (
-              <div>Loading submissions...</div>
+              <div className="py-10 text-center text-sm text-gray-600">Loading submissions...</div>
             ) : submissions.length === 0 ? (
               <div className="text-sm text-gray-600">No submissions yet for this unit.</div>
             ) : (
