@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getQuestionsByAssessmentId, postAssessmentMarks } from "../../../service/quizService";
+import { ShieldQuestion } from 'lucide-react';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -758,7 +759,7 @@ function QuizApp({ assessments, unitId, studentId }) {
                         ) : assessmentAttempts.length > 0 ? (
                           <span className="text-yellow-600 font-medium">!</span>
                         ) : (
-                          <span className="text-gray-500 font-medium">?</span>
+                          <span className="text-gray-500 font-medium"> <ShieldQuestion/> </span>
                         )}
                       </div>
                       <div>
