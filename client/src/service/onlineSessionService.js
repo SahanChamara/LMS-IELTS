@@ -58,3 +58,27 @@ export const createSession = async (sessionData) => {
     throw new Error(error.result || error.message || 'Failed to create session');
   }
 };
+
+
+// Instructor Session Creating
+export async function createOnlineSession(onlineSession) {
+    const apiObject = {
+      method: "POST",
+      withCredentials: true,
+      prefix: "onlineSession",
+      endpoint: '',
+      body: onlineSession
+    };
+  return await ApiService.callApi(apiObject);
+}
+
+
+export async function getOnlineSessionsByUnitId(unitId) {
+    const apiObject = {
+      method: "GET",
+      withCredentials: true,
+      prefix: "onlineSession",
+      endpoint: `unitId/${unitId}`,
+    };
+  return await ApiService.callApi(apiObject);
+}

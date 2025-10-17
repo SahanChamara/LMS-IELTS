@@ -5,5 +5,8 @@ const submitAssignmentController = require("../controllers/submitAssignmentContr
 
 
 router.post("/", authMiddleware(["Student","Instructor"]), submitAssignmentController.createAssignmentSubmission);
+router.get("/getAllSubmissions", authMiddleware(["Student", "Instructor"]), submitAssignmentController.getAllSubmittedAssignment);
+router.get("/submissions/unit/:unitId", authMiddleware(["Student", "Instructor"]), submitAssignmentController.getSubmissionsByUnit);
+router.put("/submissions/:submissionId/grade", authMiddleware(["student", "Instructor"]), submitAssignmentController.updateSubmissionGrade);
 
 module.exports = router;

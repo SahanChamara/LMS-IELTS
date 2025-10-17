@@ -34,6 +34,7 @@ exports.createSession = async (req, res) => {
     try {
         // Log request body for debugging
         console.log('Create session request body:', JSON.stringify(req.body, null, 2));
+        console.log("requset user",req.user.id)
 
         const { title, unit, instructor, link, date, description } = req.body;
 
@@ -67,7 +68,7 @@ exports.createSession = async (req, res) => {
         }
 
         // If user is Instructor, ensure they can only create sessions for themselves
-        if (req.user.role === 'Instructor' && instructor !== req.user._id.toString()) {
+        if (req.user.role === 'Instructor' && instructor !== req.user.id.toString()) {
             return res.status(403).json({ success: false, result: 'Instructors can only create sessions for themselves' });
         }
 
@@ -157,7 +158,7 @@ exports.getSessionByUnitId = async (req, res) => {
         // Restrict to instructor's sessions
         let query = { unit: unitId };
         if (req.user?.role === 'Instructor') {
-            query.instructor = req.user._id;
+            query.instructor = req.user.id;
         }
 
         const sessions = await OnlineSession.find(query)
