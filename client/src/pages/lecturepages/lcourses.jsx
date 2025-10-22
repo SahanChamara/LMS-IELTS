@@ -130,9 +130,7 @@ const Leccorces = () => {
   const [activeTab, setActiveTab] = useState("both");
 
   // Handling logout action
-  const handleLogout = () => {
-    console.log("Logout triggered");
-  };
+  const handleLogout = () => navigate("/login");
 
   // Updating form data on input change
   const handleInputChange = (e) => {

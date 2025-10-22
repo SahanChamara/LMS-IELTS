@@ -151,6 +151,8 @@ const Lecdashboard = () => {
     fetchAll();
   }, []);
 
+  const handleLogout = () => navigate("/login")
+
   // totals
   const unitsCount = units.length;
   const assignmentsCount = assignments.length;
@@ -160,7 +162,7 @@ const Lecdashboard = () => {
     <div className="font-sans min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* Sidebar */}
       <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-10 md:block">
-        <Lecsidebar />
+        <Lecsidebar onLogout={handleLogout} />
       </div>
 
       {/* Main Content */}
