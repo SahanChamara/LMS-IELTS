@@ -5,14 +5,14 @@ const createCourse = async (req, res) => {
   try {
     const { title, description, instructor, status } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(instructor)) {
+/*    if (!mongoose.Types.ObjectId.isValid(instructor)) {
       return res.status(400).json({ success: false, message: 'Invalid instructor ID' });
-    }
+    }*/
 
     const course = new Course({
       title,
       description,
-      instructor,
+      // instructor,
       status: status || 'pending'
     });
 

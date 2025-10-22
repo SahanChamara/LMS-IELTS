@@ -21,6 +21,7 @@ import Adminsidebar from "../Adminpages/Adminsidebars";
 import { useAppDispatch } from "../../redux/store-config/store";
 import { getAllStudentsAPI } from "../../redux/features/studentSlice";
 import { getAllLectures } from "../../service/adminService";
+import { getAllunitsForAdmin } from "../../service/unitsService";
 
 ChartJS.register(
   CategoryScale,
