@@ -7,6 +7,7 @@ import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
 import Lecsidebar from './lecsidebar';
 import Card from '../../components/card';
+import { useNavigate } from 'react-router-dom';
 
 const InstructorFeed = () => {
   const [posts, setPosts] = useState(mockPosts.filter(p => p.status === 'approved'));
@@ -16,6 +17,7 @@ const InstructorFeed = () => {
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [newComments, setNewComments] = useState({});
   const [activeTab, setActiveTab] = useState('approved');
+  const navigate = useNavigate();
 
   const currentUser = { id: '2', name: 'Dr. Smith', role: 'instructor' };
 
@@ -172,6 +174,8 @@ const InstructorFeed = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleLogout = () => navigate("/login");
+
   const renderPost = (post, showActions = false) => (
     <Card key={post.id}>
       <div
@@ -316,7 +320,7 @@ const InstructorFeed = () => {
   return (
     <div className="flex h-screen bg-gray-100 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
-        <Lecsidebar />
+        <Lecsidebar onLogout={handleLogout}/>
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-3xl mx-auto">

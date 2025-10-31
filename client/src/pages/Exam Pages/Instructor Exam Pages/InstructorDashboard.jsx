@@ -17,6 +17,7 @@ import SubmissionList from "./SubmissionList";
 import Lecsidebar from "../../../pages/lecturepages/lecsidebar"; // Import Lecsidebar component
 import { useAppDispatch, useAppSelector } from "../../../redux/store-config/store";
 import { getAllExamsAPI } from "../../../redux/features/examIeltsInstructorSlice";
+import { useNavigate } from "react-router-dom";
 
 const InstructorDashboard = () => {
   const dispatch = useAppDispatch();
@@ -25,6 +26,7 @@ const InstructorDashboard = () => {
     dispatch(getAllExamsAPI());
   }, []);
   
+  const navigate = useNavigate();
   const { examsIns, loading, error } = useAppSelector((state) => state.examIeltsInstructor);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -73,6 +75,11 @@ const InstructorDashboard = () => {
     setShowReviewSubmissions(false);
     setSelectedExam(null);
   };
+
+  const handleLogout = () => {
+    navigate("/login");
+  };
+
 
   console.log("exams", exams);
   console.log("exams Ins", examsIns);
@@ -127,7 +134,7 @@ const InstructorDashboard = () => {
   return (
     <div className="flex h-screen bg-neutral-50 text-neutral-800 overflow-hidden">
       <aside className="fixed top-0 left-0 z-10 w-64 h-full">
-        <Lecsidebar />
+        <Lecsidebar onLogout={handleLogout} />
       </aside>
       <main className="flex-1 h-full overflow-y-auto p-6 pt-10 ml-0 md:ml-64">
         <div className="max-w-7xl mx-auto">

@@ -85,10 +85,7 @@ const Lsettings = () => {
     }
   };
 
-  const handleLogout = () => {
-    // Clear any local storage or session data if needed
-    navigate("/login");
-  };
+  const handleLogout = () => navigate("/login");
 
   if (loading) {
     return (

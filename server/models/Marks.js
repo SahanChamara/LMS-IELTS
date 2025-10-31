@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const MarksSchema = new mongoose.Schema({
     studentId: {
@@ -16,6 +17,10 @@ const MarksSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Unit",
         required: [true, "Unit name is required"],
+    },
+    assessment: {
+      type: Schema.Types.ObjectId,
+      ref: "Assessment"
     },
     caMarks: {
         type: Number,
