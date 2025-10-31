@@ -173,7 +173,10 @@ exports.getMarkByStudentId = async (req, res) => {
             .populate('studentId', 'name email studentId')
             .populate('courseId', 'name')
             .populate('unit', 'title')
+            .populate('assessment', 'title')
             .sort({ createdAt: -1 });
+
+        console.log("Marks Return", marks)
 
         res.status(200).json({ success: true, data: marks });
     } catch (error) {
