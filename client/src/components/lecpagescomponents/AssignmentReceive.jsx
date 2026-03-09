@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FileText, Loader2, ChevronDown, ChevronUp, Check, Download } from "lucide-react";
-import LecSidebar from "../../pages/lecturepages/lecsidebar";
+import LecSidebar from "../../pages/lecturepages/Lecsidebar";
 
 const AssignmentReceive = () => {
   const navigate = useNavigate();

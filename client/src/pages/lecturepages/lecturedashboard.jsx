@@ -1,242 +1,289 @@
-import React, { useState, useEffect } from "react";
+// components/lecturer/Lecdashboard.jsx
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Lecsidebar from "./lecsidebar";
-import { FiAlertCircle, FiBook, FiFileText, FiUsers, FiBell } from "react-icons/fi";
+import Lecsidebar from "./Lecsidebar";
+import { FiBook, FiFileText, FiUsers } from "react-icons/fi";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { getUnitByInstructorId } from "../../service/unitsService";
+import { getAllAssignments, getAllSubmittedAssignment } from "../../service/assignmentsService";
+import { getAllStudents } from "../../service/studentService";
+
+/**
+ * Lecturer Dashboard
+ *
+ * - Summary cards: Units, Assignments, Students
+ * - Charts:
+ *    - Bar chart: Average Assignment Grades per Unit
+ *    - Pie chart: Assignments Distribution
+ */
+
+const COLORS = [
+  "#4F46E5",
+  "#06B6D4",
+  "#F59E0B",
+  "#EF4444",
+  "#10B981",
+  "#8B5CF6",
+  "#F472B6",
+  "#60A5FA",
+];
 
 const Lecdashboard = () => {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dashboardData, setDashboardData] = useState({
-    courses: [],
-    assignments: [],
-    students: [],
-    announcements: [],
-  });
 
-  // Simulated API fetch for dashboard data
+  // raw datasets
+  const [units, setUnits] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+
+  // derived data for charts
+  const [gradesByUnit, setGradesByUnit] = useState([]);
+  const [assignmentsByUnit, setAssignmentsByUnit] = useState([]);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchAll = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        // TODO: Replace with actual API call (e.g., await api.get('/lecturer/dashboard'))
-        const mockData = {
-          courses: [
-            { id: 1, name: "Introduction to Computer Science", code: "CS101", students: 50 },
-            { id: 2, name: "Advanced Mathematics", code: "MATH201", students: 40 },
-            { id: 3, name: "Data Structures", code: "CS201", students: 45 },
-          ],
-          assignments: [
-            { id: 1, title: "Week 1 Quiz", dueDate: "2025-06-20", course: "CS101" },
-            { id: 2, title: "Project Proposal", dueDate: "2025-07-01", course: "MATH201" },
-            { id: 3, title: "Lab Assignment", dueDate: "2025-06-15", course: "CS201" },
-          ],
-          students: [
-            { id: 1, name: "John Doe", email: "john.doe@university.com", course: "CS101" },
-            { id: 2, name: "Jane Smith", email: "jane.smith@university.com", course: "MATH201" },
-            { id: 3, name: "Alex Brown", email: "alex.brown@university.com", course: "CS201" },
-          ],
-          announcements: [
-            { id: 1, title: "Class Schedule Update", date: "2025-06-10" },
-            { id: 2, title: "Office Hours Change", date: "2025-06-11" },
-          ],
-        };
-        setTimeout(() => {
-          setDashboardData(mockData);
-          setLoading(false);
-        }, 1000);
-      } catch {
-        setError("Failed to load dashboard data. Please try again.");
+        // fetch all data in parallel
+        const [unitsRes, assignmentsRes, studentsRes, submissionsRes] =
+          await Promise.all([
+            getUnitByInstructorId(localStorage.getItem("user")),
+            getAllAssignments(),
+            getAllStudents(),
+            getAllSubmittedAssignment(), // ✅ new call
+          ]);
+
+        // normalize responses
+        const unitsArr = unitsRes?.data ?? unitsRes ?? [];
+        const assignmentsArr = assignmentsRes?.data ?? assignmentsRes ?? [];
+        const studentsArr = studentsRes?.data ?? studentsRes ?? [];
+        const submissionsArr = submissionsRes?.data ?? submissionsRes ?? [];
+
+        setUnits(Array.isArray(unitsArr) ? unitsArr : []);
+        setAssignments(Array.isArray(assignmentsArr) ? assignmentsArr : []);
+        setStudents(Array.isArray(studentsArr) ? studentsArr : []);
+        setSubmissions(Array.isArray(submissionsArr) ? submissionsArr : []);
+
+        // === Compute Average Grades per Unit ===
+        const gradesMap = {}; // { unitId: { total: number, count: number } }
+
+        submissionsArr.forEach((s) => {
+          const unitId =
+            (s.assignment &&
+              (s.assignment.unit?._id || s.assignment.unit?.id)) ||
+            s.unitId ||
+            null;
+
+          if (!unitId) return;
+
+          const marks = s.totalMarks ?? 0;
+          if (!gradesMap[unitId]) gradesMap[unitId] = { total: 0, count: 0 };
+          gradesMap[unitId].total += marks;
+          gradesMap[unitId].count += 1;
+        });
+
+        const gradesByUnitData = (Array.isArray(unitsArr) ? unitsArr : []).map(
+          (u) => {
+            const id = u._id || u.id;
+            const avg =
+              gradesMap[id]?.count > 0
+                ? gradesMap[id].total / gradesMap[id].count
+                : 0;
+            return {
+              unitId: id,
+              unitTitle: u.title || u.name || u.code || `Unit ${id}`,
+              averageGrade: Number(avg.toFixed(2)),
+            };
+          }
+        );
+        setGradesByUnit(gradesByUnitData);
+
+        // === Compute Assignments per Unit (Pie Chart) ===
+        const assignmentCountMap = {};
+        assignmentsArr.forEach((a) => {
+          const uId =
+            (a.unit && (a.unit._id || a.unit.id)) ||
+            a.unit ||
+            a.unitId ||
+            a.unitRef ||
+            null;
+          if (!uId) return;
+          const key = String(uId);
+          assignmentCountMap[key] = (assignmentCountMap[key] || 0) + 1;
+        });
+
+        const assignmentsByUnitData = (Array.isArray(unitsArr) ? unitsArr : []).map(
+          (u) => {
+            const id = u._id || u.id;
+            return {
+              unitId: id,
+              unitTitle: u.title || u.name || u.code || `Unit ${id}`,
+              assignments: assignmentCountMap[String(id)] || 0,
+            };
+          }
+        );
+
+        setAssignmentsByUnit(assignmentsByUnitData);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError("Failed to load dashboard data. See console for details.");
+      } finally {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+
+    fetchAll();
   }, []);
 
-  const handleLogout = () => {
-    // TODO: Add logout logic (e.g., clear auth tokens)
-    navigate("/login");
-  };
+  const handleLogout = () => navigate("/login")
+
+  // totals
+  const unitsCount = units.length;
+  const assignmentsCount = assignments.length;
+  const studentsCount = students.length;
 
   return (
-    <div className="font-sans min-h-screen bg-gray-100 flex flex-col md:flex-row">
-      {/* Fixed Sidebar */}
+    <div className="font-sans min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Sidebar */}
       <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-10 md:block">
         <Lecsidebar onLogout={handleLogout} />
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64 overflow-y-auto">
-        {/* Welcome Banner */}
-        <div className="mb-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Welcome, Lecturer!</h2>
-          <p className="text-xs sm:text-sm mt-2">
-            Manage your courses, assignments, and students with ease. Today is{" "}
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}.
+      <main className="flex-1 p-6 sm:p-8 md:ml-64">
+        {/* Banner */}
+        <div className="mb-6 bg-gradient-to-r from-sky-600 to-indigo-700 text-white p-5 rounded-lg shadow-md">
+          <h2 className="text-2xl sm:text-3xl font-bold">Welcome, Lecturer!</h2>
+          <p className="mt-2 text-sm sm:text-base">
+            Track student performance and assignment analytics at a glance.
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
-            <FiAlertCircle className="text-lg" />
-            {error}
+          <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-lg">
+            <strong>Error:</strong> {error}
           </div>
         )}
 
-        {/* Loading State */}
+        {/* Summary Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[...Array(4)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white p-4 sm:p-6 rounded-lg shadow-lg animate-pulse"
-              >
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-                <div className="h-10 bg-gray-200 rounded w-1/2"></div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg p-6 shadow animate-pulse h-32" />
             ))}
           </div>
         ) : (
-          /* Dashboard Content */
-          <div className="space-y-6 sm:space-y-8">
-            {/* Summary Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiBook className="text-2xl sm:text-3xl text-blue-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Units</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.courses.length}</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiFileText className="text-2xl sm:text-3xl text-blue-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Assignments</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.assignments.length}</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiUsers className="text-2xl sm:text-3xl text-blue-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Students</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.students.length}</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg flex items-center gap-4 transition-transform hover:scale-105">
-                <FiBell className="text-2xl sm:text-3xl text-blue-600" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Notifications</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.announcements.length}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Detailed Sections */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Recent Courses */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Recent Courses</h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.courses.slice(0, 3).map((course) => (
-                    <li
-                      key={course.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 cursor-pointer"
-                      onClick={() => navigate(`/lecturer/courses/${course.id}`)}
-                    >
-                      {course.name} ({course.code}) - {course.students} students
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/lecturer/courses")}
-                  className="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                  aria-label="View all courses"
-                >
-                  View All Courses
-                </button>
-              </div>
-
-              {/* Upcoming Assignments */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Upcoming Assignments</h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.assignments.slice(0, 3).map((assignment) => (
-                    <li
-                      key={assignment.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 cursor-pointer"
-                      onClick={() => navigate(`/lecturer/assignments/${assignment.id}`)}
-                    >
-                      {assignment.title} (Due: {assignment.dueDate})
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/lecturer/assignments")}
-                  className="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                  aria-label="View all assignments"
-                >
-                  View All Assignments
-                </button>
-              </div>
-
-              {/* Recent Students */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Recent Students</h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.students.slice(0, 3).map((student) => (
-                    <li
-                      key={student.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 cursor-pointer"
-                      onClick={() => navigate(`/lecturer/students/${student.id}`)}
-                    >
-                      {student.name} ({student.email})
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/lecturer/students")}
-                  className="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                  aria-label="View all students"
-                >
-                  View All Students
-                </button>
-              </div>
-
-              {/* Recent Announcements */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Recent Announcements</h3>
-                <ul className="space-y-2 mb-4">
-                  {dashboardData.announcements.slice(0, 3).map((announcement) => (
-                    <li
-                      key={announcement.id}
-                      className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 cursor-pointer"
-                      onClick={() => navigate("/lecturer/announcements")}
-                    >
-                      {announcement.title} (Posted: {announcement.date})
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/lecturer/announcements")}
-                  className="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                  aria-label="View all announcements"
-                >
-                  View All Announcements
-                </button>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <MetricCard icon={<FiBook />} label="Units" value={unitsCount} color="indigo" />
+            <MetricCard icon={<FiFileText />} label="Assignments" value={assignmentsCount} color="sky" />
+            <MetricCard icon={<FiUsers />} label="Students" value={studentsCount} color="green" />
           </div>
         )}
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bar Chart - Average Grades per Unit */}
+          <div className="bg-white p-5 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800">Average Grades per Unit</h3>
+              <div className="text-xs text-gray-500">Average % by unit</div>
+            </div>
+
+            {loading ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">Loading chart...</div>
+            ) : gradesByUnit.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">No grade data</div>
+            ) : (
+              <div style={{ width: "100%", height: 320 }}>
+                <ResponsiveContainer>
+                  <BarChart data={gradesByUnit} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                    <XAxis dataKey="unitTitle" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="averageGrade" name="Avg Grade (%)" fill="#4F46E5" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          {/* Pie Chart - Assignments per Unit */}
+          <div className="bg-white p-5 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800">Assignments Distribution</h3>
+              <div className="text-xs text-gray-500">By unit</div>
+            </div>
+
+            {loading ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">Loading chart...</div>
+            ) : assignmentsByUnit.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">No assignment data</div>
+            ) : (
+              <div style={{ width: "100%", height: 320 }} className="flex items-center justify-center">
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={assignmentsByUnit}
+                      dataKey="assignments"
+                      nameKey="unitTitle"
+                      outerRadius={100}
+                      innerRadius={40}
+                      paddingAngle={4}
+                      label={(entry) =>
+                        entry.assignments > 0
+                          ? `${entry.unitTitle} (${entry.assignments})`
+                          : ""
+                      }
+                    >
+                      {assignmentsByUnit.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
 };
 
 export default Lecdashboard;
+
+// Reusable card
+const MetricCard = ({ icon, label, value, color }) => {
+  const bg = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    sky: "bg-sky-50 text-sky-600",
+    green: "bg-green-50 text-green-600",
+  }[color];
+  return (
+    <div className="bg-white p-5 rounded-lg shadow flex items-center gap-4 hover:shadow-lg transition">
+      <div className={`p-3 rounded-lg ${bg}`}>{icon}</div>
+      <div>
+        <h4 className="text-sm text-gray-500">{label}</h4>
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
+      </div>
+    </div>
+  );
+};

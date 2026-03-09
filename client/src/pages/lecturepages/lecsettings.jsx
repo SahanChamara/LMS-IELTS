@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import LecSidebar from "./lecsidebar";
+import LecSidebar from "./Lecsidebar";
 
 const Lsettings = () => {
   const navigate = useNavigate();
@@ -85,10 +85,7 @@ const Lsettings = () => {
     }
   };
 
-  const handleLogout = () => {
-    // Clear any local storage or session data if needed
-    navigate("/login");
-  };
+  const handleLogout = () => navigate("/login");
 
   if (loading) {
     return (

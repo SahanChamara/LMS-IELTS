@@ -21,3 +21,13 @@ export async function enrolledStudent(courseId, studentId) {
     };
   return await ApiService.callApi(apiObject);
 }
+
+export async function getInstructorById(id) {
+    const apiObject = {
+      method: "GET",
+      withCredentials: true,
+      prefix: "instructors",
+      endpoint: id,
+    };
+  return await ApiService.callApi(apiObject);
+}

@@ -87,7 +87,7 @@ const SuperAdminCourseControl = () => {
 
       // Reset form
       setShowForm(false);
-      setNewCourse({ title: "", description: "", instructor: "", status: "active" });
+      setNewCourse({ title: "", description: "", status: "active" });
     } catch (err) {
       console.error("Error saving course:", err);
       setError("Failed to save course.");
@@ -100,7 +100,7 @@ const SuperAdminCourseControl = () => {
     setNewCourse({
       title: course.title,
       description: course.description,
-      instructor: course.instructor?._id || "",
+      // instructor: course.instructor?._id || "",
       status: course.status,
     });
     setShowForm(true);
@@ -110,7 +110,7 @@ const SuperAdminCourseControl = () => {
   const handleCancel = () => {
     setShowForm(false);
     setEditingCourseId(null);
-    setNewCourse({ title: "", description: "", instructor: "", status: "active" });
+    setNewCourse({ title: "", description: "", status: "active" });
   };
 
   // Search Filter
@@ -203,7 +203,7 @@ const SuperAdminCourseControl = () => {
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700">Instructor</label>
                 <select
                   name="instructor"
@@ -219,7 +219,7 @@ const SuperAdminCourseControl = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Status</label>
@@ -271,7 +271,7 @@ const SuperAdminCourseControl = () => {
                     <thead className="text-xs uppercase bg-gray-100">
                       <tr>
                         <th className="px-4 py-3">Title</th>
-                        <th className="px-4 py-3">Instructor</th>
+                        {/* <th className="px-4 py-3">Instructor</th> */}
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Created</th>
                         <th className="px-4 py-3">Actions</th>
@@ -282,9 +282,9 @@ const SuperAdminCourseControl = () => {
                         paginatedCourses.map((course) => (
                           <tr key={course._id} className="border-b hover:bg-gray-50">
                             <td className="px-4 py-3">{course.title}</td>
-                            <td className="px-4 py-3">
+                            {/* <td className="px-4 py-3">
                               {course.instructor?.name || "N/A"}
-                            </td>
+                            </td> */}
                             <td className="px-4 py-3 capitalize">{course.status}</td>
                             <td className="px-4 py-3">
                               {new Date(course.createdAt).toLocaleDateString()}

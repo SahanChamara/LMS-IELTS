@@ -1,28 +1,73 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
+import Datetime from "react-datetime";
+import moment from "moment";
+import "react-datetime/css/react-datetime.css";
+import { createOnlineSession, getOnlineSessionsByUnitId } from "../../../service/onlineSessionService";
 
 const OnlineSessionTab = ({ unit }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // IDs
+  const tableId = location.state?.tableId || unit?.tableId || unit?.id || "";
+  const unitId = unit?.unitId || unit?.id || "";
+  const storedUser = localStorage.getItem("user") || "{}";
+  const instructorName = localStorage.getItem("userName") || storedUser?.name || "";
+  const instructorId = storedUser|| storedUser?.id || "";
+
+  // Toast
   const [toast, setToast] = useState({ message: "", type: "", visible: false });
 
-  // Retrieve tableId from navigation state or unit prop
-  const tableId = location.state?.tableId || unit?.tableId || unit?.id || "";
-
-  // Initial form state with provided data
+  // Form Data
   const [formData, setFormData] = useState({
-    title: unit?.title || "Introduction to React",
-    dateTime: unit?.dateTime || "2025-07-01 | 03:30 PM",
-    zoomLink: unit?.zoomLink || "",
-    instructor: unit?.instructor || "Sahan",
-    description: unit?.description || "Learn the fundamentals of React including components, state, and props. Build your first React application in this comprehensive introductory unit.",
+    title: "",
+    dateTime: null,
+    zoomLink: "",
+    instructor: instructorName || "",
+    description: "",
   });
 
-  // Handle form submission
+  // Sessions
+  const [sessions, setSessions] = useState([]);
+
+  // Fetch Sessions by Unit
+  const fetchSessions = async () => {
+    try {
+      if (!unitId) return;
+      const response = await getOnlineSessionsByUnitId(unitId);
+      setSessions(response?.data || []);
+    } catch (error) {
+      console.error("Failed to fetch sessions:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, [unitId]);
+
+  // Handle Input Changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle Date Change
+  const handleDateChange = (date) => {
+    setFormData((prev) => ({ ...prev, dateTime: date }));
+  };
+
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.dateTime.trim() || !formData.instructor.trim() || !formData.description.trim()) {
+
+    if (
+      !formData.title.trim() ||
+      !formData.dateTime ||
+      !formData.instructor.trim() ||
+      !formData.description.trim()
+    ) {
       setToast({
         message: "All fields except Zoom link are required",
         type: "error",
@@ -31,31 +76,47 @@ const OnlineSessionTab = ({ unit }) => {
       return;
     }
 
-    const submission = {
-      id: Date.now(),
-      tableId,
-      ...formData,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      // Convert moment/Date to ISO date for backend
+      const isoDate = moment(formData.dateTime).toISOString();
 
-    setToast({
-      message: "Session details updated successfully",
-      type: "success",
-      visible: true,
-    });
-    console.log("Submitted:", submission);
+      const onlineSession = {
+        unit: unitId,
+        instructor: instructorId,
+        title: formData.title,
+        date: isoDate, // ✅ Send ISO format date
+        link: formData.zoomLink || "https://zoom.us/",
+        description: formData.description,
+      };
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+      const res = await createOnlineSession(onlineSession);
+      setToast({
+        message: "Online session created successfully",
+        type: "success",
+        visible: true,
+      });
+
+      setFormData({
+        title: "",
+        dateTime: null,
+        zoomLink: "",
+        instructor: instructorName,
+        description: "",
+      });
+
+      await fetchSessions();
+      console.log("Created Session:", res);
+    } catch (error) {
+      console.error("Create session failed:", error);
+      setToast({
+        message: "Failed to create online session",
+        type: "error",
+        visible: true,
+      });
+    }
   };
 
-  // Handle input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Auto-hide toast
+  // Auto-hide Toast
   useEffect(() => {
     if (toast.visible) {
       const timer = setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
@@ -67,133 +128,146 @@ const OnlineSessionTab = ({ unit }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-neutral-900">
           Online Session Update {tableId && `(Table ID: ${tableId})`}
         </h1>
         <button
-          onClick={() => navigate(`/unit/lecture/${tableId || unit?.id || "default"}`, { state: { tableId } })}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-sm font-semibold"
-          aria-label="Back to Lectures"
+          onClick={() =>
+            navigate(`/unit/lecture/${tableId || unit?.id || "default"}`, { state: { tableId } })
+          }
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Back to Lectures
         </button>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {toast.visible && (
         <div
           role="alert"
           aria-live="polite"
-          className="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg bg-green-100 text-green-800 flex items-center justify-between max-w-md"
+          className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg flex items-center justify-between max-w-md ${
+            toast.type === "error" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+          }`}
         >
           <span className="text-sm">{toast.message}</span>
-          <button
-            onClick={closeToast}
-            className="ml-4 text-green-600 hover:text-green-800 focus:outline-none"
-            aria-label="Close notification"
-          >
+          <button onClick={closeToast} className="ml-4 hover:text-black focus:outline-none">
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Update Form */}
+      {/* Form */}
       <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-lg font-semibold text-neutral-900 mb-2">
-              Session Title
-            </label>
+            <label className="block text-lg font-semibold mb-2">Session Title</label>
             <input
               type="text"
-              id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base"
+              className="w-full p-3 border border-gray-300 rounded-lg"
               placeholder="Enter session title"
-              aria-label="Session title"
-              required
             />
           </div>
 
+          {/* DateTime Picker */}
           <div>
-            <label htmlFor="dateTime" className="block text-lg font-semibold text-neutral-900 mb-2">
-              Date & Time
-            </label>
-            <input
-              type="text"
-              id="dateTime"
-              name="dateTime"
+            <label className="block text-lg font-semibold mb-2">Date & Time</label>
+            <Datetime
               value={formData.dateTime}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base"
-              placeholder="Enter date and time (e.g., 2025-07-01 | 03:30 PM)"
-              aria-label="Date and time"
-              required
+              onChange={handleDateChange}
+              dateFormat="YYYY-MM-DD"
+              timeFormat="hh:mm A"
+              inputProps={{
+                placeholder: "Select date and time",
+                className: "w-full p-3 border border-gray-300 rounded-lg cursor-pointer",
+              }}
             />
           </div>
 
+          {/* Zoom Link */}
           <div>
-            <label htmlFor="zoomLink" className="block text-lg font-semibold text-neutral-900 mb-2">
-              Zoom Link
-            </label>
+            <label className="block text-lg font-semibold mb-2">Zoom Link</label>
             <input
               type="url"
-              id="zoomLink"
               name="zoomLink"
               value={formData.zoomLink}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base"
+              className="w-full p-3 border border-gray-300 rounded-lg"
               placeholder="Enter Zoom link (optional)"
-              aria-label="Zoom link"
             />
           </div>
 
+          {/* Instructor */}
           <div>
-            <label htmlFor="instructor" className="block text-lg font-semibold text-neutral-900 mb-2">
-              Instructor
-            </label>
+            <label className="block text-lg font-semibold mb-2">Instructor</label>
             <input
               type="text"
-              id="instructor"
               name="instructor"
               value={formData.instructor}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base"
-              placeholder="Enter instructor name"
-              aria-label="Instructor name"
-              required
+              readOnly
+              className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-lg font-semibold text-neutral-900 mb-2">
-              Description
-            </label>
+            <label className="block text-lg font-semibold mb-2">Description</label>
             <textarea
-              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className="w-full h-32 p-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 text-neutral-900 placeholder-neutral-400 text-base resize-vertical"
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg"
               placeholder="Enter session description"
-              aria-label="Session description"
-              required
             />
           </div>
 
-          <div className="flex justify-end space-x-4">
+          {/* Submit */}
+          <div className="flex justify-end">
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              aria-label="Submit session update"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Submit Update
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Display Created Sessions */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold mb-4 text-neutral-900">Created Online Sessions</h2>
+        {sessions.length === 0 ? (
+          <p className="text-gray-600">No sessions created yet for this unit.</p>
+        ) : (
+          <ul className="space-y-4">
+            {sessions.map((session) => (
+              <li key={session._id} className="p-4 border border-gray-200 rounded-lg shadow-sm">
+                <h3 className="font-semibold text-lg">{session.title}</h3>
+                <p className="text-sm text-gray-600">
+                  📅 {moment(session.date).format("YYYY-MM-DD | hh:mm A")}
+                </p>
+                <p className="text-sm text-gray-600">👨‍🏫 {session.instructor?.name || "Instructor"}</p>
+                {session.link && (
+                  <a
+                    href={session.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 text-sm hover:underline"
+                  >
+                    Join Zoom
+                  </a>
+                )}
+                <p className="text-sm text-gray-700 mt-2">{session.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

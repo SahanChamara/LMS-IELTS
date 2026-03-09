@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
-import Lecsidebar from "../lecturepages/lecsidebar";
+import Lecsidebar from "../lecturepages/Lecsidebar";
 import { courses } from "../../data/courses";
 
 //=============================================================================================
@@ -130,9 +130,7 @@ const Leccorces = () => {
   const [activeTab, setActiveTab] = useState("both");
 
   // Handling logout action
-  const handleLogout = () => {
-    console.log("Logout triggered");
-  };
+  const handleLogout = () => navigate("/login");
 
   // Updating form data on input change
   const handleInputChange = (e) => {

@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Sidebar from "../components/Sidebar";
-import Card, { CardContent } from "../components/card";
+import Card, { CardContent } from "../components/Card";
 
 const DASHBOARD_DATA = {
   banner: {
