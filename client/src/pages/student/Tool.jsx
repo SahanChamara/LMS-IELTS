@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../../components/Sidebar";
-import Card, { CardContent } from "../../components/Card";
+import Card, { CardContent } from "../../components/card";
 import { ArrowLeft } from "lucide-react";
 import { getStudentById, updateStudent } from "../../service/profileService";
 import { uploadFileToS3 } from "../../service/s3/s3Service";

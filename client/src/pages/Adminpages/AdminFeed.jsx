@@ -5,7 +5,7 @@ import { Clock, CheckCircle, XCircle, AlertTriangle, BookOpen, File, MessageCirc
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
 import Adminsidebar from './Adminsidebars';
-import Card from '../../components/Card';
+import Card from '../../components/card';
 import { useNavigate } from "react-router-dom";
 import { getPosts, approvePost, deletePost, reactPost } from '../../service/postService';
 

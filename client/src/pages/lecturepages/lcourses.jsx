@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
-import Lecsidebar from "../lecturepages/Lecsidebar";
+import Lecsidebar from "../lecturepages/lecsidebar";
 import { courses } from "../../data/courses";
 
 //=============================================================================================

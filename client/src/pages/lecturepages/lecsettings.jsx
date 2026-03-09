@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import LecSidebar from "./Lecsidebar";
+import LecSidebar from "./lecsidebar";
 
 const Lsettings = () => {
   const navigate = useNavigate();

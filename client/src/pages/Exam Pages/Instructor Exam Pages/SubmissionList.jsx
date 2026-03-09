@@ -13,7 +13,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import ReviewSubmission from "./ReviewSubmission";
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../lecturepages/lecsidebar";
 
 const SubmissionList = () => {
   const [submissions, setSubmissions] = useState([]);

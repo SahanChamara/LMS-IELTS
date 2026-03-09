@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import LecSidebar from "../../pages/lecturepages/Lecsidebar";
+import LecSidebar from "../../pages/lecturepages/lecsidebar";
 
 
 import { getAllStudents } from "../../service/studentService";

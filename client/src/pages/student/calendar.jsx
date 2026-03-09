@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Section from "../../components/Section";
 import { motion } from "framer-motion";
-import Card, { CardContent } from "../../components/Card"
+import Card, { CardContent } from "../../components/card"
 
 // Define image URLs with fallbacks (fresh Unsplash URLs as of June 10, 2025)
 const images = {

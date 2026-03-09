@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Plus, Edit3, Trash2, Clock } from 'lucide-react';
-import Lecsidebar from '../../lecturepages/Lecsidebar';
+import Lecsidebar from '../../lecturepages/lecsidebar';
 
 const AddSectionsForm = ({ 
   exam, 

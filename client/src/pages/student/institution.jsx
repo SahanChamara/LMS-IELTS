@@ -3,9 +3,9 @@ import Section from "../../components/Section";
 import Performance from "../../homecomponents/Performance";
 import AssignedAssessments from "../../homecomponents/assigned";
 import Exm from "../../homecomponents/Examr";
-import CompletedAssessmentsCard from "../../homecomponents/CompletedAssessmentsCard";
+import CompletedAssessmentsCard from "../../homecomponents/completedAssessmentsCard";
 import Completed from "../../homecomponents/CompletedCoursesCard";
-import Card, { CardContent } from "../../components/Card"
+import Card, { CardContent } from "../../components/card"
 
 const Home = () => {
   return (

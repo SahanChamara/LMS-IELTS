@@ -1,7 +1,7 @@
 // components/lecturer/Lecdashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Lecsidebar from "./Lecsidebar";
+import Lecsidebar from "./lecsidebar";
 import { FiBook, FiFileText, FiUsers } from "react-icons/fi";
 import {
   ResponsiveContainer,

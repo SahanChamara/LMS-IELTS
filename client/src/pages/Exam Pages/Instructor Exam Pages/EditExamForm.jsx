@@ -3,7 +3,7 @@ import { ArrowLeft, Eye } from "lucide-react";
 import CreateExamForm from "./CreateExamForm";
 import AddQuestionsForm from "./AddQuestionsForm";
 import AddSectionsForm from "./AddSectionsForm";
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../lecturepages/lecsidebar";
 
 const EditExamForm = ({ exam, onBack, onExamUpdated }) => {
   const [currentStep, setCurrentStep] = useState("basic"); //<'basic' | 'sections' | 'questions' | 'review'>

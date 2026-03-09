@@ -4,7 +4,7 @@ import QuestionReview from './QuestionReview';
 import SubmissionSummary from './SubmissionSummary';
 import GradingForm from './GradingForm';
 import FinalizeReviewModal from './FinalizeReviewModal';
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../lecturepages/lecsidebar";
 
 const ReviewSubmission = ({ submission, onBack }) => {
   const [submissionDetails, setSubmissionDetails] = useState(null);

@@ -5,8 +5,8 @@ import { Upload, MessageCircle, Clock, CheckCircle, XCircle, BookOpen, FileUp } 
 import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
-import Lecsidebar from './Lecsidebar';
-import Card from '../../components/Card';
+import Lecsidebar from './lecsidebar';
+import Card from '../../components/card';
 import { useNavigate } from 'react-router-dom';
 
 const InstructorFeed = () => {

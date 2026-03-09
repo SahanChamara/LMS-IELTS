@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../lecturepages/lecsidebar";
 import { useAppDispatch } from '../../../redux/store-config/store';
 import { createBasicExamAPI } from '../../../redux/features/examIeltsInstructorSlice';
 

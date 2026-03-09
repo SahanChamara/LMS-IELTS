@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Play, Clock, Users, BookOpen, Edit3 } from 'lucide-react';
-import Lecsidebar from "../../lecturepages/Lecsidebar";
+import Lecsidebar from "../../lecturepages/lecsidebar";
 
 const PreviewExam = ({ exam, onBack, onExamUpdated }) => {
   const [isToggling, setIsToggling] = useState(false);

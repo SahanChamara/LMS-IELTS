@@ -7,7 +7,7 @@ import { Routes, Route } from 'react-router-dom'
 import Exam from '../pages/Exam'
 import Login from '../pages/student/Login'
 import Register from '../pages/student/Register'
-import Institution from '../pages/Institution'
+import Institution from '../pages/institution'
 import Profile from '../pages/student/profile'
 import Goals from '../pages/student/goals'
 import Units from '../pages/units'
@@ -50,7 +50,7 @@ import SuperAdminnotifications from '../pages/Adminpages/adminnotifications'
 import IELTSLandingPage from '../pages/Adminpages/landing'
 import AdminFeed from '../pages/Adminpages/AdminFeed'
 import InstructorDashboard from "../pages/Exam Pages/Instructor Exam Pages/InstructorDashboard";
-import CourseAdd from '../pages/Adminpages/courseadd';
+import CourseAdd from '../pages/Adminpages/courseAdd';
 import SuperAdminUnitControl from '../pages/Adminpages/unitAdd'
 
 // Defining the application routes

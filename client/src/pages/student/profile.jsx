@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import Card, { CardContent } from "../../components/Card";
+import Card, { CardContent } from "../../components/card";
 import { Settings } from "lucide-react";
 import { getStudentById, getStudentEnrolledCourse, updateStudent } from "../../service/profileService";
 
