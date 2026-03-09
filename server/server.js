@@ -51,8 +51,12 @@ connectDB();
 mongoose.set('debug', true);
 app.use(express.json());
 app.use(cookieParser());
+
+// Multiple Origins Setup
+const allowedOrigins = process.env.FRONTEND_ORIGIN.split(",");
+
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN,
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(helmet());
