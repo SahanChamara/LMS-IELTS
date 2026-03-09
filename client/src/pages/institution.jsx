@@ -2,7 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Section from "../components/Section";
 import Performance from "../homecomponents/Performance";
 import AssignedAssessments from "../homecomponents/assigned";
-import Exm from "../homecomponents/Examr";
+import Exm from "../homecomponents/examr";
 import CompletedAssessmentsCard from "../homecomponents/completedAssessmentsCard";
 import Completed from "../homecomponents/CompletedCoursesCard";
 import Card, { CardContent } from "../components/card";
