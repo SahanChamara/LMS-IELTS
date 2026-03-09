@@ -6,7 +6,7 @@ import { mockPosts } from '../../data/mockData';
 import ReactionBar from '../../components/ReactionBar';
 import AttachmentDisplay from '../../components/AttachmentDisplay';
 import Sidebar from '../../components/Sidebar';
-import Card from '../../components/card';
+import Card from '../../components/Card';
 import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../redux/store-config/store';
 import { getStudentDetailsAPI } from '../../redux/features/studentSlice';

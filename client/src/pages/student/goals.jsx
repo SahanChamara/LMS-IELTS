@@ -1,6 +1,6 @@
 import React from "react";
 import Sidebar from "../../components/Sidebar";
-import Card, { CardContent } from "../../components/card";
+import Card, { CardContent } from "../../components/Card";
 import {
   Download,
   UploadCloud,

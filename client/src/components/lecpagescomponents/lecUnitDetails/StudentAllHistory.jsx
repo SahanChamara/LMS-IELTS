@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Sidebar from "../../../pages/lecturepages/lecsidebar";
+import Sidebar from "../../../pages/lecturepages/Lecsidebar";
 import { Search, Check, X, Download } from "lucide-react";
 
 const StudentAllHistory = () => {
