@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
-import Card from "../components/card";
+import Card from "../components/Card";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/store-config/store";
 import { getAllUnitsAPI } from "../redux/features/unitsSlice";
