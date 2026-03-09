@@ -24,14 +24,11 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY --from=build /app/ ./
 
-RUN rm -rf .git .env* Dockerfile docker-compose* *.md tests
+RUN rm -rf .env* .git Dockerfile docker-compose* *.md tests
 
 RUN chown -R appuser:appgroup /app
 
 USER appuser
-
-ENV NODE_ENV=production
-ENV PORT=5000
 
 EXPOSE 5000
 
